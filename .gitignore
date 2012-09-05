@@ -1,7 +1,7 @@
 *.class
 *.log
 
-# sbt specific
+# SBT specific.
 dist/*
 target/
 lib_managed/
@@ -9,5 +9,10 @@ src_managed/
 project/boot/
 project/plugins/project/
 
-# Scala-IDE specific
-.scala_dependencies
+# IntelliJ Idea files.
+.idea/uiDesigner.xml
+.idea/workspace.xml
+.idea/misc.xml
+.idea/highlighting.xml
+.idea/dictionaries
+.idea/libraries
