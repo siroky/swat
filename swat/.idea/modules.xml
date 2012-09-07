@@ -1,11 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-build.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-build.iml" ></module>
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/api.iml" filepath="$PROJECT_DIR$/.idea_modules/api.iml" ></module>
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/compiler.iml" filepath="$PROJECT_DIR$/.idea_modules/compiler.iml" ></module>
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/runtime.iml" filepath="$PROJECT_DIR$/.idea_modules/runtime.iml" ></module>
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat.iml" filepath="$PROJECT_DIR$/.idea_modules/swat.iml" ></module>
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/api.iml" filepath="$PROJECT_DIR$/.idea_modules/api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/compiler.iml" filepath="$PROJECT_DIR$/.idea_modules/compiler.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/runtime.iml" filepath="$PROJECT_DIR$/.idea_modules/runtime.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat.iml" filepath="$PROJECT_DIR$/.idea_modules/swat.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-build.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-build.iml" />
     </modules>
   </component>
 </project>
+

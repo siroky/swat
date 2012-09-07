@@ -6,6 +6,7 @@
         <option name="LINE_SEPARATOR" value="&#10;" />
         <ScalaCodeStyleSettings>
           <option name="PLACE_CLOSURE_PARAMETERS_ON_NEW_LINE" value="false" />
+          <option name="NOT_CONTINUATION_INDENT_FOR_PARAMS" value="true" />
           <option name="MULTILINE_STRING_SUPORT" value="0" />
           <option name="MULTI_LINE_QUOTES_ON_NEW_LINE" value="false" />
           <option name="MULTI_LINE_STRING_MARGIN_INDENT" value="4" />
@@ -18,7 +19,11 @@
           <option name="KEEP_BLANK_LINES_IN_DECLARATIONS" value="1" />
           <option name="KEEP_BLANK_LINES_IN_CODE" value="1" />
           <option name="KEEP_BLANK_LINES_BEFORE_RBRACE" value="1" />
+          <option name="BLANK_LINES_AROUND_CLASS" value="0" />
+          <option name="BLANK_LINES_AROUND_METHOD" value="0" />
+          <option name="BLANK_LINES_AROUND_METHOD_IN_INTERFACE" value="0" />
           <option name="CLASS_BRACE_STYLE" value="2" />
+          <option name="ALIGN_MULTILINE_PARAMETERS" value="false" />
           <option name="WRAP_LONG_LINES" value="true" />
           <option name="METHOD_ANNOTATION_WRAP" value="0" />
           <option name="CLASS_ANNOTATION_WRAP" value="0" />
