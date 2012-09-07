@@ -1,6 +1,6 @@
 # Swat - Scala web application toolkit
 
-Aim of this project is to create a set of tools that will help to create rich internet applications using the Scala language. That is compilation of programs written in Scala to JavaScript and runtime environment which should enable execution of the compiled code in modern web browsers. On top of that, advanced libraries or features can be built in order to simplify tasks, that aren't very progrmmer-friendly to implement directly in JavaScript. 
+Aim of this project is to create a set of tools that will help to create rich internet applications using the Scala language. That is compilation of programs written in Scala to JavaScript and runtime environment which should enable execution of the compiled code in modern web browsers. On top of that, advanced libraries or features can be built in order to simplify tasks, that aren't very progrmmer-friendly to implement directly in JavaScript. Unlike GWT, it should be completely separated from any web application framework, so existing frameworks would be easily integratable into the Swat. Or new frameworks implemented directly in Scala could be created from scratch.
 
 ## Components
 
