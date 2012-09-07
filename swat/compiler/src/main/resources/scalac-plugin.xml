@@ -1,0 +1,4 @@
+<plugin>
+    <name>swat-compiler</name>
+    <classname>swat.compiler.SwatCompilerPlugin</classname>
+</plugin>
