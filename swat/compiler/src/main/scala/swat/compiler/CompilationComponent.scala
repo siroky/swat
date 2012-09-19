@@ -12,14 +12,13 @@ class CompilationComponent(val global: Global, val plugin: SwatCompilerPlugin) e
 
     val phaseName = "swat-compilation"
 
-    private var _output: Option[js.Program] = None
+    private var _output = js.Program()
 
     def output = _output
 
     def newPhase(prev: Phase) = new StdPhase(prev) {
         def apply(unit: CompilationUnit) {
             println("Hello from Swat.")
-            _output = None
         }
     }
 }

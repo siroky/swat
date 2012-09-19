@@ -2,25 +2,21 @@ package swat.compiler
 
 import java.io.File
 
-case class SwatCompilerOptions(target: File, mirrorPackages: Boolean)
+case class SwatCompilerOptions(target: Option[File])
 {
-    def toList = List(
-        "%s:%s".format(SwatCompilerOptions.targetOption, target.getAbsolutePath),
-        "%s:%s".format(SwatCompilerOptions.mirrorPackagesOption, mirrorPackages.toString)
-    )
+    def toList = {
+        List(
+            target.map(t =>  "%s:%s".format(SwatCompilerOptions.targetOption, t.getAbsolutePath))
+        ).flatten
+    }
 }
 
 object SwatCompilerOptions
 {
     val targetOption = "target"
 
-    val mirrorPackagesOption = "mp"
-
     def help(pluginName: String) =
-        """|  -P:%1$s:%s    The target directory for JavaScript files.
-           |  -P:%1$s:%s    Whether a directory structure mirroring the packages is created.""".stripMargin.format(
-            pluginName, targetOption, mirrorPackagesOption
-        )
+        "-P:%s:%s    The target directory for JavaScript files.".format(pluginName, targetOption)
 
     def apply(options: List[String]): SwatCompilerOptions = {
         val optionMap = options.flatMap { o =>
@@ -31,11 +27,8 @@ object SwatCompilerOptions
             }
         }.toMap
 
-        SwatCompilerOptions(
-            optionMap.get(targetOption).map(new File(_)).getOrElse(default.target),
-            optionMap.get(mirrorPackagesOption).map(_.toBoolean).getOrElse(default.mirrorPackages)
-        )
+        SwatCompilerOptions(optionMap.get(targetOption).map(new File(_)))
     }
 
-    def default = SwatCompilerOptions(new File("."), true)
+    def default = SwatCompilerOptions(None)
 }
