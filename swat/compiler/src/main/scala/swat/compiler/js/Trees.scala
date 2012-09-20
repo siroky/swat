@@ -65,6 +65,8 @@ case object EmptyStatement extends Statement
 
 case class ExpressionStatement(expr: Expression) extends Statement
 
+case class AssignmentStatement(target: Expression, expr: Expression) extends Statement
+
 case class IfStatement(
     condition: Expression,
     thenStmts: Seq[Statement],

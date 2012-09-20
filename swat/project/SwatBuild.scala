@@ -10,10 +10,12 @@ object SwatBuild extends Build
         scalacOptions ++= Seq(
             "-deprecation",
             "-unchecked",
-            "-encoding", "utf8"
+            "-feature",
+            "-encoding", "utf8",
+            "-language:implicitConversions"
         ),
         libraryDependencies ++= Seq(
-            "org.scalatest" % "scalatest_2.9.0" % "1.8" % "test"
+            "org.scalatest" % "scalatest_2.10.0-M7" % "1.9-2.10.0-M7-B1"
         ),
         resolvers ++= Seq(
             DefaultMavenRepository

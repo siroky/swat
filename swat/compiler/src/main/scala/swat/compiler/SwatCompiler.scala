@@ -21,25 +21,26 @@ class SwatCompiler(
 
     def compile(sourceFile: File): js.Program = {
         val settings = new Settings()
-        settings.classpath.value = classPath
         settings.outdir.value = classTarget
+        settings.classpath.value = classPath
+        settings.deprecation.value = true
+        settings.unchecked.value = true
+        settings.feature.value = true
 
-        val compiler = new InternalCompiler(settings, options.toList)
+        val compiler = new SwatGlobal(settings)
         val run = new compiler.Run()
         run.compile(List(sourceFile.path))
 
-        compiler.output
+        compiler.swatCompilerPlugin.output
     }
 
-    private class InternalCompiler(settings: Settings, val options: List[String]) extends Global(settings)
+    private class SwatGlobal(settings: Settings) extends Global(settings, new ExceptionReporter)
     {
-        private val swatCompilerPlugin = new SwatCompilerPlugin(this)
-
-        def output = swatCompilerPlugin.compilationComponent.output
+        val swatCompilerPlugin = new SwatCompilerPlugin(this)
 
         override protected def computeInternalPhases() {
             super.computeInternalPhases()
-            swatCompilerPlugin.processOptions(options, identity _)
+            swatCompilerPlugin.processOptions(options.toList, identity _)
             swatCompilerPlugin.components.foreach(phasesSet += _)
         }
     }

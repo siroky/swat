@@ -15,8 +15,12 @@ object SwatCompilerOptions
 {
     val targetOption = "target"
 
-    def help(pluginName: String) =
-        "-P:%s:%s    The target directory for JavaScript files.".format(pluginName, targetOption)
+    def help(pluginName: String): String = {
+        "  -P:%s:%s:dir             Sets the target directory for JavaScript files to dir.".format(
+            pluginName,
+            targetOption
+        )
+    }
 
     def apply(options: List[String]): SwatCompilerOptions = {
         val optionMap = options.flatMap { o =>

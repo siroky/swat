@@ -27,6 +27,7 @@ class CodeGenerator
                 "var " + variables.map(v => process(v._1) + " = " + process(v._2)).mkString(", ") + ";"
             }
             case EmptyStatement => ";"
+            case AssignmentStatement(target, expr) => process(target) + " = " + process(expr) + ";"
             case ExpressionStatement(expr) => "(" + expr + ");"
             case IfStatement(condition, thenStmts, elseStmts) => {
                 "if (" + process(condition) + ") " + processBlock(thenStmts) +
@@ -116,16 +117,18 @@ class CodeGenerator
     }
 
     private def escapeString(value: String) = {
-        List(
-            "\\" -> """\\""",
-            "\b" -> """\b""",
-            "\f" -> """\f""",
-            "\n" -> """\n""",
-            "\r" -> """\r""",
-            "\t" -> """\t""",
-            "'" -> """\'""",
-            "\"" -> """\""""
-        ).foldLeft(value)((s, e) => s.replace(e._1, e._2))
+        val replacementMap = Map(
+            '\\' -> """\\""",
+            '\b' -> """\b""",
+            '\f' -> """\f""",
+            '\n' -> """\n""",
+            '\r' -> """\r""",
+            '\t' -> """\t""",
+            '\'' -> """\'""",
+            '\"' -> """\""""
+        ).withDefault(c => c)
+
+        value.map(replacementMap).mkString
     }
 }
 
