@@ -41,6 +41,11 @@ case class ConditionalExpression(condition: Expression, thenExpr: Expression, el
 
 case class Program(elements: Seq[SourceElement] = Nil) extends Ast
 
+object Program
+{
+    def empty = Program()
+}
+
 sealed abstract class SourceElement extends Ast
 
 case class FunctionDeclaration(

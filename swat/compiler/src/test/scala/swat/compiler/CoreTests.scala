@@ -3,7 +3,20 @@ package swat.compiler
 class CoreTests extends CompilerSuite
 {
     test("compiler suite 1") {
-        "class A" shouldCompileTo ""
+        "package a { class A }; package b { class B }" shouldCompileTo ""
+        "class A { class B { class C } }" shouldCompileTo ""
+        """
+        class A
+        {
+            def m1() {
+                "a" match {
+                    case "b" =>
+                    case "c" =>
+                }
+            }
+        }
+
+        """ shouldCompileTo ""
     }
 
     /*test("compiler suite 2") {

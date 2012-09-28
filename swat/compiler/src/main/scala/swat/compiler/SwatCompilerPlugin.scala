@@ -1,5 +1,6 @@
 package swat.compiler
 
+import frontend.JsAstGenerator
 import scala.tools.nsc.Global
 import tools.nsc.plugins.{PluginComponent, Plugin}
 import reflect.internal.Phase
@@ -16,7 +17,7 @@ class SwatCompilerPlugin(val global: Global) extends Plugin
 
     private var options = SwatCompilerOptions.default
 
-    private var outputJsAst = js.Program()
+    private var outputJsAst = js.Program.empty
 
     override val optionsHelp = Some(SwatCompilerOptions.help(name))
 
@@ -36,17 +37,19 @@ class SwatCompilerPlugin(val global: Global) extends Plugin
      * into the output variable. If the target is specified, creates a file with JavaScript code generated from the
      * JavaScript ASTs in a directories corresponding to the packages.
      */
-    private object SwatCompilationComponent extends PluginComponent
+    private object SwatCompilationComponent
+        extends PluginComponent
+        with JsAstGenerator
     {
         val global: SwatCompilerPlugin.this.global.type = SwatCompilerPlugin.this.global
 
-        val runsAfter = List("refchecks")
+        val runsAfter = List("uncurry")
 
         val phaseName = "swat-compilation"
 
         def newPhase(prev: Phase) = new StdPhase(prev) {
             def apply(unit: CompilationUnit) {
-                outputJsAst = js.Program(List(js.ExpressionStatement(js.StringLiteral("Hello from Swat!"))))
+                outputJsAst = processCompilationUnit(unit)
             }
         }
     }

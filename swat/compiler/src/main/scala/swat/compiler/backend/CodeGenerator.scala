@@ -1,4 +1,6 @@
-package swat.compiler.js
+package swat.compiler.backend
+
+import swat.compiler.js._
 
 class CodeGenerator
 {
