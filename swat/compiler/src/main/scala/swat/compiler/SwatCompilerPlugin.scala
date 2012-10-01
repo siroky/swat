@@ -1,6 +1,6 @@
 package swat.compiler
 
-import frontend.{ArtifactRef, JsAstGenerator}
+import frontend.JsAstGenerator
 import scala.tools.nsc.Global
 import tools.nsc.plugins.{PluginComponent, Plugin}
 import reflect.internal.Phase
@@ -17,7 +17,7 @@ class SwatCompilerPlugin(val global: Global) extends Plugin
 
     private var options = CompilerOptions.default
 
-    private var artifactOutputs = Map.empty[ArtifactRef, js.Program]
+    private var definitionOutputs = Map.empty[String, js.Program]
 
     override val optionsHelp = Some(CompilerOptions.help(name))
 
@@ -26,7 +26,7 @@ class SwatCompilerPlugin(val global: Global) extends Plugin
         options = CompilerOptions(o)
     }
 
-    def outputs = artifactOutputs
+    def outputs = definitionOutputs
 
     private object SwatCompilationComponent
         extends PluginComponent
@@ -40,7 +40,7 @@ class SwatCompilerPlugin(val global: Global) extends Plugin
 
         def newPhase(prev: Phase) = new StdPhase(prev) {
             def apply(unit: CompilationUnit) {
-                artifactOutputs = processCompilationUnit(unit)
+                definitionOutputs = processCompilationUnit(unit)
             }
         }
     }

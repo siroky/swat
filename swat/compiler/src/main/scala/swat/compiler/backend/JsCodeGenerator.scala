@@ -8,7 +8,7 @@ trait JsCodeGenerator
 
     private def process(ast: Ast)(implicit indent: Indent): String = {
         ast match {
-            case Program(elements) => elements.map(process _).mkString("\n\n")
+            case Program(elements) => elements.map(process _).mkString
             case FunctionDeclaration(name, parameters, body) => {
                 "function " + process(name) + process(parameters).mkString("(", ", ", ")") +
                     processBlock(body) + "\n"
@@ -39,7 +39,7 @@ trait JsCodeGenerator
             }
             case EmptyStatement => ";"
             case AssignmentStatement(target, expr) => process(target) + " = " + process(expr) + ";"
-            case ExpressionStatement(expr) => "(" + expr + ");"
+            case ExpressionStatement(expr) => process(expr) + ";"
             case IfStatement(condition, thenStmts, elseStmts) => {
                 "if (" + process(condition) + ") " + processBlock(thenStmts) +
                 elseStmts.map(e => " else " + processBlock(e)).mkString

@@ -1,7 +1,6 @@
 package swat.compiler
 
-import frontend.{ClassArtifact, ArtifactRef}
-
+@swat.api.dependency(classOf[String])
 class ClassTests extends CompilerSuite
 {
     test("Adapter classes and ignored classes aren't compiled") {
@@ -22,6 +21,19 @@ class ClassTests extends CompilerSuite
         """
             @swat.api.native("A = function() { this.a = 'foo'; };")
             class A
-        """ shouldCompileTo Map(ArtifactRef(ClassArtifact, "A") -> "A = function() { this.a = 'foo'; };\n")
+        """ shouldCompileTo Map("A" -> "A = function() { this.a = 'foo'; };\n")
+    }
+
+    test("Dependencies with native annotations are supported") {
+        """
+            @swat.api.native("A = function() { };")
+            @swat.api.dependency(classOf[Boolean], false)
+            @swat.api.dependency(classOf[String], true)
+            class A
+        """ shouldCompileTo Map("A" -> """
+            swat.dependsOn('scala.Boolean', false);
+            swat.dependsOn('java.lang.String', true);
+            A = function() { };
+        """)
     }
 }

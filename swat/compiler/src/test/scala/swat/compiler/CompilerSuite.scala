@@ -1,6 +1,5 @@
 package swat.compiler
 
-import frontend.{ClassArtifact, ArtifactRef}
 import org.scalatest.FunSuite
 import tools.nsc.io.Directory
 import swat.compiler.backend.JsCodeGenerator
@@ -14,23 +13,32 @@ trait CompilerSuite extends FunSuite with JsCodeGenerator
 
     protected class ScalaCode(val code: String)
     {
-        def shouldCompileTo(expectedCodes: Map[ArtifactRef, String]) {
-            shouldCompileTo(expectedCodes, jsAstToCode _)
+        def shouldCompileTo(expectedCodes: Map[String, String]) {
+            def normalizeCode(c: String) = {
+                val withoutIndent = c.lines.map(_.dropWhile(_ == ' ').reverse.dropWhile(_ == ' ').reverse).mkString
+                withoutIndent.dropWhile(_ == '\n').reverse.dropWhile(_ == '\n').reverse
+            }
+
+            shouldCompileTo(expectedCodes.mapValues(normalizeCode _), c => normalizeCode(jsAstToCode(c)))
         }
 
-        def shouldCompileToPrograms(expectedPrograms: Map[ArtifactRef, js.Program]) {
+        def shouldCompileTo(definitionIdentifier: String)(code: String) {
+            shouldCompileTo(Map(definitionIdentifier -> code))
+        }
+
+        def shouldCompileToPrograms(expectedPrograms: Map[String, js.Program]) {
             shouldCompileTo(expectedPrograms, identity _)
         }
 
-        protected def shouldCompileTo[A](expectedOutputs: Map[ArtifactRef, A], astProcessor: js.Ast => A) {
+        protected def shouldCompileTo[A](expectedOutputs: Map[String, A], astProcessor: js.Ast => A) {
             val compilationOutput = compile()
-            val actualOutputs = compilationOutput.artifactOutputs.mapValues(astProcessor)
+            val actualOutputs = compilationOutput.definitionOutputs.mapValues(astProcessor)
             val e = expectedOutputs.toSet
             val a = actualOutputs.toSet
             val difference = (a diff e) union (e diff a)
 
-            difference.headOption.foreach { case (ref, _) =>
-                expectationFail(ref.fullName, expectedOutputs.get(ref), actualOutputs.get(ref))
+            difference.headOption.foreach { case (ident, _) =>
+                expectationFail(ident, expectedOutputs.get(ident), actualOutputs.get(ident))
             }
 
             val additionalInfos = compilationOutput.warnings ++ compilationOutput.infos
@@ -74,12 +82,12 @@ trait CompilerSuite extends FunSuite with JsCodeGenerator
 
     protected class ScalaCodeFragment(code: String)
     {
-        private val ref = ArtifactRef(ClassArtifact, "A")
+        private val ident ="A"
 
         private val scalaCode = new ScalaCode("class A { def f() { %s } }".format(code)) {
             override def compile(): CompilationOutput = {
                 val output = super.compile()
-                val functionBody = output.artifactOutputs.get(ref).flatMap {
+                val functionBody = output.definitionOutputs.get(ident).flatMap {
                     _.elements.collect {
                         case AssignmentStatement(MemberExpression(_, Identifier("f")), f: FunctionDeclaration) => {
                             f.body
@@ -87,16 +95,16 @@ trait CompilerSuite extends FunSuite with JsCodeGenerator
                     }.headOption
                 }
 
-                CompilationOutput(Map(ref -> Program(functionBody.toList.flatten)), output.warnings, output.infos)
+                CompilationOutput(Map(ident -> Program(functionBody.toList.flatten)), output.warnings, output.infos)
             }
         }
 
         def fragmentShouldCompileTo(expectedCode: String) {
-            scalaCode.shouldCompileTo(Map(ref -> expectedCode))
+            scalaCode.shouldCompileTo(Map(ident -> expectedCode))
         }
 
         def fragmentShouldCompileTo(expectedProgram: js.Program) {
-            scalaCode.shouldCompileToPrograms(Map(ref -> expectedProgram))
+            scalaCode.shouldCompileToPrograms(Map(ident -> expectedProgram))
         }
     }
 }

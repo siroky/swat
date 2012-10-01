@@ -33,7 +33,12 @@ class SwatCompiler(
         val reporter = new SilentReporter
         val compiler = new SwatGlobal(settings, reporter)
         val run = new compiler.Run()
-        run.compile(List(sourceFile.path))
+
+        try {
+            run.compile(List(sourceFile.path))
+        } catch {
+            case t: Throwable => // Exception should already be tracked inside the reporter.
+        }
 
         if (reporter.errors.nonEmpty) {
             throw new CompilationException(reporter.errors.mkString("\n"))
@@ -59,20 +64,17 @@ class SwatCompiler(
         val infos = mutable.ListBuffer.empty[String]
 
         protected def info0(pos: Position, msg: String, severity: this.type#Severity, force: Boolean) {
-            val (messages, severityDescription) = severity match {
-                case ERROR => (errors, "error")
-                case WARNING => (warnings, "warning")
-                case INFO => (infos, "info")
-            }
-
-            messages += "[%s] %s".format(
-                severityDescription,
-                try {
-                    "Line %s column %s: %s\n%s".format(pos.line, pos.column, msg, pos.lineContent)
-                } catch {
-                    case _: UnsupportedOperationException => msg
+            if (pos.isDefined) {
+                val (messages, severityDescription) = severity match {
+                    case ERROR => (errors, "error")
+                    case WARNING => (warnings, "warning")
+                    case INFO => (infos, "info")
                 }
-            )
+
+                messages += "[%s] Line %s column %s: %s\n%s".format(
+                    severityDescription, pos.line, pos.column, msg, pos.lineContent
+                )
+            }
         }
     }
 }

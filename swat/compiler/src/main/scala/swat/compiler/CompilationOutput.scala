@@ -1,5 +1,3 @@
 package swat.compiler
 
-import frontend.ArtifactRef
-
-case class CompilationOutput(artifactOutputs: Map[ArtifactRef, js.Program], warnings: Seq[String], infos: Seq[String])
+case class CompilationOutput(definitionOutputs: Map[String, js.Program], warnings: Seq[String], infos: Seq[String])
