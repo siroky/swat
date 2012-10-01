@@ -10,7 +10,7 @@ import collection.mutable
 class SwatCompiler(
     val classPath: String,
     val classTarget: String,
-    val options: SwatCompilerOptions)
+    val options: CompilerOptions)
 {
     def compile(scalaCode: String): CompilationOutput = {
         val sourceFile = new File(new io.File(java.util.UUID.randomUUID + ".scala"))
@@ -38,7 +38,7 @@ class SwatCompiler(
         if (reporter.errors.nonEmpty) {
             throw new CompilationException(reporter.errors.mkString("\n"))
         }
-        CompilationOutput(compiler.swatCompilerPlugin.output, reporter.warnings, reporter.infos)
+        CompilationOutput(compiler.swatCompilerPlugin.outputs, reporter.warnings, reporter.infos)
     }
 
     private class SwatGlobal(settings: Settings, reporter: Reporter) extends Global(settings, reporter)
@@ -68,7 +68,7 @@ class SwatCompiler(
             messages += "[%s] %s".format(
                 severityDescription,
                 try {
-                    "Line %s column %s: %s".format(pos.line, pos.column, msg)
+                    "Line %s column %s: %s\n%s".format(pos.line, pos.column, msg, pos.lineContent)
                 } catch {
                     case _: UnsupportedOperationException => msg
                 }

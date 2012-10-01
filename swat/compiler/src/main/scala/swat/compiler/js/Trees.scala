@@ -20,6 +20,8 @@ case class RegExpLiteral(pattern: String, modifiers: String) extends Literal
 case class ArrayLiteral(items: Seq[Expression] = Nil) extends Literal
 case class ObjectLiteral(items: Map[String, Expression] = Map.empty) extends Literal
 
+case class RawCodeExpression(code: String) extends Expression
+
 case class FunctionExpression(
     name: Option[Identifier],
     parameters: Seq[Identifier],
@@ -60,6 +62,8 @@ case class Block(statements: Seq[Statement]) extends Statement
 {
     require(statements.nonEmpty)
 }
+
+case class RawCodeBlock(code: String) extends Statement
 
 case class VariableStatement(variables: List[(Identifier, Option[Expression])]) extends Statement
 {

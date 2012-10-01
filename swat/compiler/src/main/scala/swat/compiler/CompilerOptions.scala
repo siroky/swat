@@ -2,16 +2,16 @@ package swat.compiler
 
 import java.io.File
 
-case class SwatCompilerOptions(target: Option[File])
+case class CompilerOptions(target: Option[File])
 {
     def toList = {
         List(
-            target.map(t =>  "%s:%s".format(SwatCompilerOptions.targetOption, t.getAbsolutePath))
+            target.map(t =>  "%s:%s".format(CompilerOptions.targetOption, t.getAbsolutePath))
         ).flatten
     }
 }
 
-object SwatCompilerOptions
+object CompilerOptions
 {
     val targetOption = "target"
 
@@ -22,7 +22,7 @@ object SwatCompilerOptions
         )
     }
 
-    def apply(options: List[String]): SwatCompilerOptions = {
+    def apply(options: List[String]): CompilerOptions = {
         val optionMap = options.flatMap { o =>
             o.split(":").toList match {
                 case option :: value :: _ => Some(option, value)
@@ -31,8 +31,8 @@ object SwatCompilerOptions
             }
         }.toMap
 
-        SwatCompilerOptions(optionMap.get(targetOption).map(new File(_)))
+        CompilerOptions(optionMap.get(targetOption).map(new File(_)))
     }
 
-    def default = SwatCompilerOptions(None)
+    def default = CompilerOptions(None)
 }

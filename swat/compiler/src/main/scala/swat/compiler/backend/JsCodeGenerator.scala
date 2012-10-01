@@ -2,9 +2,9 @@ package swat.compiler.backend
 
 import swat.compiler.js._
 
-class CodeGenerator
+trait JsCodeGenerator
 {
-    def run(ast: Ast): String = process(ast)(Indent("    "))
+    def jsAstToCode(ast: Ast): String = process(ast)(Indent("    "))
 
     private def process(ast: Ast)(implicit indent: Indent): String = {
         ast match {
@@ -25,6 +25,15 @@ class CodeGenerator
     private def processStatement(statement: Statement)(implicit indent: Indent): String = {
         indent + (statement match {
             case Block(stmts) => processBlock(stmts)
+            case RawCodeBlock(code) => {
+                val lines = code.lines.toList
+                val indentPrefix = lines.headOption.map(_.takeWhile(_ == ' ')).getOrElse("")
+                if (lines.forall(_.startsWith(indentPrefix))) {
+                    lines.map(indent + _.drop(indentPrefix.length)).mkString("\n")
+                } else {
+                    code
+                }
+            }
             case VariableStatement(variables) => {
                 "var " + variables.map(v => process(v._1) + " = " + process(v._2)).mkString(", ") + ";"
             }
@@ -84,6 +93,7 @@ class CodeGenerator
         expression match {
             case CommaExpression(exprs) => process(exprs).mkString(", ")
             case literal: Literal => processLiteral(literal)
+            case RawCodeExpression(code) => code
             case FunctionExpression(name, parameters, body) => {
                 "function " + process(name) + process(parameters).mkString("(", ", ", ")") + "{\n" +
                 process(body)(indent.increased) +
@@ -134,9 +144,4 @@ class CodeGenerator
     }
 }
 
-private case class Indent(step: String, value: String = "")
-{
-    def increased = Indent(step, value + step)
 
-    override def toString = value
-}

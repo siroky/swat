@@ -27,9 +27,10 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="org.scala-lang_scala-library_2.10.0-M7" level="project" />
-    <orderEntry type="library" name="org.scala-lang_scala-compiler_2.10.0-M7" level="project" />
+    <orderEntry type="library" name="org.scalatest_scalatest_2.10.0-M7_1.9-2.10.0-M7-B1" level="project" />
+    <orderEntry type="library" name="org.scala-lang_scala-actors_2.10.0-M7" level="project" />
     <orderEntry type="library" name="org.scala-lang_scala-reflect_2.10.0-M7" level="project" />
-    <orderEntry type="library" scope="TEST" name="org.scalatest_scalatest_2.9.0_1.8_test" level="project" />
+    <orderEntry type="library" name="org.scala-lang_scala-compiler_2.10.0-M7" level="project" />
     <orderEntry type="module" module-name="api" exported="" />
   </component>
 </module>
