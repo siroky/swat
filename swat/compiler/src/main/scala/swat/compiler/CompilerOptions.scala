@@ -5,9 +5,7 @@ import java.io.File
 case class CompilerOptions(target: Option[File])
 {
     def toList = {
-        List(
-            target.map(t =>  "%s:%s".format(CompilerOptions.targetOption, t.getAbsolutePath))
-        ).flatten
+        target.map(t =>  "%s:%s".format(CompilerOptions.targetOption, t.getAbsolutePath)).toList
     }
 }
 
@@ -18,8 +16,7 @@ object CompilerOptions
     def help(pluginName: String): String = {
         "  -P:%s:%s:dir             Sets the target directory for JavaScript files to dir.".format(
             pluginName,
-            targetOption
-        )
+            targetOption)
     }
 
     def apply(options: List[String]): CompilerOptions = {

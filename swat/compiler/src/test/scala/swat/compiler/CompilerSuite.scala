@@ -1,11 +1,11 @@
 package swat.compiler
 
+import backend.JsCodeGenerator
 import org.scalatest.FunSuite
 import tools.nsc.io.Directory
-import swat.compiler.backend.JsCodeGenerator
 import swat.compiler.js._
 
-trait CompilerSuite extends FunSuite with JsCodeGenerator
+trait CompilerSuite extends FunSuite
 {
     implicit protected def string2scalaCode(code: String)= new ScalaCode(code)
 
@@ -15,11 +15,11 @@ trait CompilerSuite extends FunSuite with JsCodeGenerator
     {
         def shouldCompileTo(expectedCodes: Map[String, String]) {
             def normalizeCode(c: String) = {
-                val withoutIndent = c.lines.map(_.dropWhile(_ == ' ').reverse.dropWhile(_ == ' ').reverse).mkString
-                withoutIndent.dropWhile(_ == '\n').reverse.dropWhile(_ == '\n').reverse
+                c.lines.map(_.dropWhile(_ == ' ').reverse.dropWhile(_ == ' ').reverse).filter(!_.isEmpty).mkString(" ")
             }
 
-            shouldCompileTo(expectedCodes.mapValues(normalizeCode _), c => normalizeCode(jsAstToCode(c)))
+            val codeGenerator = new JsCodeGenerator
+            shouldCompileTo(expectedCodes.mapValues(normalizeCode _), c => normalizeCode(codeGenerator.astToCode(c)))
         }
 
         def shouldCompileTo(definitionIdentifier: String)(code: String) {

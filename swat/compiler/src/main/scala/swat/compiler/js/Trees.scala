@@ -4,7 +4,7 @@ trait Ast
 
 sealed abstract class Expression extends Ast
 
-case class CommaExpression(exprs: List[Expression]) extends Expression
+case class CommaExpression(exprs: Seq[Expression]) extends Expression
 {
     require(exprs.nonEmpty)
 }
@@ -65,7 +65,7 @@ case class Block(statements: Seq[Statement]) extends Statement
 
 case class RawCodeBlock(code: String) extends Statement
 
-case class VariableStatement(variables: List[(Identifier, Option[Expression])]) extends Statement
+case class VariableStatement(variables: Seq[(Identifier, Option[Expression])]) extends Statement
 {
     require(variables.nonEmpty)
 }

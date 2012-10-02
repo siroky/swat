@@ -37,7 +37,7 @@ class SwatCompiler(
         try {
             run.compile(List(sourceFile.path))
         } catch {
-            case t: Throwable => // Exception should already be tracked inside the reporter.
+            case t: Throwable => // Exception should have already been tracked inside the reporter.
         }
 
         if (reporter.errors.nonEmpty) {
@@ -72,8 +72,7 @@ class SwatCompiler(
                 }
 
                 messages += "[%s] Line %s column %s: %s\n%s".format(
-                    severityDescription, pos.line, pos.column, msg, pos.lineContent
-                )
+                    severityDescription, pos.line, pos.column, msg, pos.lineContent)
             }
         }
     }

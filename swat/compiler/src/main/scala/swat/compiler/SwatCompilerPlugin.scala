@@ -1,11 +1,13 @@
 package swat.compiler
 
-import frontend.JsAstGenerator
+import frontend.ScalaAstProcessor
 import scala.tools.nsc.Global
 import tools.nsc.plugins.{PluginComponent, Plugin}
 import reflect.internal.Phase
 
-class SwatCompilerPlugin(val global: Global) extends Plugin
+class SwatCompilerPlugin(val global: Global)
+    extends Plugin
+    with ScalaAstProcessor
 {
     import global._
 
@@ -28,9 +30,7 @@ class SwatCompilerPlugin(val global: Global) extends Plugin
 
     def outputs = definitionOutputs
 
-    private object SwatCompilationComponent
-        extends PluginComponent
-        with JsAstGenerator
+    private object SwatCompilationComponent extends PluginComponent
     {
         val global: SwatCompilerPlugin.this.global.type = SwatCompilerPlugin.this.global
 

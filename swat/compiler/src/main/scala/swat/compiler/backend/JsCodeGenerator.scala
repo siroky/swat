@@ -2,9 +2,9 @@ package swat.compiler.backend
 
 import swat.compiler.js._
 
-trait JsCodeGenerator
+class JsCodeGenerator
 {
-    def jsAstToCode(ast: Ast): String = process(ast)(Indent("    "))
+    def astToCode(ast: Ast): String = process(ast)(Indent("    "))
 
     private def process(ast: Ast)(implicit indent: Indent): String = {
         ast match {
@@ -137,10 +137,9 @@ trait JsCodeGenerator
             '\r' -> """\r""",
             '\t' -> """\t""",
             '\'' -> """\'""",
-            '\"' -> """\""""
-        ).withDefault(c => c)
+            '\"' -> """\"""")
 
-        value.map(replacementMap).mkString
+        value.map(replacementMap.withDefault(c => c)).mkString
     }
 }
 
