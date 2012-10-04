@@ -38,7 +38,12 @@ trait CompilerSuite extends FunSuite
             val difference = (a diff e) union (e diff a)
 
             difference.headOption.foreach { case (ident, _) =>
-                expectationFail(ident, expectedOutputs.get(ident), actualOutputs.get(ident))
+                fail(
+                    """|The compiler output of class %s doesn't correspond to the expected result.
+                       |    EXPECTED: %s
+                       |    ACTUAL:   %s
+                       |    FULL OUTPUT: %s
+                    """.stripMargin.format(ident, expectedOutputs.get(ident), actualOutputs.get(ident), actualOutputs))
             }
 
             val additionalInfos = compilationOutput.warnings ++ compilationOutput.infos
@@ -70,14 +75,6 @@ trait CompilerSuite extends FunSuite
                 classTarget.deleteRecursively()
             }
         }
-
-        private def expectationFail(classFullName: String, expected: Any, actual: Any) {
-            fail(
-                """|The compiler output of class %s doesn't correspond to the expected result.
-                   |    EXPECTED: %s
-                   |    ACTUAL:   %s
-                """.stripMargin.format(classFullName, expected, actual))
-        }
     }
 
     protected class ScalaCodeFragment(code: String)
@@ -89,7 +86,7 @@ trait CompilerSuite extends FunSuite
                 val output = super.compile()
                 val functionBody = output.definitionOutputs.get(ident).flatMap {
                     _.elements.collect {
-                        case AssignmentStatement(MemberExpression(_, Identifier("f")), f: FunctionDeclaration) => {
+                        case AssignmentStatement(MemberExpression(_, Identifier("f")), f: FunctionExpression) => {
                             f.body
                         }
                     }.headOption

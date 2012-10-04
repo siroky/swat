@@ -38,7 +38,7 @@ trait RichTrees
             val isHard = i.constantAtIndex(1).map(_.booleanValue).getOrElse {
                 throw new CompilationException("The isHard argument of the @dependency annotation must be a constant.")
             }
-            (dependencyType, isHard)
+            dependencyType -> isHard
         }
 
         def hasAnnotation(tpe: Type) = typedAnnotation(tpe).nonEmpty

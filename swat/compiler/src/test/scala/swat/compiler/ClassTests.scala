@@ -1,6 +1,5 @@
 package swat.compiler
 
-@swat.api.dependency(classOf[String])
 class ClassTests extends CompilerSuite
 {
     test("Adapter classes and ignored classes aren't compiled") {
@@ -61,7 +60,6 @@ class ClassTests extends CompilerSuite
                     {
                         class D
                         trait E
-                        object F
                     }
                 }
             }
@@ -83,9 +81,6 @@ class ClassTests extends CompilerSuite
             """,
             "foo.bar.baz.C$E" -> """
                 swat.provide('foo.bar.baz.C$E');
-            """,
-            "foo.bar.baz.C$F$" -> """
-                swat.provide('foo.bar.baz.C$F$');
             """
         )
     }

@@ -22,7 +22,9 @@ trait ScalaAstProcessor
 
     def processCompilationUnit(compilationUnit: CompilationUnit): Map[String, js.Program] = {
         compilationUnit.body match {
-            case p: PackageDef => extractDefinitions(p).map(processDefinition _).toMap
+            case p: PackageDef => {
+                extractDefinitions(p).map(d => (definitionIdentifier(d.symbol), processDefinition(d))).toMap
+            }
             case _ => {
                 error("The %s must contain a package definition.".format(compilationUnit.source.file.name))
                 Map.empty
@@ -36,7 +38,7 @@ trait ScalaAstProcessor
         case _ => Nil
     }
 
-    def processDefinition(definition: ClassDef): (String, js.Program) = {
+    def processDefinition(definition: ClassDef): js.Program = {
         val defSymbol = definition.symbol
 
         val provide = List(processProvide(defSymbol.tpe))
@@ -50,20 +52,24 @@ trait ScalaAstProcessor
                 processor.process(definition)
             }
 
-        (definitionIdentifier(defSymbol), js.Program(provide ++ statements))
+        js.Program(provide ++ statements)
+    }
+
+    def swatMethodInvocation(methodName: String, args: js.Expression*): js.Expression = {
+        js.CallExpression(memberChain("swat", methodName), args)
     }
 
     def processDependency(dependencyType: Type, isHard: Boolean): js.Statement = {
-        callStatement(
-            memberChain("swat", "require"),
+        js.ExpressionStatement(swatMethodInvocation(
+            "require",
             js.StringLiteral(definitionIdentifier(dependencyType.typeSymbol)),
-            js.BooleanLiteral(isHard))
+            js.BooleanLiteral(isHard)))
     }
 
     def processProvide(dependencyType: Type): js.Statement = {
-        callStatement(
-            memberChain("swat", "provide"),
-            js.StringLiteral(definitionIdentifier(dependencyType.typeSymbol)))
+        js.ExpressionStatement(swatMethodInvocation(
+            "provide",
+            js.StringLiteral(definitionIdentifier(dependencyType.typeSymbol))))
     }
 
     def packageIdentifier(pkgSymbol: Symbol) = {

@@ -24,7 +24,7 @@ class JsCodeGenerator
 
     private def processStatement(statement: Statement)(implicit indent: Indent): String = {
         indent + (statement match {
-            case Block(stmts) => processBlock(stmts)
+            case Block(stmts) => processBlock(stmts, enclosed = false)
             case RawCodeBlock(code) => {
                 val lines = code.lines.toList
                 val indentPrefix = lines.headOption.map(_.takeWhile(_ == ' ')).getOrElse("")
@@ -58,7 +58,10 @@ class JsCodeGenerator
             }
             case ContinueStatement => "continue;"
             case BreakStatement => "break;"
-            case ReturnStatement(value) => "return " + process(value) + ";"
+            case ReturnStatement(value) => value match {
+                case Some(UndefinedLiteral) => ""
+                case _ => "return" + value.map(" " + process(_)).getOrElse("") + ";"
+            }
             case WithStatement(environment, body) => "with (" + process(environment) + ") " + processBlock(body)
             case SwitchStatement(expr, cases, default) => {
                 "switch (" + process(expr) + ") {\n" +
@@ -81,11 +84,14 @@ class JsCodeGenerator
         }) + "\n"
     }
 
-    private def processBlock(stmts: Seq[Statement])(implicit indent: Indent): String = {
-        if (stmts.isEmpty) "{ }" else {
-            "{\n" +
-                process(stmts)(indent.increased).mkString
-            indent + "}"
+    private def processBlock(stmts: Seq[Statement], enclosed: Boolean = true)(implicit indent: Indent): String = {
+        if (stmts.isEmpty) {
+            if (enclosed) "{ }" else ""
+        } else {
+            val (start, bodyIndent, end) = if (enclosed) ("{\n", indent.increased, indent + "}") else ("", indent, "")
+            start +
+                process(stmts)(bodyIndent).mkString +
+            end
         }
     }
 
