@@ -49,7 +49,7 @@ trait CompilerSuite extends FunSuite
             val additionalInfos = compilationOutput.warnings ++ compilationOutput.infos
             val relevantInfos = additionalInfos.filter(!_.startsWith("[warning] a pure expression does nothing"))
             if (relevantInfos.nonEmpty) {
-                info(relevantInfos.mkString("\n"))
+                info(additionalInfos.mkString("\n"))
             }
         }
 
@@ -80,16 +80,14 @@ trait CompilerSuite extends FunSuite
 
     protected class ScalaCodeFragment(code: String)
     {
-        private val ident ="A"
+        private val ident = "A"
 
         private val scalaCode = new ScalaCode("class A { def f() { %s } }".format(code)) {
             override def compile(): CompilationOutput = {
                 val output = super.compile()
                 val functionBody = output.definitionOutputs.get(ident).flatMap {
                     _.elements.collect {
-                        case AssignmentStatement(MemberExpression(_, Identifier("f")), f: FunctionExpression) => {
-                            f.body
-                        }
+                        case AssignmentStatement(MemberExpression(_, Identifier("f")), f: FunctionExpression) => f.body
                     }.headOption
                 }
 

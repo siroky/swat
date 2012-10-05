@@ -15,4 +15,10 @@ trait TreeBuilder
     def callStatement(expr: Expression, arguments: Expression*): Statement = {
         ExpressionStatement(CallExpression(expr, arguments))
     }
+
+    def immediateAnonymousInvocation(body: Statement): Expression = immediateAnonymousInvocation(List(body))
+
+    def immediateAnonymousInvocation(body: Seq[Statement]): Expression = {
+        CallExpression(FunctionExpression(None, Nil, body), Nil)
+    }
 }

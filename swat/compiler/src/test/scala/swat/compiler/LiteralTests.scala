@@ -4,11 +4,11 @@ class LiteralTests extends CompilerSuite
 {
     test("Unit and null") {
         """
-            ()
-            null
+            val x = ()
+            val y = null
         """ fragmentShouldCompileTo """
-            undefined;
-            null;
+            var x = undefined;
+            var y = null;
         """
     }
 

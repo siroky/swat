@@ -25,7 +25,7 @@ case class RawCodeExpression(code: String) extends Expression
 case class FunctionExpression(
     name: Option[Identifier],
     parameters: Seq[Identifier],
-    body: Seq[SourceElement]
+    body: Seq[Statement]
 ) extends Expression
 
 case object ThisReference extends Expression
@@ -79,7 +79,7 @@ case class AssignmentStatement(target: Expression, expr: Expression) extends Sta
 case class IfStatement(
     condition: Expression,
     thenStmts: Seq[Statement],
-    elseStmts: Option[Seq[Statement]]
+    elseStmts: Seq[Statement]
 ) extends Statement
 
 case class WhileStatement(

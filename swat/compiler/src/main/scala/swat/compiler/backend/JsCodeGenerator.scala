@@ -6,11 +6,19 @@ class JsCodeGenerator
 {
     def astToCode(ast: Ast): String = process(ast)(Indent("    "))
 
+    private def astIsEmpty(ast: Ast): Boolean = ast match {
+        case ExpressionStatement(UndefinedLiteral) => true
+        case ReturnStatement(Some(UndefinedLiteral)) => true
+        case _ => false
+    }
+
+    private def astsAreEmpty(asts: Seq[Ast]): Boolean = asts.foldLeft(true)(_ && astIsEmpty(_))
+
     private def process(ast: Ast)(implicit indent: Indent): String = {
-        ast match {
+        if (astIsEmpty(ast)) "" else ast match {
             case Program(elements) => elements.map(process _).mkString
             case FunctionDeclaration(name, parameters, body) => {
-                "function " + process(name) + process(parameters).mkString("(", ", ", ")") +
+                "function " + process(name) + process(parameters).mkString("(", ", ", ") ") +
                     processBlock(body) + "\n"
             }
             case stmt: Statement => processStatement(stmt)
@@ -42,7 +50,7 @@ class JsCodeGenerator
             case ExpressionStatement(expr) => process(expr) + ";"
             case IfStatement(condition, thenStmts, elseStmts) => {
                 "if (" + process(condition) + ") " + processBlock(thenStmts) +
-                elseStmts.map(e => " else " + processBlock(e)).mkString
+                (if (astsAreEmpty(elseStmts)) "" else " else " + processBlock(elseStmts))
             }
             case WhileStatement(condition, body, isDoWhile) => {
                 val processedCondition = "while (" + process(condition) + ")"
@@ -101,9 +109,9 @@ class JsCodeGenerator
             case literal: Literal => processLiteral(literal)
             case RawCodeExpression(code) => code
             case FunctionExpression(name, parameters, body) => {
-                "function " + process(name) + process(parameters).mkString("(", ", ", ")") + "{\n" +
-                process(body)(indent.increased) +
-                indent + "}"
+                val processedName = name.map(" " + process(_)).getOrElse("")
+                "(function" + processedName + process(parameters).mkString("(", ", ", ") ") +
+                    processBlock(body) + ")"
             }
             case ThisReference => "this"
             case Identifier(name) => name
@@ -147,6 +155,7 @@ class JsCodeGenerator
 
         value.map(replacementMap.withDefault(c => c)).mkString
     }
+
 }
 
 
