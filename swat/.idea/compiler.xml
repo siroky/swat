@@ -19,7 +19,7 @@
   </component>
   <component name="SbtSettings">
     <option name="sbtLauncherJarPath" value="$PROJECT_DIR$/sbt-launch.jar" />
-    <option name="sbtLauncherVmParameters" value="-Xmx512m -Xss4m -XX:MaxPermSize=512m -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005" />
+    <option name="sbtLauncherVmParameters" value="-Xmx1024m -Xss4m -XX:MaxPermSize=512m -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005" />
     <option name="useApplicationSettings" value="false" />
   </component>
 </project>

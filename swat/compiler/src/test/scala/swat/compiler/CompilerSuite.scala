@@ -47,8 +47,9 @@ trait CompilerSuite extends FunSuite
             }
 
             val additionalInfos = compilationOutput.warnings ++ compilationOutput.infos
-            if (additionalInfos.nonEmpty) {
-                info(additionalInfos.mkString("\n"))
+            val relevantInfos = additionalInfos.filter(!_.startsWith("[warning] a pure expression does nothing"))
+            if (relevantInfos.nonEmpty) {
+                info(relevantInfos.mkString("\n"))
             }
         }
 

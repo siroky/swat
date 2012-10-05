@@ -35,7 +35,7 @@ trait DefinitionProcessors
 
         def processDefDef(definition: ClassDef, defDef: DefDef): Seq[js.Statement] = {
             // TODO just temporary solution to enable testing of code fragments.
-            val body = processTreeToStatement(defDef.rhs).toList
+            val body = processTreeToStatements(defDef.rhs)
             List(js.AssignmentStatement(
                 memberChain(js.RawCodeExpression(definitionIdentifier(definition.symbol)), "prototype", defDef.name.toString),
                 js.FunctionExpression(None, Nil, body)
@@ -45,31 +45,35 @@ trait DefinitionProcessors
         def processTree(tree: Tree): js.Ast = tree match {
             case b: Block => processBlock(b)
             case l: Literal => processLiteral(l)
+            case t: Typed => processTree(t.expr)
             case _ => {
                 error("Not implemented Scala language feature %s: %s".format(tree.getClass, tree.toString()))
                 js.UndefinedLiteral
             }
         }
 
-        def processTreeToStatement(tree: Tree): Option[js.Statement] = processTree(tree) match {
-            case e: js.Expression => Some(js.ExpressionStatement(e))
-            case s: js.Statement => Some(s)
-            case _ => None
+        def processTreeToStatements(tree: Tree): List[js.Statement] = processTree(tree) match {
+            case e: js.Expression => List(js.ExpressionStatement(e))
+            case s: js.Statement => List(s)
+            case _ => Nil
         }
 
-        def processTreeToExpression(tree: Tree): Option[Expression] = processTree(tree) match {
-            case e: js.Expression => Some(e)
-            case js.ExpressionStatement(e) => Some(e)
-            case _ => None
+        def processTreeToExpression(tree: Tree): Expression = processTree(tree) match {
+            case e: js.Expression => e
+            case js.ExpressionStatement(e) => e
+            case _ => {
+                error("A non-expression tree on a place where expected expression (" + tree + ").")
+                js.UndefinedLiteral
+            }
         }
 
         def processBlock(block: Block): js.Block = {
-            val processedStats = block.stats.flatMap(processTreeToStatement _)
+            val processedStats = block.stats.flatMap(processTreeToStatements _)
             val processedExpr = block.expr match {
-                case b: Block => Some(processBlock(b))
-                case e => processTreeToExpression(e).map(e => js.ReturnStatement(Some(e)))
+                case b: Block => processBlock(b)
+                case e => js.ReturnStatement(Some(processTreeToExpression(e)))
             }
-            js.Block(processedStats ++ processedExpr.toList)
+            js.Block(processedStats ++ List(processedExpr))
         }
 
         def processLiteral(literal: Literal): js.Expression = literal.value.value match {
@@ -84,9 +88,20 @@ trait DefinitionProcessors
             case l: Long => js.NumericLiteral(l)
             case f: Float => js.NumericLiteral(f)
             case d: Double => js.NumericLiteral(d)
-            case t: TypeRef => {
+            case ErrorType => js.UndefinedLiteral
+            case t: Type => {
                 dependencies += t.typeSymbol -> false
                 swatMethodInvocation("classOf", js.RawCodeExpression(definitionIdentifier(t.typeSymbol)))
+            }
+        }
+
+        def processTyped(typed: Typed): js.Expression = {
+            if (typed.expr.tpe <:< typed.tpt.tpe) {
+                // It's compile time sure that the expr is of the specified type.
+                processTreeToExpression(typed.expr)
+            } else {
+                // TODO
+                swatMethodInvocation("asInstanceOf", processTreeToExpression(typed.expr))
             }
         }
     }
