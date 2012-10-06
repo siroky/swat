@@ -47,4 +47,51 @@ trait RichTrees
 
         def typedAnnotations(tpe: Type) = s.annotations.filter(_.atp == tpe)
     }
+
+    implicit class RichBlock(b: Block)
+    {
+        def toMatchBlock: Option[MatchBlock] = {
+            val (init, labels) = (b.stats ++ List(b.expr)).span(!_.isInstanceOf[LabelDef])
+            val cases = labels.collect {
+                case l @ LabelDef(n, _, _) if n.toString.matches("^(case|matchEnd)[0-9]*$") => l
+            }
+
+            if (labels.nonEmpty && cases.length == labels.length) {
+                Some(MatchBlock(init, cases))
+            } else {
+                None
+            }
+        }
+    }
+
+    case class MatchBlock(init: Seq[Tree], cases: Seq[LabelDef])
+
+    implicit class RichLabelDef(l: LabelDef)
+    {
+        def isLoop = toLoop.isEmpty
+
+        def toLoop: Option[Loop] = {
+            val labelName = l.name.toString
+            val isWhile = labelName.startsWith("while$")
+            val isDoWhile = labelName.startsWith("doWhile$")
+
+            if (isWhile || isDoWhile) {
+                val (expr, stats) = l.rhs match {
+                    case Block(s, Apply(Ident(n), _)) if n.toString == labelName => (Literal(Constant(true)), s)
+                    case If(e, Block(s, Apply(Ident(n), _)), _) if n.toString == labelName => (e, s)
+                    case Block(s, If(e, Apply(Ident(n), _), _)) if n.toString == labelName => (e, s)
+                    case _ => {
+                        error("Unknown format of a while loop label (%s)".format(l))
+                        (EmptyTree, Nil)
+                    }
+                }
+                Some(Loop(expr, stats, isDoWhile))
+
+            } else {
+                None
+            }
+        }
+    }
+
+    case class Loop(expr: Tree, stats: Seq[Tree], isDoWhile: Boolean)
 }

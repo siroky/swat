@@ -58,7 +58,7 @@ trait DefinitionProcessors
             case l: LabelDef => processLabelDef(l)
             case t: Throw => processThrow(t)
             case _ => {
-                error("Not implemented Scala language feature %s: %s".format(tree.getClass, tree.toString()))
+                error("Unknown Scala construct %s: %s".format(tree.getClass, tree.toString()))
                 js.UndefinedLiteral
             }
         }
@@ -84,26 +84,29 @@ trait DefinitionProcessors
 
         def processExpressionTrees(trees: Seq[Tree]): Seq[js.Expression] = trees.map(processExpressionTree _)
 
-        def processBlock(block: Block): js.Expression = {
-            def traverseBlock(block: Block): (Seq[Tree], Tree) = block.expr match {
-                case nestedBlock: Block => {
-                    val (nestedStats, nestedExpr) = traverseBlock(nestedBlock)
-                    (block.stats ++ nestedStats, nestedExpr)
-                }
-                case e => (block.stats, e)
-            }
+        def processBlock(block: Block): js.Expression = block.toMatchBlock match {
+            case Some(m: MatchBlock) => processMatchBlock(m)
+            case _ => {
+                val processedExpr = processExpressionTree(block.expr)
+                val processedStats = processStatementTrees(block.stats)
 
-            val (stats, expr) = traverseBlock(block)
-            val processedExpr = processExpressionTree(expr)
-            val exprStatement =
-                if (expr.tpe == typeOf[Unit]) {
-                    js.ExpressionStatement(processedExpr)
-                } else {
-                    js.ReturnStatement(Some(processedExpr))
-                }
+                // If the block doesn't return anything and the expr is a Block consisting of a tree and Unit object,
+                // then it may be unscoped. The scope protects from shadowing and using the shadowed value instead of
+                // the original value. However it's not possible to shadow and use a variable in one statement, which
+                // isn't itself scoped. The purpose is to get rid of unnecessary scoping.
+                val unscopedExpr =
+                    if (block.expr.tpe == typeOf[Unit]) {
+                        block.expr match {
+                            case Block(s, Literal(Constant(_: Unit))) if (s.length == 1) => unscoped(processedExpr)
+                            case _ => List(js.ExpressionStatement(processedExpr))
+                        }
+                    } else {
+                        List(js.ReturnStatement(Some(processedExpr)))
+                    }
 
-            immediateAnonymousInvocation {
-                processStatementTrees(stats) ++ List(exprStatement)
+                scoped {
+                    processedStats ++ unscopedExpr
+                }
             }
         }
 
@@ -173,7 +176,7 @@ trait DefinitionProcessors
             js.NewExpression(js.CallExpression(definitionExpr, processExpressionTrees(args)))
         }
 
-        def processIf(condition: If): js.Expression = immediateAnonymousInvocation {
+        def processIf(condition: If): js.Expression = scoped {
             js.IfStatement(
                 processExpressionTree(condition.cond),
                 List(js.ReturnStatement(Some(processExpressionTree(condition.thenp)))),
@@ -181,34 +184,24 @@ trait DefinitionProcessors
         }
 
         def processLabelDef(labelDef: LabelDef): js.Expression = {
-            if (labelDef.name.startsWith("while$")) {
-                processWhile(labelDef, isDoWhile = false)
-            } else if (labelDef.name.startsWith("doWhile$")) {
-                processWhile(labelDef, isDoWhile = true)
-            } else {
-                error("Unexpected type of a label (%s)".format(labelDef))
-                js.UndefinedLiteral
-            }
-        }
-
-        def processWhile(labelDef: LabelDef, isDoWhile: Boolean): js.Expression = {
-            val labelName = labelDef.name.toString
-            val (expr, stats) = labelDef.rhs match {
-                case Block(s, Apply(Ident(n), _)) if n.toString == labelName => (Literal(Constant(true)), s)
-                case If(e, Block(s, Apply(Ident(n), _)), _) if n.toString == labelName => (e, s)
-                case Block(s, If(e, Apply(Ident(n), _), _)) if n.toString == labelName => (e, s)
+            labelDef.toLoop match {
+                case Some(l: Loop) => processLoop(l)
                 case _ => {
-                    error("Unknown format of a while loop label (%s)".format(labelDef))
-                    (EmptyTree, Nil)
+                    error("Unexpected type of a label (%s)".format(labelDef))
+                    js.UndefinedLiteral
                 }
             }
-
-            immediateAnonymousInvocation {
-                js.WhileStatement(processExpressionTree(expr), processStatementTrees(stats), isDoWhile)
-            }
         }
 
-        def processThrow(t: Throw): js.Expression = immediateAnonymousInvocation {
+        def processLoop(loop: Loop): js.Expression = scoped {
+            js.WhileStatement(processExpressionTree(loop.expr), processStatementTrees(loop.stats), loop.isDoWhile)
+        }
+
+        def processMatchBlock(matchBlock: MatchBlock): js.Expression = scoped {
+            js.EmptyStatement
+        }
+
+        def processThrow(t: Throw): js.Expression = scoped {
             js.ThrowStatement(processExpressionTree(t.expr))
         }
     }

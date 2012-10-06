@@ -7,6 +7,7 @@ class JsCodeGenerator
     def astToCode(ast: Ast): String = process(ast)(Indent("    "))
 
     private def astIsEmpty(ast: Ast): Boolean = ast match {
+        case EmptyStatement => true
         case ExpressionStatement(UndefinedLiteral) => true
         case ReturnStatement(Some(UndefinedLiteral)) => true
         case _ => false
@@ -15,14 +16,18 @@ class JsCodeGenerator
     private def astsAreEmpty(asts: Seq[Ast]): Boolean = asts.foldLeft(true)(_ && astIsEmpty(_))
 
     private def process(ast: Ast)(implicit indent: Indent): String = {
-        if (astIsEmpty(ast)) "" else ast match {
-            case Program(elements) => elements.map(process _).mkString
-            case FunctionDeclaration(name, parameters, body) => {
-                "function " + process(name) + process(parameters).mkString("(", ", ", ") ") +
-                    processBlock(body) + "\n"
+        if (astIsEmpty(ast)) {
+            ""
+        } else {
+            ast match {
+                case Program(elements) => elements.map(process _).mkString
+                case FunctionDeclaration(name, parameters, body) => {
+                    "function " + process(name) + process(parameters).mkString("(", ", ", ") ") +
+                        processBlock(body) + "\n"
+                }
+                case stmt: Statement => processStatement(stmt)
+                case expr: Expression => processExpression(expr)
             }
-            case stmt: Statement => processStatement(stmt)
-            case expr: Expression => processExpression(expr)
         }
     }
 
