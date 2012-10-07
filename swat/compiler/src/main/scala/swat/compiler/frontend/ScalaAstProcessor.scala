@@ -55,19 +55,25 @@ trait ScalaAstProcessor
         js.Program(provide ++ statements)
     }
 
-    def swatMethodInvocation(methodName: String, args: js.Expression*): js.Expression = {
-        js.CallExpression(memberChain("swat", methodName), args)
+
+    def objectMethodCall(objectSymbol: Symbol, methodName: String, args: js.Expression*): js.Expression = {
+        // TODO
+        methodCall(js.RawCodeExpression(objectSymbol.fullName), methodName, args: _*)
+    }
+
+    def swatMethodCall(methodName: String, args: js.Expression*): js.Expression = {
+        methodCall(js.Identifier("swat"), methodName, args: _*) // TODO
     }
 
     def processDependency(dependencyType: Type, isHard: Boolean): js.Statement = {
-        js.ExpressionStatement(swatMethodInvocation(
+        js.ExpressionStatement(swatMethodCall(
             "require",
             js.StringLiteral(definitionIdentifier(dependencyType.typeSymbol)),
             js.BooleanLiteral(isHard)))
     }
 
     def processProvide(dependencyType: Type): js.Statement = {
-        js.ExpressionStatement(swatMethodInvocation(
+        js.ExpressionStatement(swatMethodCall(
             "provide",
             js.StringLiteral(definitionIdentifier(dependencyType.typeSymbol))))
     }

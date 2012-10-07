@@ -12,8 +12,8 @@ trait TreeBuilder
         identifiers.map(Identifier(_)).foldLeft[Expression](expr)(MemberExpression(_, _))
     }
 
-    def callStatement(expr: Expression, arguments: Expression*): Statement = {
-        ExpressionStatement(CallExpression(expr, arguments))
+    def methodCall(target: Expression, methodName: String, args: Expression*): Expression = {
+        CallExpression(memberChain(target, methodName), args)
     }
 
     def scoped(body: Statement): Expression = scoped(List(body))
@@ -22,7 +22,7 @@ trait TreeBuilder
         CallExpression(FunctionExpression(None, Nil, body), Nil)
     }
 
-    def unscoped(expression: Expression): Seq[Statement] = expression match {
+    def unScoped(expression: Expression): Seq[Statement] = expression match {
         case CallExpression(FunctionExpression(None, Nil, body), Nil) => body
         case e => List(ExpressionStatement(e))
     }

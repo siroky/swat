@@ -121,19 +121,15 @@ class ControlStructureTests extends CompilerSuite
         """
     }
 
-    test("Match statement") {
+   /* TODO depends on qualifiers, operators, etc.
+   test("Match statement") {
         """
             val x: Any = null
-            val y = "sss"
+
             x match {
-                case 1 => println("nope")
-                case _ => println("c")
+                case _ => println("x")
             }
-            "s"
-            val q = x match {
-                case 1 if y == "dd" => println("nope")
-                case _ => println("c")
-            }
+
             x match {
                 case 1 => println("nope")
                 case _ => println("c")
@@ -141,7 +137,7 @@ class ControlStructureTests extends CompilerSuite
         """ fragmentShouldCompileTo """
 
         """
-    }
+    }*/
 
     test("Exceptions (throw, try-catch-finally)") {
         """

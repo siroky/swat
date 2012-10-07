@@ -45,7 +45,35 @@ trait RichTrees
 
         def typedAnnotation(tpe: Type) = typedAnnotations(tpe).headOption
 
-        def typedAnnotations(tpe: Type) = s.annotations.filter(_.atp == tpe)
+        def typedAnnotations(tpe: Type) = s.annotations.filter(_.atp =:= tpe)
+
+        def isIntegralValueClass = {
+            import definitions._
+            ScalaNumericValueClasses.filterNot(Set(FloatClass, DoubleClass)).contains(s)
+        }
+
+        def isEqualsMethod = s.isMethod && s.nameString == "equals"
+
+        def isAnyValOperator = isNumericValOperator || isBooleanValOperator
+
+        def isNumericValOperator = {
+            val unaryArithmetic = Set("unary_$plus", "unary_$minus")
+            val arithmetic = Set("$plus", "$minus", "$times", "$div", "$percent")
+            val unaryBitwise = Set("unary_$tilde")
+            val bitwise = Set("$amp", "$bar", "$up", "$less$less", "$greater$greater", "$greater$greater$greater")
+            val relational = Set("$greater", "$less", "$greater$eq", "$less$eq", "$eq$eq", "$bang$eq")
+            val allOperators = unaryArithmetic ++ arithmetic ++ relational ++ unaryBitwise ++ bitwise
+            s.owner.tpe.typeSymbol.isNumericValueClass && allOperators.contains(s.name.toString)
+        }
+
+        def isBooleanValOperator = {
+            val unaryLogical = Set("unary_$bang")
+            val logicalShortCircuit = Set("$amp$amp", "$bar$bar")
+            val logicalLongCircuit = Set("$amp", "$bar", "$up")
+            val relational = Set("$eq$eq", "$bang$eq")
+            val allOperators = unaryLogical ++ logicalShortCircuit ++ logicalLongCircuit ++ relational
+            typeOf[Boolean] <:< s.owner.tpe && allOperators.contains(s.name.toString)
+        }
     }
 
     implicit class RichBlock(b: Block)

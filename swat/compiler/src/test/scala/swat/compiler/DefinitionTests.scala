@@ -1,8 +1,8 @@
 package swat.compiler
 
-class ClassTests extends CompilerSuite
+class DefinitionTests extends CompilerSuite
 {
-    test("Adapter classes and ignored classes aren't compiled") {
+    test("Adapter definitions and ignored definitions aren't compiled") {
         """
             import swat.api._
 
@@ -16,7 +16,7 @@ class ClassTests extends CompilerSuite
         """ shouldCompileToPrograms Map.empty
     }
 
-    test("Native classes aren't compiled and get replaced with the native code") {
+    test("Native definitions aren't compiled and get replaced with the native code") {
         """
             @swat.api.native("A = function() { this.a = 'foo'; };")
             class A
@@ -42,7 +42,7 @@ class ClassTests extends CompilerSuite
         """)
     }
 
-    test("Classes are properly qualified with respect to packages and outer classes") {
+    test("Definitions are properly qualified with respect to packages and outer classes") {
         """
             import swat.api._
 
