@@ -2,6 +2,38 @@ package swat.compiler
 
 class ControlStructureTests extends CompilerSuite
 {
+    test("Block scope is preserved") {
+        """
+            val x = 1
+
+            val y = {
+                val x = 2
+                x
+            }
+
+            val z = {
+                "a"
+                "b"
+                val x = 3
+                "c"
+            }
+        """ fragmentShouldCompileTo """
+            var x = 1;
+
+            var y = (function() {
+                var x = 2;
+                return x;
+            })();
+
+            var z = (function() {
+                'a';
+                'b';
+                var x = 3;
+                return 'c';
+            })();
+        """
+    }
+
     test("Conditions (if-then-else)") {
         """
             val expr = true
@@ -12,8 +44,12 @@ class ControlStructureTests extends CompilerSuite
 
             if (expr) {
                 "x"
-            } else {
                 "y"
+                "z"
+            } else {
+                "a"
+                "b"
+                "c"
             }
 
             val a =
@@ -43,9 +79,13 @@ class ControlStructureTests extends CompilerSuite
 
             (function() {
                 if (expr) {
-                    return 'x';
+                    'x';
+                    'y';
+                    return 'z';
                 } else {
-                    return 'y';
+                    'a';
+                    'b';
+                    return 'c';
                 }
             })();
 
@@ -61,13 +101,11 @@ class ControlStructureTests extends CompilerSuite
                 if (expr) {
                     return 'x';
                 } else {
-                    return (function() {
-                        if (expr) {
-                            return 'y';
-                        } else {
-                            return 'z';
-                        }
-                    })();
+                    if (expr) {
+                        return 'y';
+                    } else {
+                        return 'z';
+                    }
                 }
             })();
         """
@@ -79,6 +117,8 @@ class ControlStructureTests extends CompilerSuite
 
             while (true) {
                 "x"
+                "y"
+                "z"
             }
 
             while (expr) {
@@ -98,6 +138,8 @@ class ControlStructureTests extends CompilerSuite
             (function() {
                 while (true) {
                     'x';
+                    'y';
+                    'z';
                 }
             })();
 

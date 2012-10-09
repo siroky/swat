@@ -80,33 +80,33 @@ trait DefinitionProcessors
             }
         }
 
+        def processReturnTree(tree: Tree): js.Statement = {
+            val processedTree = processExpressionTree(tree)
+
+            // If the type of the tree is Unit, then the tree appears on the return position of an expression, which
+            // actually doesn't return anything. So the 'return' may be omitted.
+            if (tree.tpe =:= typeOf[Unit]) {
+                tree match {
+                    // If the tree is a Block with structure { statement; (); } then the scope of the block created in
+                    // the processBlock method may be omitted. The scope protects from shadowing and using the shadowed
+                    // value instead of the original value. However it's not possible to shadow and use a variable in
+                    // one statement, which isn't itself scoped. The purpose is to get rid of unnecessary scoping.
+                    case Block(statement :: Nil, Literal(Constant(_: Unit))) => processStatementTree(statement)
+                    case _ => js.ExpressionStatement(processedTree)
+                }
+            } else {
+                js.ReturnStatement(Some(processedTree))
+            }
+        }
+
         def processStatementTrees(trees: Seq[Tree]): Seq[js.Statement] = trees.map(processStatementTree _)
 
         def processExpressionTrees(trees: Seq[Tree]): Seq[js.Expression] = trees.map(processExpressionTree _)
 
         def processBlock(block: Block): js.Expression = block.toMatchBlock match {
             case Some(m: MatchBlock) => processMatchBlock(m)
-            case _ => {
-                val processedExpr = processExpressionTree(block.expr)
-                val processedStats = processStatementTrees(block.stats)
-
-                // If the block doesn't return anything and the expr is a Block consisting of a tree and Unit object,
-                // then it may be unscoped. The scope protects from shadowing and using the shadowed value instead of
-                // the original value. However it's not possible to shadow and use a variable in one statement, which
-                // isn't itself scoped. The purpose is to get rid of unnecessary scoping.
-                val unScopedExpr =
-                    if (block.expr.tpe =:= typeOf[Unit]) {
-                        block.expr match {
-                            case Block(s, Literal(Constant(_: Unit))) if (s.length == 1) => unScoped(processedExpr)
-                            case _ => List(js.ExpressionStatement(processedExpr))
-                        }
-                    } else {
-                        List(js.ReturnStatement(Some(processedExpr)))
-                    }
-
-                scoped {
-                    processedStats ++ unScopedExpr
-                }
+            case _ => scoped {
+                processStatementTrees(block.stats) :+ processReturnTree(block.expr)
             }
         }
 
@@ -247,8 +247,8 @@ trait DefinitionProcessors
         def processIf(condition: If): js.Expression = scoped {
             js.IfStatement(
                 processExpressionTree(condition.cond),
-                List(js.ReturnStatement(Some(processExpressionTree(condition.thenp)))),
-                List(js.ReturnStatement(Some(processExpressionTree(condition.elsep)))))
+                unScoped(processReturnTree(condition.thenp)),
+                unScoped(processReturnTree(condition.elsep)))
         }
 
         def processLabelDef(labelDef: LabelDef): js.Expression = {
@@ -261,8 +261,17 @@ trait DefinitionProcessors
             }
         }
 
-        def processLoop(loop: Loop): js.Expression = scoped {
-            js.WhileStatement(processExpressionTree(loop.expr), processStatementTrees(loop.stats), loop.isDoWhile)
+        def processLoop(loop: Loop): js.Expression = {
+            // Because the whole loop is scoped, the stats may be unscoped (double scoping isn't necessary). As a
+            // consequence, all top level return statements have to be omitted. Otherwise it'd terminate the loop.
+            val processedStats = processStatementTrees(loop.stats).flatMap(unScoped _).map {
+                case js.ReturnStatement(Some(e)) => js.ExpressionStatement(e)
+                case s => s
+            }
+
+            scoped {
+                js.WhileStatement(processExpressionTree(loop.expr), processedStats, loop.isDoWhile)
+            }
         }
 
         def processMatchBlock(matchBlock: MatchBlock): js.Expression = {

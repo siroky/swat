@@ -18,12 +18,16 @@ trait TreeBuilder
 
     def scoped(body: Statement): Expression = scoped(List(body))
 
-    def scoped(body: Seq[Statement]): Expression = {
-        CallExpression(FunctionExpression(None, Nil, body), Nil)
-    }
+    def scoped(body: Seq[Statement]): Expression = CallExpression(FunctionExpression(None, Nil, body), Nil)
 
     def unScoped(expression: Expression): Seq[Statement] = expression match {
         case CallExpression(FunctionExpression(None, Nil, body), Nil) => body
         case e => List(ExpressionStatement(e))
+    }
+
+    def unScoped(statement: Statement): Seq[Statement] = statement match {
+        case ExpressionStatement(e) => unScoped(e)
+        case ReturnStatement(Some(CallExpression(FunctionExpression(None, Nil, body), Nil))) => body
+        case s => List(s)
     }
 }

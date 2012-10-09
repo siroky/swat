@@ -72,7 +72,7 @@ trait RichTrees
             val logicalLongCircuit = Set("$amp", "$bar", "$up")
             val relational = Set("$eq$eq", "$bang$eq")
             val allOperators = unaryLogical ++ logicalShortCircuit ++ logicalLongCircuit ++ relational
-            typeOf[Boolean] <:< s.owner.tpe && allOperators.contains(s.name.toString)
+            s.owner.tpe =:= typeOf[Boolean] && allOperators.contains(s.name.toString)
         }
     }
 

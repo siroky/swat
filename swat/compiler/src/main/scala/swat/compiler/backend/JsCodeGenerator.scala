@@ -9,7 +9,6 @@ class JsCodeGenerator
     private def astIsEmpty(ast: Ast): Boolean = ast match {
         case EmptyStatement => true
         case ExpressionStatement(UndefinedLiteral) => true
-        case ReturnStatement(Some(UndefinedLiteral)) => true
         case _ => false
     }
 
