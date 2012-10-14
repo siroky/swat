@@ -2,7 +2,24 @@ package swat.compiler
 
 class ExpressionTests extends CompilerSuite
 {
-    test("Operators on primitive types compile to primitive operators") {
+    test("Operators on Any") {
+        """
+            val x: Any = "x"
+            val y: Any = 123
+
+            x == y
+            x != y
+            x equals y
+        """ fragmentShouldCompileTo """
+            var x = 'x';
+            var y = 123;
+            swat.equals(x, y);
+            !swat.equals(x, y);
+            swat.equals(x, y);
+        """
+    }
+
+    test("Operators on AnyVal") {
         """
             val i: Int = 1
             val j: Int = 2
@@ -45,6 +62,7 @@ class ExpressionTests extends CompilerSuite
             m << n
             m < n
             m >= n
+            m == n
             m != n
             m equals n
 
@@ -98,7 +116,8 @@ class ExpressionTests extends CompilerSuite
             (scala.Char.toInt(m) << scala.Char.toInt(n));
             (scala.Char.toInt(m) < scala.Char.toInt(n));
             (scala.Char.toInt(m) >= scala.Char.toInt(n));
-            (scala.Char.toInt(m) != scala.Char.toInt(n));
+            (m == n);
+            (m != n);
             (m == n);
 
             var x = true;
@@ -109,6 +128,49 @@ class ExpressionTests extends CompilerSuite
             Boolean((x & y));
             Boolean((x | y));
             Boolean((x ^ y));
+        """
+    }
+
+    test("Operators on AnyRef") {
+        """
+            val x: AnyRef = null
+            val y: AnyRef = null
+
+            x == y
+            x != y
+            x equals y
+            x eq y
+            x ne y
+        """ fragmentShouldCompileTo """
+            var x = null;
+            var y = null;
+            swat.equals(x, y);
+            !swat.equals(x, y);
+            swat.equals(x, y);
+            (x === y);
+            (x !== y);
+        """
+    }
+
+    test("Operators on String") {
+        """
+            val a: String = "a"
+            val b: String = "b"
+            a + b
+            a == b
+            a != b
+            a equals b
+            a eq b
+            a ne b
+        """ fragmentShouldCompileTo """
+            var a = 'a';
+            var b = 'b';
+            (a + b);
+            (a == b);
+            (a != b);
+            (a == b);
+            (a === b);
+            (a !== b);
         """
     }
 }

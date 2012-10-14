@@ -9,6 +9,25 @@ trait RichTrees
 
     import global._
 
+    implicit class RichType(t: Type)
+    {
+        def isUnit = t.underlying =:= typeOf[Unit]
+
+        def isAnyValOrString = isAnyVal || isString
+
+        def isAnyVal = t.underlying <:< typeOf[AnyVal]
+
+        def isString = t.underlying =:= typeOf[String]
+
+        def isNumericVal = t.underlying.typeSymbol.isNumericValueClass
+
+        def isIntegralVal = t.underlying.typeSymbol.isIntegralValClass
+
+        def isChar = t.underlying =:= typeOf[Char]
+
+        def isBoolean = t.underlying =:= typeOf[Boolean]
+    }
+
     implicit class RichSymbol(s: Symbol)
     {
         def definitionType = {
@@ -47,32 +66,38 @@ trait RichTrees
 
         def typedAnnotations(tpe: Type) = s.annotations.filter(_.atp =:= tpe)
 
-        def isIntegralValueClass = {
+        def isIntegralValClass = {
             import definitions._
             ScalaNumericValueClasses.filterNot(Set(FloatClass, DoubleClass)).contains(s)
         }
 
-        def isEqualsMethod = s.isMethod && s.nameString == "equals"
+        def isEqualityOperator = s.isMethod && Set("==", "!=", "equals", "eq", "ne").contains(s.nameString)
+
+        def isAnyValOrStringOperator = isAnyValOperator || isStringOperator
 
         def isAnyValOperator = isNumericValOperator || isBooleanValOperator
 
         def isNumericValOperator = {
-            val unaryArithmetic = Set("unary_$plus", "unary_$minus")
-            val arithmetic = Set("$plus", "$minus", "$times", "$div", "$percent")
-            val unaryBitwise = Set("unary_$tilde")
-            val bitwise = Set("$amp", "$bar", "$up", "$less$less", "$greater$greater", "$greater$greater$greater")
-            val relational = Set("$greater", "$less", "$greater$eq", "$less$eq", "$eq$eq", "$bang$eq")
-            val allOperators = unaryArithmetic ++ arithmetic ++ relational ++ unaryBitwise ++ bitwise
-            s.owner.tpe.typeSymbol.isNumericValueClass && allOperators.contains(s.name.toString)
+            val unaryArithmetic = Set("unary_+", "unary_-")
+            val arithmetic = Set("+", "-", "*", "/", "%")
+            val unaryBitwise = Set("unary_~")
+            val bitwise = Set("&", "|", "^", "<<", ">>", ">>>")
+            val relational = Set(">", "<", ">=", "<=")
+            val operators = unaryArithmetic ++ arithmetic ++ relational ++ unaryBitwise ++ bitwise
+            isTypeSpecificOperator(operators, _.isNumericVal)
         }
 
         def isBooleanValOperator = {
-            val unaryLogical = Set("unary_$bang")
-            val logicalShortCircuit = Set("$amp$amp", "$bar$bar")
-            val logicalLongCircuit = Set("$amp", "$bar", "$up")
-            val relational = Set("$eq$eq", "$bang$eq")
-            val allOperators = unaryLogical ++ logicalShortCircuit ++ logicalLongCircuit ++ relational
-            s.owner.tpe =:= typeOf[Boolean] && allOperators.contains(s.name.toString)
+            val unaryLogical = Set("unary_!")
+            val logicalShortCircuit = Set("&&", "||")
+            val logicalLongCircuit = Set("&", "|", "^")
+            isTypeSpecificOperator(unaryLogical ++ logicalShortCircuit ++ logicalLongCircuit, _.isBoolean)
+        }
+
+        def isStringOperator = isTypeSpecificOperator(Set("+"), _.isString)
+
+        private def isTypeSpecificOperator(operators: Set[String], typeFilter: Type => Boolean): Boolean = {
+            s.isMethod && typeFilter(s.owner.tpe) && operators.contains(s.nameString)
         }
     }
 

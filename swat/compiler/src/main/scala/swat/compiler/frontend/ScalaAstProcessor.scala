@@ -41,7 +41,7 @@ trait ScalaAstProcessor
     def processDefinition(definition: ClassDef): js.Program = {
         val defSymbol = definition.symbol
 
-        val provide = List(processProvide(defSymbol.tpe))
+        val provide = List(processProvide(defSymbol.tpe.underlying))
         val statements =
             defSymbol.nativeAnnotation.map { code =>
                 val requirements = defSymbol.dependencyAnnotations.map((processDependency _).tupled)

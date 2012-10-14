@@ -24,6 +24,8 @@ trait DefinitionProcessors
     {
         private val dependencies = mutable.ListBuffer.empty[(Symbol, Boolean)]
 
+        private val equalityOperatorMap = Map("equals" -> "==", "eq" -> "===", "ne" -> "!==")
+
         def process(definition: ClassDef): Seq[js.Statement] = {
             dependencies.clear()
             definition.impl.body.flatMap {
@@ -85,7 +87,7 @@ trait DefinitionProcessors
 
             // If the type of the tree is Unit, then the tree appears on the return position of an expression, which
             // actually doesn't return anything. So the 'return' may be omitted.
-            if (tree.tpe =:= typeOf[Unit]) {
+            if (tree.tpe.isUnit) {
                 tree match {
                     // If the tree is a Block with structure { statement; (); } then the scope of the block created in
                     // the processBlock method may be omitted. The scope protects from shadowing and using the shadowed
@@ -150,16 +152,16 @@ trait DefinitionProcessors
             }
         }
 
-        def processApply(apply: Apply): js.Expression = apply.fun match {
-            // TODO
-            case s @ Select(q, _) if q.tpe <:< typeOf[AnyVal] => processAnyValMethod(s.symbol, q, apply.args)
+        def processApply(apply: Apply): js.Expression = apply.fun match { // TODO
+            case s @ Select(q, _) if q.tpe.isAnyValOrString => processAnyValOrStringMethod(s.symbol, q, apply.args)
+            case s @ Select(q, _) if s.symbol.isEqualityOperator => processEqualityOperator(s.symbol, q, apply.args)
             case Select(n: New, selectName) if selectName.toString == "<init>" => processNew(n, apply.args)
             case f => js.CallExpression(processExpressionTree(f), processExpressionTrees(apply.args))
         }
 
-        def processAnyValMethod(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
-            if (method.isAnyValOperator || method.isEqualsMethod) {
-                processAnyValOperator(method, qualifier, args.headOption)
+        def processAnyValOrStringMethod(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
+            if (method.isAnyValOrStringOperator || method.isEqualityOperator) {
+                processAnyValOrStringOperator(method, qualifier, args.headOption)
             } else {
                 // Primitive values in JavaScript aren't objects, so methods can't be invoked on them. It's possible
                 // to convert a primitive value to an object wrapper (e.g. Number), however these wrappers would have
@@ -173,28 +175,22 @@ trait DefinitionProcessors
                 // http://perfectionkills.com/extending-built-in-native-objects-evil-or-not/
 
                 val processedArgs = processExpressionTrees(List(qualifier) ++ args) // TODO names
-                objectMethodCall(qualifier.tpe.typeSymbol.companionModule, method.name.toString, processedArgs: _*)
+                val companionModule = qualifier.tpe.underlying.typeSymbol.companionModule
+                objectMethodCall(companionModule, method.name.toString, processedArgs: _*)
             }
         }
 
-        def processAnyValOperator(operatorSymbol: Symbol, operand1: Tree, operand2: Option[Tree]): js.Expression = {
+        def processAnyValOrStringOperator(symbol: Symbol, operand1: Tree, operand2: Option[Tree]): js.Expression = {
             // Convert the Scala operator name to JavaScript operator. Luckily, all are the same as in Scala.
-            val operatorReplacements = Map(
-                "unary_" -> "", "$plus" -> "+", "$minus" -> "-", "$times" -> "*", "$div" -> "/", "$percent" -> "%",
-                "$amp" -> "&", "$bar" -> "|", "$up" -> "^", "$less" -> "<", "$greater" -> ">", "$tilde" -> "~",
-                "$eq" -> "=", "$bang" -> "!", "equals" -> "=="
-            )
-            val operator = operatorReplacements.foldLeft(operatorSymbol.nameString)((o, r) => o.replace(r._1, r._2))
+            val operator = equalityOperatorMap.foldLeft(symbol.nameString.stripPrefix("unary_")) { (o, r) =>
+                o.replace(r._1, r._2)
+            }
 
             // Chars, that are represented as strings, need to be explicitly converted to integers, so arithmetic
-            // operations would work on them. The first operand should be converted iff the class owning the operator
-            // method is the scala.Char. The second operand should be converted iff the the operator method takes
-            // scala.Char as the first argument.
-            def processOperand(operand: Tree, isFirst: Boolean = true): js.Expression = {
+            // operations would work on them.
+            def processOperand(operand: Tree): js.Expression = {
                 val processedOperand = processExpressionTree(operand)
-                def shouldConvertFirst = isFirst && operatorSymbol.owner.tpe =:= typeOf[Char]
-                def shouldConvertSecond = !isFirst && operatorSymbol.tpe.paramTypes.head =:= typeOf[Char]
-                if (!operatorSymbol.isEqualsMethod && (shouldConvertFirst || shouldConvertSecond)) {
+                if (!symbol.isEqualityOperator && operand.tpe.isChar) {
                     objectMethodCall(typeOf[Char].typeSymbol.companionModule, "toInt", processedOperand)
                 } else {
                     processedOperand
@@ -202,19 +198,19 @@ trait DefinitionProcessors
             }
 
             val expr = operand2.map { o2 =>
-                js.InfixExpression(processOperand(operand1), operator, processOperand(o2, isFirst = false))
+                js.InfixExpression(processOperand(operand1), operator, processOperand(o2))
             }.getOrElse {
                 js.PrefixExpression(operator, processOperand(operand1))
             }
 
             operator match {
-                case "/" if operand1.tpe.typeSymbol.isIntegralValueClass => {
+                case "/" if operand1.tpe.isIntegralVal => {
                     // All numbers are represented as doubles, so even if they're integral, their division can yield a
                     // double. E.g. 3 / 2 == 1.5. To ensure the same behavior as in Scala, division results have to be
                     // floored in case that the first operand is of integral type.
                     methodCall(js.Identifier("Math"), "floor", expr)
                 }
-                case "&" | "|" | "^" if operatorSymbol.isBooleanValOperator => {
+                case "&" | "|" | "^" if symbol.isBooleanValOperator => {
                     // The long-circuited logical operations aren't directly supported in JavaScript. But if they're
                     // used on booleans, then the operands are converted to numbers. A result of the corresponding
                     // bitwise is therefore also a number, which has to be converted back to a boolean.
@@ -224,8 +220,20 @@ trait DefinitionProcessors
             }
         }
 
+        def processEqualityOperator(symbol: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
+            val processedOperand1 = processExpressionTree(qualifier)
+            val processedOperand2 = processExpressionTree(args.head)
+            val equalityExpr = swatMethodCall("equals", processedOperand1, processedOperand2)
+
+            symbol.nameString match {
+                case "==" | "equals" => equalityExpr
+                case "!=" => js.PrefixExpression("!", equalityExpr)
+                case o => js.InfixExpression(processedOperand1, equalityOperatorMap(o), processedOperand2)
+            }
+        }
+
         def processTyped(typed: Typed): js.Expression = {
-            if (typed.expr.tpe <:< typed.tpt.tpe) {
+            if (typed.expr.tpe.underlying <:< typed.tpt.tpe.underlying) {
                 // No type cast is necessary since it's already proven that the expr is of the specified type.
                 processExpressionTree(typed.expr)
             } else {
@@ -240,7 +248,7 @@ trait DefinitionProcessors
         }
 
         def processNew(n: New, args: Seq[Tree]): js.Expression = {
-            val definitionExpr = js.RawCodeExpression(definitionIdentifier(n.tpe.typeSymbol)) // TODO names
+            val definitionExpr = js.RawCodeExpression(definitionIdentifier(n.tpe.underlying.typeSymbol)) // TODO names
             js.NewExpression(js.CallExpression(definitionExpr, processExpressionTrees(args)))
         }
 

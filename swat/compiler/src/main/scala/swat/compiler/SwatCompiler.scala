@@ -33,7 +33,11 @@ class SwatCompiler(
         val reporter = new SilentReporter
         val compiler = new SwatGlobal(settings, reporter)
         val run = new compiler.Run()
-        run.compile(List(sourceFile.path))
+        try {
+            run.compile(List(sourceFile.path))
+        } catch {
+            case _: Throwable => // The error should have been already tracked within the reporter.
+        }
 
         if (reporter.errors.nonEmpty) {
             throw new CompilationException(reporter.errors.mkString("\n"))
