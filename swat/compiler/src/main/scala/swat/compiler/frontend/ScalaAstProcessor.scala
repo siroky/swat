@@ -56,13 +56,18 @@ trait ScalaAstProcessor
     }
 
 
-    def objectMethodCall(objectSymbol: Symbol, methodName: String, args: js.Expression*): js.Expression = {
+    def objectMethodCall(objectSymbol: Symbol, methodSymbol: Symbol, args: Seq[js.Expression]): js.Expression = {
+        objectMethodCall(objectSymbol, localIdentifier(methodSymbol.name), args)
+    }
+
+    def objectMethodCall(objectSymbol: Symbol, methodName: String, args: Seq[js.Expression]): js.Expression = {
         // TODO
         methodCall(js.RawCodeExpression(objectSymbol.fullName), methodName, args: _*)
     }
 
+
     def swatMethodCall(methodName: String, args: js.Expression*): js.Expression = {
-        methodCall(js.Identifier("swat"), methodName, args: _*) // TODO
+        methodCall(localJsIdentifier("swat"), methodName, args: _*) // TODO swat object.
     }
 
     def processDependency(dependencyType: Type, isHard: Boolean): js.Statement = {
@@ -106,10 +111,7 @@ trait ScalaAstProcessor
     }
 
     def localIdentifier(name: Name): String = localIdentifier(name.toString)
-
     def localIdentifier(name: String): String = (if (js.Language.keywords.contains(name)) "$" else "") + name
-
-    def localJsIdentifier(name: Name) = js.Identifier(localIdentifier(name))
-
-    def localSymbolJsIdentifier(symbol: Symbol) = localJsIdentifier(symbol.name)
+    def localJsIdentifier(name: Name): js.Identifier = localJsIdentifier(name.toString)
+    def localJsIdentifier(name: String): js.Identifier = js.Identifier(localIdentifier(name))
 }

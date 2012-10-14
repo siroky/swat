@@ -11,21 +11,22 @@ trait RichTrees
 
     implicit class RichType(t: Type)
     {
+        import definitions._
+
+        val s = t.underlying.typeSymbol
+
         def isUnit = t.underlying =:= typeOf[Unit]
-
+        def isAny = t.underlying =:= typeOf[Any]
         def isAnyValOrString = isAnyVal || isString
-
         def isAnyVal = t.underlying <:< typeOf[AnyVal]
-
         def isString = t.underlying =:= typeOf[String]
-
-        def isNumericVal = t.underlying.typeSymbol.isNumericValueClass
-
-        def isIntegralVal = t.underlying.typeSymbol.isIntegralValClass
-
+        def isNumericVal = s.isNumericValueClass
+        def isIntegralVal = ScalaNumericValueClasses.filterNot(Set(FloatClass, DoubleClass)).contains(s)
         def isChar = t.underlying =:= typeOf[Char]
-
         def isBoolean = t.underlying =:= typeOf[Boolean]
+        def isFunction = isFunctionType(t.underlying)
+
+        def companionSymbol = s.companionSymbol
     }
 
     implicit class RichSymbol(s: Symbol)
@@ -65,12 +66,14 @@ trait RichTrees
 
         def typedAnnotations(tpe: Type) = s.annotations.filter(_.atp =:= tpe)
 
-        def isIntegralValClass = {
-            import definitions._
-            ScalaNumericValueClasses.filterNot(Set(FloatClass, DoubleClass)).contains(s)
-        }
+        def isApplyMethod = s.isMethod && s.nameString == "apply"
 
         def isEqualityOperator = s.isMethod && Set("==", "!=", "equals", "eq", "ne").contains(s.nameString)
+
+        def isAnyMethodOrOperator = {
+            val methods = Set("toString", "hashCode", "##", "asInstanceOf", "isInstanceOf", "getClass", "clone")
+            isEqualityOperator || isTypeSpecificMethod(methods, _ => true)
+        }
 
         def isAnyValOrStringOperator = isAnyValOperator || isStringOperator
 
@@ -83,20 +86,20 @@ trait RichTrees
             val bitwise = Set("&", "|", "^", "<<", ">>", ">>>")
             val relational = Set(">", "<", ">=", "<=")
             val operators = unaryArithmetic ++ arithmetic ++ relational ++ unaryBitwise ++ bitwise
-            isTypeSpecificOperator(operators, _.isNumericVal)
+            isTypeSpecificMethod(operators, _.isNumericVal)
         }
 
         def isBooleanValOperator = {
             val unaryLogical = Set("unary_!")
             val logicalShortCircuit = Set("&&", "||")
             val logicalLongCircuit = Set("&", "|", "^")
-            isTypeSpecificOperator(unaryLogical ++ logicalShortCircuit ++ logicalLongCircuit, _.isBoolean)
+            isTypeSpecificMethod(unaryLogical ++ logicalShortCircuit ++ logicalLongCircuit, _.isBoolean)
         }
 
-        def isStringOperator = isTypeSpecificOperator(Set("+"), _.isString)
+        def isStringOperator = isTypeSpecificMethod(Set("+"), _.isString)
 
-        private def isTypeSpecificOperator(operators: Set[String], typeFilter: Type => Boolean): Boolean = {
-            s.isMethod && typeFilter(s.owner.tpe) && operators.contains(s.nameString)
+        private def isTypeSpecificMethod(methods: Set[String], typeFilter: Type => Boolean): Boolean = {
+            s.isMethod && typeFilter(s.owner.tpe) && methods.contains(s.nameString)
         }
     }
 

@@ -40,7 +40,7 @@ class SwatCompiler(
         }
 
         if (reporter.errors.nonEmpty) {
-            throw new CompilationException(reporter.errors.mkString("\n"))
+            throw new CompilationException(reporter.errors.head)
         }
         CompilationOutput(compiler.swatCompilerPlugin.outputs, reporter.warnings, reporter.infos)
     }

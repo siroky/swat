@@ -6,7 +6,6 @@ class ExpressionTests extends CompilerSuite
         """
             val x: Any = "x"
             val y: Any = 123
-
             x == y
             x != y
             x equals y
@@ -16,6 +15,22 @@ class ExpressionTests extends CompilerSuite
             swat.equals(x, y);
             !swat.equals(x, y);
             swat.equals(x, y);
+        """
+    }
+
+    test("Methods on Any") {
+        """
+            val x: Any = "x"
+            x.toString
+            x.hashCode
+            x.##
+            x.getClass
+        """ fragmentShouldCompileTo """
+            var x = 'x';
+            swat.toString(x);
+            swat.hashCode(x);
+            swat.hashCode(x);
+            swat.getClass(x);
         """
     }
 
@@ -131,11 +146,24 @@ class ExpressionTests extends CompilerSuite
         """
     }
 
+    test("Methods on AnyVal") {
+        """
+            val x: Int = 1
+            x.hashCode
+            x.toByte
+            x.toDouble
+        """ fragmentShouldCompileTo """
+            var x = 1;
+            swat.hashCode(x);
+            scala.Int.toByte(x);
+            scala.Int.toDouble(x);
+        """
+    }
+
     test("Operators on AnyRef") {
         """
             val x: AnyRef = null
             val y: AnyRef = null
-
             x == y
             x != y
             x equals y
@@ -149,6 +177,20 @@ class ExpressionTests extends CompilerSuite
             swat.equals(x, y);
             (x === y);
             (x !== y);
+        """
+    }
+
+    test("Methods on AnyRef") {
+        """
+            val x: AnyRef = null
+            x.hashCode
+            x.isInstanceOf[String]
+            x.asInstanceOf[String]
+        """ fragmentShouldCompileTo """
+            var x = null;
+            swat.hashCode(x);
+            swat.isInstanceOf(x, java.lang.String);
+            swat.asInstanceOf(x, java.lang.String);
         """
     }
 
@@ -171,6 +213,57 @@ class ExpressionTests extends CompilerSuite
             (a == b);
             (a === b);
             (a !== b);
+        """
+    }
+
+    test("Methods on String") {
+        """
+            val x: String = "a"
+            x.hashCode
+            x.length
+            x.substring(3)
+        """ fragmentShouldCompileTo """
+            var x = 'a';
+            swat.hashCode(x);
+            java.lang.String.length(x);
+            java.lang.String.substring(x, 3);
+        """
+    }
+
+    test("Anonymous functions, cyrrying, partial application") {
+        """
+            val f = (x: Int, y: Int) => x * y
+
+            val g = (x: Int) => (y: Int) => x + y
+
+            val h = f(_, _)
+            val i = h(_, _)
+            val j = f(1, _: Int)
+            val k = f(_: Int, 1)
+
+        """ fragmentShouldCompileTo """
+            var f = (function(x, y) {
+                return (x * y);
+            });
+
+            var g = (function(x) {
+                return (function(y) {
+                    return (x + y);
+                });
+            });
+
+            var h = (function(x$1, x$2) {
+                return f(x$1, x$2);
+            });
+            var i = (function(x$3, x$4) {
+                return h(x$3, x$4);
+            });
+            var j = (function(x$5) {
+                return f(1, x$5);
+            });
+            var k = (function(x$6) {
+                return f(x$6, 1);
+            });
         """
     }
 }
