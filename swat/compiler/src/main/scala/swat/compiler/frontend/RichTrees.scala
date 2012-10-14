@@ -30,12 +30,11 @@ trait RichTrees
 
     implicit class RichSymbol(s: Symbol)
     {
-        def definitionType = {
+        def classSymbolKind = {
             require(s.isClass)
-
-            if (s.isPackageObjectClass) PackageObjectDefinition else
-            if (s.isModuleClass) ObjectDefinition else
-            if (s.isTrait) TraitDefinition else ClassDefinition
+            if (s.isPackageObjectClass) PackageObjectSymbol else
+            if (s.isModuleClass) ObjectSymbol else
+            if (s.isTrait) TraitSymbol else ClassSymbol
         }
 
         def isCompiled = !(isIgnored || isAdapter)

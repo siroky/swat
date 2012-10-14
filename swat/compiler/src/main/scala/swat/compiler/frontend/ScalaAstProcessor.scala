@@ -5,7 +5,7 @@ import swat.compiler.{SwatCompilerPlugin, js}
 trait ScalaAstProcessor
     extends js.TreeBuilder
     with RichTrees
-    with DefinitionProcessors
+    with ClassDefProcessors
 {
     self: SwatCompilerPlugin =>
 
@@ -18,12 +18,12 @@ trait ScalaAstProcessor
      * package where altered versions of Scala Library classes may be defined. Advantage is, that in the compiled
      * code, they seem like they were declared in the scala package.
      */
-    val ignoredPackages = List("__root__", "<empty>", "swat.runtime.client")
+    val ignoredPackages = List("<root>", "<empty>", "swat.runtime.client")
 
     def processCompilationUnit(compilationUnit: CompilationUnit): Map[String, js.Program] = {
         compilationUnit.body match {
             case p: PackageDef => {
-                extractDefinitions(p).map(d => (definitionIdentifier(d.symbol), processDefinition(d))).toMap
+                extractClassDefs(p).map(c => (typeIdentifier(c.symbol.tpe), processClassDef(c))).toMap
             }
             case _ => {
                 error("The %s must contain a package definition.".format(compilationUnit.source.file.name))
@@ -32,24 +32,24 @@ trait ScalaAstProcessor
         }
     }
 
-    def extractDefinitions(tree: Tree): List[ClassDef] = tree match {
-        case p: PackageDef => p.stats.flatMap(extractDefinitions _)
-        case c: ClassDef if c.symbol.isCompiled => c :: c.impl.body.flatMap(extractDefinitions _)
+    def extractClassDefs(tree: Tree): List[ClassDef] = tree match {
+        case p: PackageDef => p.stats.flatMap(extractClassDefs _)
+        case c: ClassDef if c.symbol.isCompiled => c :: c.impl.body.flatMap(extractClassDefs _)
         case _ => Nil
     }
 
-    def processDefinition(definition: ClassDef): js.Program = {
-        val defSymbol = definition.symbol
+    def processClassDef(classDef: ClassDef): js.Program = {
+        val classSymbol = classDef.symbol
 
-        val provide = List(processProvide(defSymbol.tpe.underlying))
+        val provide = List(processProvide(classSymbol.tpe.underlying))
         val statements =
-            defSymbol.nativeAnnotation.map { code =>
-                val requirements = defSymbol.dependencyAnnotations.map((processDependency _).tupled)
+            classSymbol.nativeAnnotation.map { code =>
+                val requirements = classSymbol.dependencyAnnotations.map((processDependency _).tupled)
                 val declarations = List(js.RawCodeBlock(code))
                 requirements ++ declarations
             }.getOrElse {
-                val processor = DefinitionProcessor(defSymbol.definitionType)
-                processor.process(definition)
+                val processor = ClassDefProcessor(classSymbol.classSymbolKind)
+                processor.process(classDef)
             }
 
         js.Program(provide ++ statements)
@@ -68,33 +68,48 @@ trait ScalaAstProcessor
     def processDependency(dependencyType: Type, isHard: Boolean): js.Statement = {
         js.ExpressionStatement(swatMethodCall(
             "require",
-            js.StringLiteral(definitionIdentifier(dependencyType.typeSymbol)),
+            js.StringLiteral(typeIdentifier(dependencyType)),
             js.BooleanLiteral(isHard)))
     }
 
     def processProvide(dependencyType: Type): js.Statement = {
-        js.ExpressionStatement(swatMethodCall(
-            "provide",
-            js.StringLiteral(definitionIdentifier(dependencyType.typeSymbol))))
+        js.ExpressionStatement(swatMethodCall("provide", js.StringLiteral(typeIdentifier(dependencyType))))
     }
 
-    def packageIdentifier(pkgSymbol: Symbol) = {
-        require(pkgSymbol.isPackage)
-        ignoredPackages.foldLeft(pkgSymbol.fullName)((z, p) => z.stripPrefix(p))
+    def packageIdentifier(packageSymbol: Symbol): String = {
+        if (ignoredPackages.contains(packageSymbol.fullName)) {
+            ""
+        } else {
+            symbolIdentifier(packageSymbol)
+        }
     }
 
-    def definitionIdentifier(defSymbol: Symbol): String = {
-        val qualifier =
-            if (defSymbol.owner.isPackageClass) {
-                (packageIdentifier(defSymbol.enclosingPackage) + ".").stripPrefix(".")
-            } else {
-                definitionIdentifier(defSymbol.owner) + "$"
-            }
-        val suffix = defSymbol.definitionType match {
-            case PackageObjectDefinition | ObjectDefinition => "$"
+    def typeIdentifier(tpe: Type): String = {
+        val suffix = tpe.typeSymbol.classSymbolKind match {
+            case PackageObjectSymbol | ObjectSymbol => "$"
             case _ => ""
         }
 
-        qualifier + defSymbol.name + suffix
+        symbolIdentifier(tpe.typeSymbol) + suffix
     }
+
+    private def symbolIdentifier(symbol: Symbol): String = {
+        if (symbol.owner.isPackageClass) {
+            val qualifier = packageIdentifier(symbol.owner) match {
+                case "" => ""
+                case i => i + "."
+            }
+            qualifier + localIdentifier(symbol.name)
+        } else {
+            typeIdentifier(symbol.owner.tpe) + "$" + symbol.name.toString
+        }
+    }
+
+    def localIdentifier(name: Name): String = localIdentifier(name.toString)
+
+    def localIdentifier(name: String): String = (if (js.Language.keywords.contains(name)) "$" else "") + name
+
+    def localJsIdentifier(name: Name) = js.Identifier(localIdentifier(name))
+
+    def localSymbolJsIdentifier(symbol: Symbol) = localJsIdentifier(symbol.name)
 }

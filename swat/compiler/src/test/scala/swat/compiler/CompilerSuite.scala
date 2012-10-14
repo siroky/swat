@@ -22,8 +22,8 @@ trait CompilerSuite extends FunSuite
             shouldCompileTo(expectedCodes.mapValues(normalizeCode _), c => normalizeCode(codeGenerator.astToCode(c)))
         }
 
-        def shouldCompileTo(definitionIdentifier: String)(code: String) {
-            shouldCompileTo(Map(definitionIdentifier -> code))
+        def shouldCompileTo(classIdentifier: String)(code: String) {
+            shouldCompileTo(Map(classIdentifier -> code))
         }
 
         def shouldCompileToPrograms(expectedPrograms: Map[String, js.Program]) {
@@ -32,7 +32,7 @@ trait CompilerSuite extends FunSuite
 
         protected def shouldCompileTo[A](expectedOutputs: Map[String, A], astProcessor: js.Ast => A) {
             val compilationOutput = compile()
-            val actualOutputs = compilationOutput.definitionOutputs.mapValues(astProcessor)
+            val actualOutputs = compilationOutput.classOutputs.mapValues(astProcessor)
             val e = expectedOutputs.toSet
             val a = actualOutputs.toSet
             val difference = (a diff e) union (e diff a)
@@ -85,7 +85,7 @@ trait CompilerSuite extends FunSuite
         private val scalaCode = new ScalaCode("class A { def f() { %s } }".format(code)) {
             override def compile(): CompilationOutput = {
                 val output = super.compile()
-                val functionBody = output.definitionOutputs.get(ident).flatMap {
+                val functionBody = output.classOutputs.get(ident).flatMap {
                     _.elements.collect {
                         case AssignmentStatement(MemberExpression(_, Identifier("f")), f: FunctionExpression) => f.body
                     }.headOption

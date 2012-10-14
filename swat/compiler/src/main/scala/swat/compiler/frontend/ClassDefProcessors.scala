@@ -4,45 +4,47 @@ import swat.compiler.SwatCompilerPlugin
 import swat.compiler.js
 import collection.mutable
 
-trait DefinitionProcessors
+trait ClassDefProcessors
 {
     self: SwatCompilerPlugin with ScalaAstProcessor =>
 
     import global._
 
-    object DefinitionProcessor
+    object ClassDefProcessor
     {
-        def apply(definitionType: DefinitionType): DefinitionProcessor = definitionType match {
-            case ClassDefinition => new ClassProcessor
-            case TraitDefinition => new TraitProcessor
-            case ObjectDefinition => new ObjectProcessor
-            case PackageObjectDefinition => new PackageObjectProcessor
+        def apply(classSymbolKind: ClassSymbolKind): ClassDefProcessor = classSymbolKind match {
+            case ClassSymbol => new ClassProcessor
+            case TraitSymbol => new TraitProcessor
+            case ObjectSymbol => new ObjectProcessor
+            case PackageObjectSymbol => new PackageObjectProcessor
         }
     }
 
-    class DefinitionProcessor
+    class ClassDefProcessor
     {
-        private val dependencies = mutable.ListBuffer.empty[(Symbol, Boolean)]
+        private val dependencies = mutable.ListBuffer.empty[(Type, Boolean)]
 
         private val equalityOperatorMap = Map("equals" -> "==", "eq" -> "===", "ne" -> "!==")
 
-        def process(definition: ClassDef): Seq[js.Statement] = {
+        def process(classDef: ClassDef): Seq[js.Statement] = {
             dependencies.clear()
-            definition.impl.body.flatMap {
-                case d: DefDef if !d.symbol.isConstructor => processDefDef(definition, d)
+            classDef.impl.body.flatMap {
+                case d: DefDef if !d.symbol.isConstructor => processDefDef(classDef, d)
                 case _ => Nil
             }
         }
 
-        def processDefDef(definition: ClassDef, defDef: DefDef): Seq[js.Statement] = {
+        def processDefDef(classDef: ClassDef, defDef: DefDef): Seq[js.Statement] = {
             // TODO just temporary solution to enable testing of code fragments.
             val body = processStatementTree(defDef.rhs) match {
                 case js.ExpressionStatement(js.CallExpression(js.FunctionExpression(_, _, b), _)) => js.Block(b)
                 case b => b
             }
             List(js.AssignmentStatement(
-                // TODO names
-                memberChain(js.RawCodeExpression(definitionIdentifier(definition.symbol)), "prototype", defDef.name.toString),
+                memberChain(
+                    js.RawCodeExpression(typeIdentifier(classDef.symbol.tpe)),
+                    "prototype",
+                    defDef.name.toString),
                 js.FunctionExpression(None, Nil, List(body))
             ))
         }
@@ -126,8 +128,8 @@ trait DefinitionProcessors
             case d: Double => js.NumericLiteral(d)
             case ErrorType => js.UndefinedLiteral
             case t: Type => {
-                dependencies += t.typeSymbol -> false
-                swatMethodCall("classOf", js.RawCodeExpression(definitionIdentifier(t.typeSymbol))) // TODO names
+                dependencies += t -> false
+                swatMethodCall("classOf", js.RawCodeExpression(typeIdentifier(t)))
             }
             case l => {
                 error("Unexpected type of a literal (%s)".format(l))
@@ -135,9 +137,7 @@ trait DefinitionProcessors
             }
         }
 
-        def processIdent(identifier: Ident): js.Identifier = {
-            js.Identifier(identifier.name.toString) // TODO names
-        }
+        def processIdent(identifier: Ident) = localJsIdentifier(identifier.name)
 
         def processSelect(select: Select): js.Expression = {
             // TODO
@@ -174,7 +174,7 @@ trait DefinitionProcessors
                 // Pros and cons of native object extensions can be found here:
                 // http://perfectionkills.com/extending-built-in-native-objects-evil-or-not/
 
-                val processedArgs = processExpressionTrees(List(qualifier) ++ args) // TODO names
+                val processedArgs = processExpressionTrees(List(qualifier) ++ args)
                 val companionModule = qualifier.tpe.underlying.typeSymbol.companionModule
                 objectMethodCall(companionModule, method.name.toString, processedArgs: _*)
             }
@@ -242,13 +242,11 @@ trait DefinitionProcessors
             }
         }
 
-        def processValDef(valDef: ValDef): js.Statement = {
-            // TODO names
-            js.VariableStatement(List(js.Identifier(valDef.name.toString) -> Some(processExpressionTree(valDef.rhs))))
-        }
+        def processValDef(valDef: ValDef) =
+            js.VariableStatement(List(localJsIdentifier(valDef.name) -> Some(processExpressionTree(valDef.rhs))))
 
         def processNew(n: New, args: Seq[Tree]): js.Expression = {
-            val definitionExpr = js.RawCodeExpression(definitionIdentifier(n.tpe.underlying.typeSymbol)) // TODO names
+            val definitionExpr = js.RawCodeExpression(typeIdentifier(n.tpe.underlying))
             js.NewExpression(js.CallExpression(definitionExpr, processExpressionTrees(args)))
         }
 
@@ -285,12 +283,14 @@ trait DefinitionProcessors
         def processMatchBlock(matchBlock: MatchBlock): js.Expression = {
             val processedInit = processStatementTrees(matchBlock.init)
             val processedCases = matchBlock.cases.map { c =>
-                val name = Some(js.Identifier(c.name.toString)) // TODO names
+                val name = Some(localJsIdentifier(c.name))
                 val params = c.params.map(processIdent _)
                 val body = processStatementTree(c.rhs)
                 js.ExpressionStatement(js.FunctionExpression(name, params, List(body)))
             }
-            val matchResult = js.ReturnStatement(Some(js.CallExpression(js.Identifier(matchBlock.cases.head.name), Nil))) // TODO names
+
+            val firstCaseIdentifier = localJsIdentifier(matchBlock.cases.head.name)
+            val matchResult = js.ReturnStatement(Some(js.CallExpression(firstCaseIdentifier, Nil)))
 
             scoped {
                 processedInit ++ processedCases ++ List(matchResult)
@@ -302,8 +302,8 @@ trait DefinitionProcessors
         }
     }
 
-    private class ClassProcessor extends DefinitionProcessor
-    private class TraitProcessor extends DefinitionProcessor
-    private class ObjectProcessor extends DefinitionProcessor
-    private class PackageObjectProcessor extends DefinitionProcessor
+    private class ClassProcessor extends ClassDefProcessor
+    private class TraitProcessor extends ClassDefProcessor
+    private class ObjectProcessor extends ClassDefProcessor
+    private class PackageObjectProcessor extends ClassDefProcessor
 }

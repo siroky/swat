@@ -19,7 +19,7 @@ class SwatCompilerPlugin(val global: Global)
 
     private var options = CompilerOptions.default
 
-    private var definitionOutputs = Map.empty[String, js.Program]
+    private var classOutputs = Map.empty[String, js.Program]
 
     override val optionsHelp = Some(CompilerOptions.help(name))
 
@@ -28,7 +28,7 @@ class SwatCompilerPlugin(val global: Global)
         options = CompilerOptions(o)
     }
 
-    def outputs = definitionOutputs
+    def outputs = classOutputs
 
     private object SwatCompilationComponent extends PluginComponent
     {
@@ -40,7 +40,7 @@ class SwatCompilerPlugin(val global: Global)
 
         def newPhase(prev: Phase) = new StdPhase(prev) {
             def apply(unit: CompilationUnit) {
-                definitionOutputs = processCompilationUnit(unit)
+                classOutputs = processCompilationUnit(unit)
             }
         }
     }

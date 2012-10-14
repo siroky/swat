@@ -2,7 +2,7 @@ package swat.compiler
 
 class DefinitionTests extends CompilerSuite
 {
-    test("Adapter definitions and ignored definitions aren't compiled") {
+    test("Adapter classes and ignored classes aren't compiled") {
         """
             import swat.api._
 
@@ -16,7 +16,7 @@ class DefinitionTests extends CompilerSuite
         """ shouldCompileToPrograms Map.empty
     }
 
-    test("Native definitions aren't compiled and get replaced with the native code") {
+    test("Native classes aren't compiled and get replaced with the native code") {
         """
             @swat.api.native("A = function() { this.a = 'foo'; };")
             class A
@@ -48,6 +48,8 @@ class DefinitionTests extends CompilerSuite
 
             class A
 
+            class ::<>
+
             package foo
             {
                 class B
@@ -67,11 +69,14 @@ class DefinitionTests extends CompilerSuite
             "A" -> """
                 swat.provide('A');
             """,
+            "$colon$colon$less$greater" -> """
+                swat.provide('$colon$colon$less$greater');
+            """,
             "foo.B" -> """
                 swat.provide('foo.B');
             """,
-            "foo.bar.package$" -> """
-                swat.provide('foo.bar.package$');
+            "foo.bar.$package$" -> """
+                swat.provide('foo.bar.$package$');
             """,
             "foo.bar.baz.C" -> """
                 swat.provide('foo.bar.baz.C');
