@@ -55,6 +55,7 @@ trait ClassDefProcessors
             case a: Apply => processApply(a)
             case t: Typed => processTyped(t)
             case v: ValDef => processValDef(v)
+            case d: DefDef => processLocalDefDef(d)
             case i: If => processIf(i)
             case l: LabelDef => processLabelDef(l)
             case t: Throw => processThrow(t)
@@ -148,8 +149,8 @@ trait ClassDefProcessors
 
         def processAnonymousFunction(functionClassDef: ClassDef): js.Expression = {
             val applyDefDef = functionClassDef.impl.body.collect { case d: DefDef if d.symbol.isApplyMethod => d }.head
-            val processedParams = applyDefDef.vparamss.flatten.map(v => localJsIdentifier(v.name))
-            js.FunctionExpression(None, processedParams, unScoped(processReturnTree(applyDefDef.rhs)))
+            val parameters = applyDefDef.vparamss.flatten.map(v => localJsIdentifier(v.name))
+            js.FunctionExpression(None, parameters, unScoped(processReturnTree(applyDefDef.rhs)))
         }
 
         def processSelect(select: Select): js.Expression = {
@@ -167,25 +168,25 @@ trait ClassDefProcessors
 
         def processApply(apply: Apply): js.Expression = apply.fun match {
             // Methods on types that compile to JavaScript primitive types.
-            case s @ Select(q, _) if q.tpe.isAnyValOrString => processAnyValOrStringMethod(s.symbol, q, apply.args)
+            case s @ Select(q, _) if q.tpe.isAnyValOrString => processAnyValOrStringMethodCall(s.symbol, q, apply.args)
 
             // Standard methods of the Any class.
-            case s @ Select(q, _) if s.symbol.isAnyMethodOrOperator => processAnyMethod(s.symbol, q, apply.args)
+            case s @ Select(q, _) if s.symbol.isAnyMethodOrOperator => processAnyMethodCall(s.symbol, q, apply.args)
             case TypeApply(s @ Select(q, _), typeArgs) if s.symbol.isAnyMethodOrOperator => {
-                processAnyMethod(s.symbol, q, apply.args ++ typeArgs)
+                processAnyMethodCall(s.symbol, q, apply.args ++ typeArgs)
             }
-            case s @ Select(q, _) if q.tpe.isFunction => processFunctionMethod(s.symbol, q, apply.args)
+            case s @ Select(q, _) if q.tpe.isFunction => processFunctionMethodCall(s.symbol, q, apply.args)
 
             // TODO
             case Select(n: New, selectName) if selectName.toString == "<init>" => processNew(n, apply.args)
             case f => js.CallExpression(processExpressionTree(f), processExpressionTrees(apply.args))
         }
 
-        def dispatchToCompanion(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
+        def dispatchCallToCompanion(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
             objectMethodCall(qualifier.tpe.companionSymbol, method, processExpressionTrees(qualifier +: args))
         }
 
-        def processAnyValOrStringMethod(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
+        def processAnyValOrStringMethodCall(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
             if (method.isAnyValOrStringOperator || method.isEqualityOperator) {
                 processAnyValOrStringOperator(method, qualifier, args.headOption)
             } else {
@@ -200,9 +201,9 @@ trait ClassDefProcessors
                 // Pros and cons of native object extensions can be found here:
                 // http://perfectionkills.com/extending-built-in-native-objects-evil-or-no
                 if (method.isAnyMethodOrOperator) {
-                    processAnyMethod(method, qualifier, args)
+                    processAnyMethodCall(method, qualifier, args)
                 } else {
-                    dispatchToCompanion(method, qualifier, args)
+                    dispatchCallToCompanion(method, qualifier, args)
                 }
             }
         }
@@ -247,7 +248,7 @@ trait ClassDefProcessors
             }
         }
 
-        def processAnyMethod(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
+        def processAnyMethodCall(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
             val processedQualifier = processExpressionTree(qualifier)
             if (method.isEqualityOperator) {
                 val processedOperand2 = processExpressionTree(args.head)
@@ -264,13 +265,13 @@ trait ClassDefProcessors
             }
         }
 
-        def processFunctionMethod(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
+        def processFunctionMethodCall(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
             val processedQualifier = processExpressionTree(qualifier)
             val processedArgs = args.map(processExpressionTree _)
             if (method.isApplyMethod) {
                 js.CallExpression(processedQualifier, processedArgs)
             } else {
-                dispatchToCompanion(method, qualifier, args)
+                dispatchCallToCompanion(method, qualifier, args)
             }
         }
 
@@ -284,8 +285,48 @@ trait ClassDefProcessors
             }
         }
 
-        def processValDef(valDef: ValDef) =
-            js.VariableStatement(List(localJsIdentifier(valDef.name) -> Some(processExpressionTree(valDef.rhs))))
+        def processValDef(valDef: ValDef) = {
+            if (valDef.symbol.isLazy && valDef.name.endsWith("$lzy")) {
+                // The val definition associated with the lazy val can be omitted as the value will be stored in the
+                // corresponding function (see processLocalDefDef method).
+                js.EmptyStatement
+            } else {
+                js.VariableStatement(localJsIdentifier(valDef.name), Some(processExpressionTree(valDef.rhs)))
+            }
+        }
+
+        def processLazyVal(defDef: DefDef) = defDef.rhs match {
+            case Block(List(Assign(_, rhs)), _) => {
+                val initializer = js.FunctionExpression(None, Nil, unScoped(processReturnTree(rhs)))
+                val value = swatMethodCall("memoize", initializer)
+                js.VariableStatement(localJsIdentifier(defDef.name), Some(value))
+            }
+            case _ => {
+                error("Unexpected lazy val initializer (%s)".format(defDef.rhs))
+                js.EmptyStatement
+            }
+        }
+
+        def processLocalDefDef(defDef: DefDef) = {
+            if (defDef.symbol.isLazy) {
+                processLazyVal(defDef)
+            } else {
+                // Check whether the function is nested in a local function with the same name which isn't supported.
+                def checkNameDuplicity(symbol: Symbol) {
+                    if (symbol.isLocal && symbol.isMethod) {
+                        if (symbol.name == defDef.symbol.name) {
+                            error("Nested local functions with same names aren't supported (%s).".format(defDef))
+                        }
+                        checkNameDuplicity(symbol.owner)
+                    }
+                }
+                checkNameDuplicity(defDef.symbol.owner)
+
+                val parameters = defDef.vparamss.flatten.map(p => localJsIdentifier(p.name))
+                val body = unScoped(processReturnTree(defDef.rhs))
+                js.FunctionDeclaration(localJsIdentifier(defDef.name), parameters, body)
+            }
+        }
 
         def processNew(n: New, args: Seq[Tree]): js.Expression = {
             val identifier = js.RawCodeExpression(typeIdentifier(n.tpe.underlying))

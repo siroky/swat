@@ -50,12 +50,6 @@ object Program
 
 sealed abstract class SourceElement extends Ast
 
-case class FunctionDeclaration(
-    name: Identifier,
-    parameters: Seq[Identifier],
-    body: Seq[Statement]
-) extends SourceElement
-
 sealed abstract class Statement extends SourceElement
 
 case class Block(statements: Seq[Statement]) extends Statement
@@ -65,9 +59,21 @@ case class Block(statements: Seq[Statement]) extends Statement
 
 case class RawCodeBlock(code: String) extends Statement
 
+case class FunctionDeclaration(
+    name: Identifier,
+    parameters: Seq[Identifier],
+    body: Seq[Statement]
+) extends Statement
+
 case class VariableStatement(variables: Seq[(Identifier, Option[Expression])]) extends Statement
 {
     require(variables.nonEmpty)
+}
+
+object VariableStatement
+{
+    def apply(identifier: Identifier, value: Option[Expression]): VariableStatement =
+        VariableStatement(List((identifier, value)))
 }
 
 case object EmptyStatement extends Statement

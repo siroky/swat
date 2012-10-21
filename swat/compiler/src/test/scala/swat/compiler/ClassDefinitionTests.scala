@@ -1,6 +1,6 @@
 package swat.compiler
 
-class DefinitionTests extends CompilerSuite
+class ClassDefinitionTests extends CompilerSuite
 {
     test("Adapter classes and ignored classes aren't compiled") {
         """

@@ -20,10 +20,6 @@ class JsCodeGenerator
         } else {
             ast match {
                 case Program(elements) => elements.map(process _).mkString
-                case FunctionDeclaration(name, parameters, body) => {
-                    "function " + process(name) + process(parameters).mkString("(", ", ", ") ") +
-                        processBlock(body) + "\n"
-                }
                 case stmt: Statement => processStatement(stmt)
                 case expr: Expression => processExpression(expr)
             }
@@ -45,6 +41,10 @@ class JsCodeGenerator
                 } else {
                     code
                 }
+            }
+            case FunctionDeclaration(name, parameters, body) => {
+                "function " + process(name) + process(parameters).mkString("(", ", ", ") ") +
+                    processBlock(body) + ";"
             }
             case VariableStatement(variables) => {
                 "var " + variables.map(v => process(v._1) + " = " + process(v._2)).mkString(", ") + ";"

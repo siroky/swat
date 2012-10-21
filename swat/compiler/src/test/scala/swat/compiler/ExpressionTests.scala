@@ -229,41 +229,4 @@ class ExpressionTests extends CompilerSuite
             java.lang.String.substring(x, 3);
         """
     }
-
-    test("Anonymous functions, cyrrying, partial application") {
-        """
-            val f = (x: Int, y: Int) => x * y
-
-            val g = (x: Int) => (y: Int) => x + y
-
-            val h = f(_, _)
-            val i = h(_, _)
-            val j = f(1, _: Int)
-            val k = f(_: Int, 1)
-
-        """ fragmentShouldCompileTo """
-            var f = (function(x, y) {
-                return (x * y);
-            });
-
-            var g = (function(x) {
-                return (function(y) {
-                    return (x + y);
-                });
-            });
-
-            var h = (function(x$1, x$2) {
-                return f(x$1, x$2);
-            });
-            var i = (function(x$3, x$4) {
-                return h(x$3, x$4);
-            });
-            var j = (function(x$5) {
-                return f(1, x$5);
-            });
-            var k = (function(x$6) {
-                return f(x$6, 1);
-            });
-        """
-    }
 }
