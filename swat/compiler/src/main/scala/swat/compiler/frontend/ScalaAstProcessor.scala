@@ -48,8 +48,7 @@ trait ScalaAstProcessor
                 val declarations = List(js.RawCodeBlock(code))
                 requirements ++ declarations
             }.getOrElse {
-                val processor = ClassDefProcessor(classSymbol.classSymbolKind)
-                processor.process(classDef)
+                ClassDefProcessor(classDef).process()
             }
 
         js.Program(provide ++ statements)
@@ -114,4 +113,5 @@ trait ScalaAstProcessor
     def localIdentifier(name: String): String = (if (js.Language.keywords.contains(name)) "$" else "") + name
     def localJsIdentifier(name: Name): js.Identifier = localJsIdentifier(name.toString)
     def localJsIdentifier(name: String): js.Identifier = js.Identifier(localIdentifier(name))
+    def packageJsIdentifier(packageSymbol: Symbol) = js.Identifier(packageIdentifier(packageSymbol))
 }

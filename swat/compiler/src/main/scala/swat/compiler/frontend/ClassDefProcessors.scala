@@ -12,22 +12,25 @@ trait ClassDefProcessors
 
     object ClassDefProcessor
     {
-        def apply(classSymbolKind: ClassSymbolKind): ClassDefProcessor = classSymbolKind match {
-            case ClassSymbol => new ClassProcessor
-            case TraitSymbol => new TraitProcessor
-            case ObjectSymbol => new ObjectProcessor
-            case PackageObjectSymbol => new PackageObjectProcessor
+        def apply(classDef: ClassDef): ClassDefProcessor = classDef.symbol.classSymbolKind match {
+            case ClassSymbol => new ClassProcessor(classDef)
+            case TraitSymbol => new TraitProcessor(classDef)
+            case ObjectSymbol => new ObjectProcessor(classDef)
+            case PackageObjectSymbol => new PackageObjectProcessor(classDef)
         }
     }
 
-    class ClassDefProcessor
+    class ClassDefProcessor(private val classDef: ClassDef)
     {
         private val dependencies = mutable.ListBuffer.empty[(Type, Boolean)]
 
         private val equalityOperatorMap = Map("equals" -> "==", "eq" -> "===", "ne" -> "!==")
 
-        def process(classDef: ClassDef): Seq[js.Statement] = {
-            dependencies.clear()
+        private val self = localJsIdentifier("self")
+
+        private val outer = localJsIdentifier("$outer")
+
+        def process(): Seq[js.Statement] = {
             classDef.impl.body.flatMap {
                 case d: DefDef if !d.symbol.isConstructor => processDefDef(classDef, d)
                 case _ => Nil
@@ -50,10 +53,14 @@ trait ClassDefProcessors
             case b: Block => processBlock(b)
             case l: Literal => processLiteral(l)
             case t: TypeTree => processTypeTree(t)
+            case a: ArrayValue => processArrayValue(a)
             case i: Ident => processIdent(i)
+            case t: This => processThis(t)
             case s: Select => processSelect(s)
             case a: Apply => processApply(a)
+            case t: TypeApply => processTypeApply(t)
             case t: Typed => processTyped(t)
+            case a: Assign => processAssign(a)
             case v: ValDef => processValDef(v)
             case d: DefDef => processLocalDefDef(d)
             case i: If => processIf(i)
@@ -74,7 +81,6 @@ trait ClassDefProcessors
             }
         }
 
-
         def processExpressionTree(tree: Tree): js.Expression = processTree(tree) match {
             case e: js.Expression => e
             case _ => {
@@ -90,10 +96,10 @@ trait ClassDefProcessors
             // actually doesn't return anything. So the 'return' may be omitted.
             if (tree.tpe.isUnit) {
                 tree match {
-                    // If the tree is a Block with structure { statement; (); } then the scope of the block created in
-                    // the processBlock method may be omitted. The scope protects from shadowing and using the shadowed
-                    // value instead of the original value. However it's not possible to shadow and use a variable in
-                    // one statement, which isn't itself scoped. The purpose is to get rid of unnecessary scoping.
+                    // If the tree is a Block with structure { statement; (); } then the block that wraps the statement
+                    // may be omitted. The scope protects from shadowing and using the shadowed value instead of the
+                    // original value. However it's not possible to shadow and use a variable in one statement, which
+                    // isn't itself scoped. The purpose is to get rid of unnecessary scoping.
                     case Block(statement :: Nil, Literal(Constant(_: Unit))) => processStatementTree(statement)
                     case _ => js.ExpressionStatement(processedTree)
                 }
@@ -111,7 +117,12 @@ trait ClassDefProcessors
             case b => b.toMatchBlock match {
                 case Some(m: MatchBlock) => processMatchBlock(m)
                 case _ => scoped {
-                    processStatementTrees(b.stats) :+ processReturnTree(b.expr)
+                    val processedExpr = processReturnTree(b.expr)
+
+                    // If the block contains just the expr, then the expr doesn't have to be scoped, because there
+                    // isn't anything to protect from shadowing in the block (the stats are empty)
+                    val unScopedExpr = if (b.stats.isEmpty) unScoped(processedExpr) else List(processedExpr)
+                    processStatementTrees(b.stats) ++ unScopedExpr
                 }
             }
         }
@@ -139,18 +150,34 @@ trait ClassDefProcessors
             }
         }
 
-        def processTypeTree(typeTree: TypeTree) = {
+        def processTypeTree(typeTree: TypeTree): js.Expression = {
             val tpe = typeTree.tpe.underlying
             dependencies += tpe -> false
             js.RawCodeExpression(typeIdentifier(tpe))
         }
 
-        def processIdent(identifier: Ident) = localJsIdentifier(identifier.name)
+        def processArrayValue(arrayValue: ArrayValue): js.Expression =
+            objectMethodCall(typeOf[Array[_]].companionSymbol, "apply", arrayValue.elems.map(processExpressionTree _))
 
         def processAnonymousFunction(functionClassDef: ClassDef): js.Expression = {
             val applyDefDef = functionClassDef.impl.body.collect { case d: DefDef if d.symbol.isApplyMethod => d }.head
             val parameters = applyDefDef.vparamss.flatten.map(v => localJsIdentifier(v.name))
             js.FunctionExpression(None, parameters, unScoped(processReturnTree(applyDefDef.rhs)))
+        }
+
+        def processIdent(identifier: Ident): js.Identifier = localJsIdentifier(identifier.name)
+
+        def processThis(t: This): js.Expression = {
+            if (t.symbol.isPackageClass) {
+                packageJsIdentifier(t.symbol)
+            } else {
+                // The t.symbol isn't a package, therefore it's the current class or an outer class.
+                def getNestingDepth(innerClass: Symbol): Int = {
+                    if (innerClass == t.symbol) 0 else getNestingDepth(innerClass.owner) + 1
+                }
+                val depth = getNestingDepth(classDef.symbol)
+                (1 to depth).foldLeft[js.Expression](self)((z, _) => js.MemberExpression(z, outer))
+            }
         }
 
         def processSelect(select: Select): js.Expression = {
@@ -275,6 +302,12 @@ trait ClassDefProcessors
             }
         }
 
+        def processTypeApply(typeApply: TypeApply): js.Expression = {
+            // The methods where the type actually matters (e.g. isInstanceOf) are processed earlier. In other cases
+            // the type application may be omitted.
+            processExpressionTree(typeApply.fun)
+        }
+
         def processTyped(typed: Typed): js.Expression = {
             if (typed.expr.tpe.underlying <:< typed.tpt.tpe.underlying) {
                 // No type cast is necessary since it's already proven that the expr is of the specified type.
@@ -285,7 +318,10 @@ trait ClassDefProcessors
             }
         }
 
-        def processValDef(valDef: ValDef) = {
+        def processAssign(assign: Assign): js.Statement =
+            js.AssignmentStatement(processExpressionTree(assign.lhs), processExpressionTree(assign.rhs))
+
+        def processValDef(valDef: ValDef): js.Statement = {
             if (valDef.symbol.isLazy && valDef.name.endsWith("$lzy")) {
                 // The val definition associated with the lazy val can be omitted as the value will be stored in the
                 // corresponding function (see processLocalDefDef method).
@@ -295,7 +331,7 @@ trait ClassDefProcessors
             }
         }
 
-        def processLazyVal(defDef: DefDef) = defDef.rhs match {
+        def processLazyVal(defDef: DefDef): js.Statement = defDef.rhs match {
             case Block(List(Assign(_, rhs)), _) => {
                 val initializer = js.FunctionExpression(None, Nil, unScoped(processReturnTree(rhs)))
                 val value = swatMethodCall("memoize", initializer)
@@ -307,7 +343,7 @@ trait ClassDefProcessors
             }
         }
 
-        def processLocalDefDef(defDef: DefDef) = {
+        def processLocalDefDef(defDef: DefDef): js.Statement = {
             if (defDef.symbol.isLazy) {
                 processLazyVal(defDef)
             } else {
@@ -385,8 +421,8 @@ trait ClassDefProcessors
         }
     }
 
-    private class ClassProcessor extends ClassDefProcessor
-    private class TraitProcessor extends ClassDefProcessor
-    private class ObjectProcessor extends ClassDefProcessor
-    private class PackageObjectProcessor extends ClassDefProcessor
+    private class ClassProcessor(c: ClassDef) extends ClassDefProcessor(c)
+    private class TraitProcessor(c: ClassDef) extends ClassDefProcessor(c)
+    private class ObjectProcessor(c: ClassDef) extends ClassDefProcessor(c)
+    private class PackageObjectProcessor(c: ClassDef) extends ClassDefProcessor(c)
 }
