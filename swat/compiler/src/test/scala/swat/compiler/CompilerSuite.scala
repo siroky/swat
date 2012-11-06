@@ -82,7 +82,7 @@ trait CompilerSuite extends FunSuite
     {
         private val ident = "A"
 
-        private val scalaCode = new ScalaCode("class A { def f() { %s } }".format(code)) {
+        private val scalaCode = new ScalaCode(s"class A { def f() { $code } }") {
             override def compile(): CompilationOutput = {
                 val output = super.compile()
                 val functionBody = output.classOutputs.get(ident).flatMap {

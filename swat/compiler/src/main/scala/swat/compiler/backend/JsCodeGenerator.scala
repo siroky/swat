@@ -28,7 +28,15 @@ class JsCodeGenerator
 
     private def process(ast: Option[Ast])(implicit indent: Indent): String = ast.map(process(_)).mkString
 
-    private def process(asts: Seq[Ast])(implicit indent: Indent): Seq[String] = asts.map(process(_))
+    private def process(asts: Seq[Ast])(implicit indent: Indent): Seq[String] = {
+        val (liveAsts, deadAsts) = asts.span {
+            case _: ReturnStatement | _: ThrowStatement => false
+            case _ => true
+        }
+
+        // Omit all statements after the first occurance of return or throw statement;
+        (liveAsts ++ deadAsts.headOption.toList).map(process(_))
+    }
 
     private def processStatement(statement: Statement)(implicit indent: Indent): String = {
         indent + (statement match {
@@ -90,7 +98,7 @@ class JsCodeGenerator
             case TryStatement(body, catcher, finalizer) => {
                 "try " + processBlock(body) +
                 catcher.map(c => " catch (" + process(c._1) + ") " + processBlock(c._2)).mkString +
-                finalizer.map(f => " finally " + processBlock(f))
+                finalizer.map(f => " finally " + processBlock(f)).mkString
             }
             case DebuggerStatement => "debugger;"
         }) + "\n"

@@ -40,10 +40,7 @@ trait ClassDefProcessors
         def processDefDef(classDef: ClassDef, defDef: DefDef): Seq[js.Statement] = {
             // TODO just temporary solution to enable testing of code fragments.
             List(js.AssignmentStatement(
-                memberChain(
-                    js.RawCodeExpression(typeIdentifier(classDef.symbol.tpe)),
-                    "prototype",
-                    defDef.name.toString),
+                memberChain(typeJsIdentifier(classDef.symbol.tpe), "prototype", defDef.name.toString),
                 js.FunctionExpression(None, Nil, unScoped(processReturnTree(defDef.rhs)))
             ))
         }
@@ -66,8 +63,9 @@ trait ClassDefProcessors
             case i: If => processIf(i)
             case l: LabelDef => processLabelDef(l)
             case t: Throw => processThrow(t)
+            case t: Try => processTry(t)
             case _ => {
-                error("Unknown Scala construct %s: %s".format(tree.getClass, tree.toString()))
+                error("Unknown Scala construct %s: %s".format(tree.getClass, tree.toString))
                 js.UndefinedLiteral
             }
         }
@@ -76,7 +74,7 @@ trait ClassDefProcessors
             case s: js.Statement => s
             case e: js.Expression => js.ExpressionStatement(e)
             case _ => {
-                error("A non-statement tree found on a statement position (%s)".format(tree))
+                error(s"A non-statement tree found on a statement position ($tree)")
                 js.Block(Nil)
             }
         }
@@ -84,7 +82,7 @@ trait ClassDefProcessors
         def processExpressionTree(tree: Tree): js.Expression = processTree(tree) match {
             case e: js.Expression => e
             case _ => {
-                error("A non-expression tree found on an expression position (%s)".format(tree))
+                error(s"A non-expression tree found on an expression position ($tree)")
                 js.UndefinedLiteral
             }
         }
@@ -142,10 +140,10 @@ trait ClassDefProcessors
             case ErrorType => js.UndefinedLiteral
             case t: Type => {
                 dependencies += t -> false
-                swatMethodCall("classOf", js.RawCodeExpression(typeIdentifier(t)))
+                swatMethodCall("classOf", typeJsIdentifier(t))
             }
             case l => {
-                error("Unexpected type of a literal (%s)".format(l))
+                error(s"Unexpected type of a literal ($l)")
                 js.UndefinedLiteral
             }
         }
@@ -153,7 +151,7 @@ trait ClassDefProcessors
         def processTypeTree(typeTree: TypeTree): js.Expression = {
             val tpe = typeTree.tpe.underlying
             dependencies += tpe -> false
-            js.RawCodeExpression(typeIdentifier(tpe))
+            typeJsIdentifier(tpe)
         }
 
         def processArrayValue(arrayValue: ArrayValue): js.Expression =
@@ -313,7 +311,7 @@ trait ClassDefProcessors
                 // No type cast is necessary since it's already proven that the expr is of the specified type.
                 processExpressionTree(typed.expr)
             } else {
-                error("Unexpected typed expression (%s)".format(typed))
+                error(s"Unexpected typed expression ($typed)")
                 js.UndefinedLiteral
             }
         }
@@ -351,7 +349,7 @@ trait ClassDefProcessors
                 def checkNameDuplicity(symbol: Symbol) {
                     if (symbol.isLocal && symbol.isMethod) {
                         if (symbol.name == defDef.symbol.name) {
-                            error("Nested local functions with same names aren't supported (%s).".format(defDef))
+                            error(s"Nested local functions with same names aren't supported ($defDef).")
                         }
                         checkNameDuplicity(symbol.owner)
                     }
@@ -365,8 +363,7 @@ trait ClassDefProcessors
         }
 
         def processNew(n: New, args: Seq[Tree]): js.Expression = {
-            val identifier = js.RawCodeExpression(typeIdentifier(n.tpe.underlying))
-            js.NewExpression(js.CallExpression(identifier, processExpressionTrees(args)))
+            js.NewExpression(js.CallExpression(typeJsIdentifier(n.tpe.underlying), processExpressionTrees(args)))
         }
 
         def processIf(condition: If): js.Expression = scoped {
@@ -380,7 +377,7 @@ trait ClassDefProcessors
             labelDef.toLoop match {
                 case Some(l: Loop) => processLoop(l)
                 case _ => {
-                    error("Unexpected type of a label (%s)".format(labelDef))
+                    error(s"Unexpected type of a label ($labelDef)")
                     js.UndefinedLiteral
                 }
             }
@@ -402,10 +399,8 @@ trait ClassDefProcessors
         def processMatchBlock(matchBlock: MatchBlock): js.Expression = {
             val processedInit = processStatementTrees(matchBlock.init)
             val processedCases = matchBlock.cases.map { c =>
-                val name = Some(localJsIdentifier(c.name))
-                val params = c.params.map(processIdent _)
-                val body = processStatementTree(c.rhs)
-                js.ExpressionStatement(js.FunctionExpression(name, params, List(body)))
+                val body = unScoped(processReturnTree(c.rhs))
+                js.FunctionDeclaration(localJsIdentifier(c.name), c.params.map(processIdent _), body)
             }
 
             val firstCaseIdentifier = localJsIdentifier(matchBlock.cases.head.name)
@@ -418,6 +413,74 @@ trait ClassDefProcessors
 
         def processThrow(t: Throw): js.Expression = scoped {
             js.ThrowStatement(processExpressionTree(t.expr))
+        }
+
+        def processTry(t: Try): js.Expression = t match {
+            case Try(b, Nil, EmptyTree) => processExpressionTree(b)
+            case _ => {
+                val processedBody = unScoped(processReturnTree(t.block))
+                val processedCatches = t.catches match {
+                    case Nil => None
+
+                    // If the cases contain some more advanced patterns than simple type check, wildcard or bind, then
+                    // the patmat transforms the cases the same way as it transforms the match expression and wraps the
+                    // match into one case. Therefore we don't have take care of exception rethrowing (in case of
+                    // unsuccessful match) since it's already done in the case produced by patmat.
+                    case List(CaseDef(Bind(matcheeName, _), _, b: Block)) if b.toMatchBlock.nonEmpty => {
+                        Some((localJsIdentifier(matcheeName), unScoped(processReturnTree(b))))
+                    }
+                    case catches => {
+                        val exception = freshLocalJsIdentifier("e")
+                        val body = catches.flatMap(processCaseDef(_, exception)) :+ js.ThrowStatement(exception)
+                        Some((exception, body))
+                    }
+                }
+                val processedFinalizer =
+                    if (t.finalizer == EmptyTree) None else Some(unScoped(processStatementTree(t.finalizer)))
+
+                scoped {
+                    js.TryStatement(processedBody, processedCatches, processedFinalizer)
+                }
+            }
+        }
+
+        def processCaseDef(caseDef: CaseDef, matchee: js.Expression): Seq[js.Statement] = {
+            // The body is terminated with the return statement, so even if the body doesn't return anything, the
+            // matching process is terminated.
+            val processedBody = unScoped(processReturnTree(caseDef.body)) :+ js.ReturnStatement(None)
+            val guardedBody = caseDef.guard match {
+                case EmptyTree => processedBody
+                case guard => List(js.IfStatement(processExpressionTree(guard), processedBody, Nil))
+            }
+
+            processPattern(caseDef.pat, matchee, guardedBody)
+        }
+
+        def processPattern(p: Tree, matchee: js.Expression, body: Seq[js.Statement]): Seq[js.Statement] = p match {
+            case i: Ident => processIdentifierPattern(i, matchee, body)
+            case t: Typed => processTypedPattern(t, matchee, body)
+            case b: Bind => processBindPattern(b, matchee, body)
+            case pattern => {
+                error(s"Unexpected type of a pattern ($pattern).")
+                Nil
+            }
+        }
+
+        def processIdentifierPattern(identifier: Ident, matchee: js.Expression, body: Seq[js.Statement]) = {
+            if (identifier.name != nme.WILDCARD) {
+                error(s"Unexpected type of an identifier pattern ($identifier).")
+            }
+            body
+        }
+
+        def processTypedPattern(typed: Typed, matchee: js.Expression, body: Seq[js.Statement]) = {
+            val condition = swatMethodCall(localIdentifier("isInstanceOf"), matchee, typeJsIdentifier(typed.tpt.tpe))
+            List(js.IfStatement(condition, body, Nil))
+        }
+
+        def processBindPattern(bind: Bind, matchee: js.Expression, body: Seq[js.Statement]) = {
+            val binding = js.VariableStatement(localJsIdentifier(bind.name), Some(matchee))
+            processPattern(bind.body, matchee, binding +: body)
         }
     }
 

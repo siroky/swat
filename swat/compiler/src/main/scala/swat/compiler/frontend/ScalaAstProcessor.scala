@@ -26,7 +26,8 @@ trait ScalaAstProcessor
                 extractClassDefs(p).map(c => (typeIdentifier(c.symbol.tpe), processClassDef(c))).toMap
             }
             case _ => {
-                error("The %s must contain a package definition.".format(compilationUnit.source.file.name))
+                val fileName = compilationUnit.source.file.name
+                error(s"The source file $fileName must contain a package definition.")
                 Map.empty
             }
         }
@@ -97,6 +98,12 @@ trait ScalaAstProcessor
         symbolIdentifier(tpe.typeSymbol) + suffix
     }
 
+    private var counter = 0
+    def freshLocalJsIdentifier(prefix: String) = {
+        counter += 1
+        js.Identifier(prefix + "$" + counter)
+    }
+
     private def symbolIdentifier(symbol: Symbol): String = {
         if (symbol.owner.isPackageClass) {
             val qualifier = packageIdentifier(symbol.owner) match {
@@ -113,5 +120,6 @@ trait ScalaAstProcessor
     def localIdentifier(name: String): String = (if (js.Language.keywords.contains(name)) "$" else "") + name
     def localJsIdentifier(name: Name): js.Identifier = localJsIdentifier(name.toString)
     def localJsIdentifier(name: String): js.Identifier = js.Identifier(localIdentifier(name))
+    def typeJsIdentifier(tpe: Type): js.Identifier = js.Identifier(typeIdentifier(tpe))
     def packageJsIdentifier(packageSymbol: Symbol) = js.Identifier(packageIdentifier(packageSymbol))
 }

@@ -136,7 +136,7 @@ trait RichTrees
                     case If(e, Block(s, Apply(Ident(n), _)), _) if n.toString == labelName => (e, s)
                     case Block(s, If(e, Apply(Ident(n), _), _)) if n.toString == labelName => (e, s)
                     case _ => {
-                        error("Unknown format of a while loop label (%s)".format(l))
+                        error(s"Unknown format of a while loop label ($l)")
                         (EmptyTree, Nil)
                     }
                 }

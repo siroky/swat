@@ -14,9 +14,7 @@ object CompilerOptions
     val targetOption = "target"
 
     def help(pluginName: String): String = {
-        "  -P:%s:%s:dir             Sets the target directory for JavaScript files to dir.".format(
-            pluginName,
-            targetOption)
+        s"  -P:$pluginName:$targetOption:xyz             Sets the target directory for JavaScript files to xyz."
     }
 
     def apply(options: List[String]): CompilerOptions = {

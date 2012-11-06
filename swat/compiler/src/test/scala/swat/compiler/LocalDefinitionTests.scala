@@ -92,7 +92,7 @@ class LocalDefinitionTests extends CompilerSuite
         """
     }
 
-    test("Closures") {
+    test("Functions") {
         """
             val f = (x: Int, y: Int) => x * y
 

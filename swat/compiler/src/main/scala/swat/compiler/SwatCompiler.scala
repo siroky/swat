@@ -13,7 +13,8 @@ class SwatCompiler(
     val options: CompilerOptions)
 {
     def compile(scalaCode: String): CompilationOutput = {
-        val sourceFile = new File(new io.File(java.util.UUID.randomUUID + ".scala"))
+        val uuid = java.util.UUID.randomUUID
+        val sourceFile = new File(new io.File(s"$uuid.scala"))
         try {
             sourceFile.writeAll(scalaCode)
             compile(sourceFile)
@@ -36,7 +37,9 @@ class SwatCompiler(
         try {
             run.compile(List(sourceFile.path))
         } catch {
-            case _: Throwable => // The error should have been already tracked within the reporter.
+            case t: Throwable => {
+                println(t.getStackTrace.map(_.toString).mkString("\n"))
+            }
         }
 
         if (reporter.errors.nonEmpty) {
@@ -71,7 +74,7 @@ class SwatCompiler(
             val positionDescription =
                 if (pos.isDefined) "\nOn line %s column %s: %s".format(pos.line, pos.column, pos.lineContent) else ""
 
-            messages += "[%s] %s%s".format(severityDescription, msg, positionDescription)
+            messages += s"[$severityDescription] $msg $positionDescription"
         }
     }
 }
