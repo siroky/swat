@@ -55,19 +55,21 @@ trait ScalaAstProcessor
         js.Program(provide ++ statements)
     }
 
-
-    def objectMethodCall(objectSymbol: Symbol, methodSymbol: Symbol, args: Seq[js.Expression]): js.Expression = {
-        objectMethodCall(objectSymbol, localIdentifier(methodSymbol.name), args)
+    def objectMethodCall(objectSymbol: Symbol, methodName: String, args: List[js.Expression]): js.Expression = {
+        objectMethodCall(objectSymbol, localJsIdentifier(methodName), args)
     }
 
-    def objectMethodCall(objectSymbol: Symbol, methodName: String, args: Seq[js.Expression]): js.Expression = {
+    def objectMethodCall(objectSymbol: Symbol, methodSymbol: Symbol, args: List[js.Expression]): js.Expression = {
+        objectMethodCall(objectSymbol, localJsIdentifier(methodSymbol.name), args)
+    }
+
+    def objectMethodCall(objectSymbol: Symbol, methodName: js.Identifier, args: List[js.Expression]) = {
         // TODO
         methodCall(js.RawCodeExpression(objectSymbol.fullName), methodName, args: _*)
     }
 
-
     def swatMethodCall(methodName: String, args: js.Expression*): js.Expression = {
-        methodCall(localJsIdentifier("swat"), methodName, args: _*) // TODO swat object.
+        methodCall(localJsIdentifier("swat"), localJsIdentifier(methodName), args: _*) // TODO swat object.
     }
 
     def processDependency(dependencyType: Type, isHard: Boolean): js.Statement = {
@@ -98,14 +100,11 @@ trait ScalaAstProcessor
         symbolIdentifier(tpe.typeSymbol) + suffix
     }
 
-    private var counter = 0
-    def freshLocalJsIdentifier(prefix: String) = {
-        counter += 1
-        js.Identifier(prefix + "$" + counter)
-    }
-
-    private def symbolIdentifier(symbol: Symbol): String = {
-        if (symbol.owner.isPackageClass) {
+    def symbolIdentifier(symbol: Symbol): String = {
+        if (symbol.classSymbolKind == PackageObjectSymbol) {
+            // The $package suffix is stripped.
+            symbolIdentifier(symbol.owner)
+        } else if (symbol.owner.isPackageClass) {
             val qualifier = packageIdentifier(symbol.owner) match {
                 case "" => ""
                 case i => i + "."
@@ -116,10 +115,21 @@ trait ScalaAstProcessor
         }
     }
 
+    def localIdentifier(name: String): String = {
+        val cleanName = name.replace(" ", "").replace("<", "$").replace(">", "$")
+        (if (js.Language.keywords(cleanName)) "$" else "") + cleanName
+    }
+
+    private var counter = 0
+    def freshLocalJsIdentifier(prefix: String) = {
+        counter += 1
+        js.Identifier(prefix + "$" + counter)
+    }
+
     def localIdentifier(name: Name): String = localIdentifier(name.toString)
-    def localIdentifier(name: String): String = (if (js.Language.keywords.contains(name)) "$" else "") + name
     def localJsIdentifier(name: Name): js.Identifier = localJsIdentifier(name.toString)
     def localJsIdentifier(name: String): js.Identifier = js.Identifier(localIdentifier(name))
-    def typeJsIdentifier(tpe: Type): js.Identifier = js.Identifier(typeIdentifier(tpe))
+    def symbolJsIdentifier(symbol: Symbol) = js.Identifier(symbolIdentifier(symbol))
+    def typeJsIdentifier(tpe: Type) = js.Identifier(typeIdentifier(tpe))
     def packageJsIdentifier(packageSymbol: Symbol) = js.Identifier(packageIdentifier(packageSymbol))
 }

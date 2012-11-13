@@ -45,7 +45,7 @@ class SwatCompiler(
         if (reporter.errors.nonEmpty) {
             throw new CompilationException(reporter.errors.head)
         }
-        CompilationOutput(compiler.swatCompilerPlugin.outputs, reporter.warnings, reporter.infos)
+        CompilationOutput(compiler.swatCompilerPlugin.outputs, reporter.warnings.toList, reporter.infos.toList)
     }
 
     private class SwatGlobal(settings: Settings, reporter: Reporter) extends Global(settings, reporter)

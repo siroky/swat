@@ -22,27 +22,73 @@ trait ClassDefProcessors
 
     class ClassDefProcessor(private val classDef: ClassDef)
     {
-        private val dependencies = mutable.ListBuffer.empty[(Type, Boolean)]
+        val dependencies = mutable.ListBuffer.empty[(Type, Boolean)]
 
-        private val equalityOperatorMap = Map("equals" -> "==", "eq" -> "===", "ne" -> "!==")
+        val classDefSymbolIdentifier = symbolJsIdentifier(classDef.symbol)
+        val classDefTypeIdentifier = typeJsIdentifier(classDef.symbol.tpe)
+        val self = localJsIdentifier("$self")
+        val fields = localJsIdentifier("$fields")
+        val outer = localJsIdentifier("$outer")
+        val selfDeclaration = js.VariableStatement(self, Some(js.ThisReference))
 
-        private val self = localJsIdentifier("self")
+        def process(): List[js.Statement] = {
+            // Group the methods by their names and process all the methods in a group together (merge overloaded
+            // methods into a single method. In its body, it determines by parameter types which one of the overloaded
+            // methods should be invoked).
+            val methodGroups = classDef.impl.body.collect { case d: DefDef => d }.groupBy(_.name.toString).toList
+            val methodDeclarations = methodGroups.sortBy(_._1).map(g => processDefDefGroup(g._2))
 
-        private val outer = localJsIdentifier("$outer")
+            // The constructor
+            val superClasses = classDef.symbol.baseClasses.map(c => typeJsIdentifier(c.tpe))
+            val constructorExpression = swatMethodCall("constructor", js.ArrayLiteral(superClasses))
 
-        def process(): Seq[js.Statement] = {
-            classDef.impl.body.flatMap {
-                case d: DefDef if !d.symbol.isConstructor => processDefDef(classDef, d)
-                case _ => Nil
-            }
+            methodDeclarations :+ processConstructor(constructorExpression)
         }
 
-        def processDefDef(classDef: ClassDef, defDef: DefDef): Seq[js.Statement] = {
-            // TODO just temporary solution to enable testing of code fragments.
-            List(js.AssignmentStatement(
-                memberChain(typeJsIdentifier(classDef.symbol.tpe), "prototype", defDef.name.toString),
-                js.FunctionExpression(None, Nil, unScoped(processReturnTree(defDef.rhs)))
-            ))
+        def processConstructor(constructorExpression: js.Expression): js.Statement = {
+            js.AssignmentStatement(classDefTypeIdentifier, constructorExpression)
+        }
+
+        def processDefDefGroup(defDefs: List[DefDef]): js.Statement = {
+            // A method qualifier (e.g Foo.foo) and an expression corresponding to the method group. A single
+            // constructor doesn't have to be treated as a method since it can't be overriden nor overloaded in
+            // subclasses.
+            val qualifier = memberChain(classDefTypeIdentifier, localJsIdentifier(defDefs.head.name))
+            val methodExpression = defDefs match {
+                case List(c) if c.symbol.isConstructor => processDefDef(c, isMethod = true)
+                case _ => {
+                    // Each method is processed and a type hint containing types of the method formal parameters is
+                    // added. E.g. function(i) { ... }, [Int], function(s1, s2) { ... }, [String, String].
+                    val methodBuilderArguments = defDefs.flatMap { defDef =>
+                        val parameterTypes = defDef.vparamss.flatten.map(p => typeJsIdentifier(p.tpt.tpe))
+                        List(js.ArrayLiteral(parameterTypes), processDefDef(defDef, isMethod = true))
+                    }
+                    swatMethodCall("method", methodBuilderArguments: _*)
+                }
+            }
+
+            js.AssignmentStatement(qualifier, methodExpression)
+        }
+
+        def processDefDef(defDef: DefDef, isMethod: Boolean): js.FunctionExpression = {
+            val parameters = defDef.vparamss.flatten.map(p => localJsIdentifier(p.name))
+            val body =
+                if (defDef.hasSymbolWhich (s => s.isAccessor)) {
+                    List(processAccessorBody(defDef, parameters))
+                } else {
+                    (if (isMethod) List(selfDeclaration) else Nil) ++ unScoped(processReturnTree(defDef.rhs))
+                }
+
+            js.FunctionExpression(None, parameters, body)
+        }
+
+        def processAccessorBody(defDef: DefDef, processedParameters: List[js.Identifier]): js.Statement = {
+            val field = memberChain(js.ThisReference, fields, localJsIdentifier(defDef.symbol.accessed.name))
+            if (defDef.symbol.isGetter) {
+                js.ReturnStatement(Some(if (defDef.symbol.isLazy) js.CallExpression(field, Nil) else field))
+            } else {
+                js.AssignmentStatement(field, processedParameters.head)
+            }
         }
 
         def processTree(tree: Tree): js.Ast = tree match {
@@ -53,6 +99,7 @@ trait ClassDefProcessors
             case a: ArrayValue => processArrayValue(a)
             case i: Ident => processIdent(i)
             case t: This => processThis(t)
+            case s: Super => processSuper(s)
             case s: Select => processSelect(s)
             case a: Apply => processApply(a)
             case t: TypeApply => processTypeApply(t)
@@ -106,9 +153,9 @@ trait ClassDefProcessors
             }
         }
 
-        def processStatementTrees(trees: Seq[Tree]): Seq[js.Statement] = trees.map(processStatementTree _)
+        def processStatementTrees(trees: List[Tree]): List[js.Statement] = trees.map(processStatementTree _)
 
-        def processExpressionTrees(trees: Seq[Tree]): Seq[js.Expression] = trees.map(processExpressionTree _)
+        def processExpressionTrees(trees: List[Tree]): List[js.Expression] = trees.map(processExpressionTree _)
 
         def processBlock(block: Block): js.Expression = block match {
             case Block(List(c: ClassDef), _) if c.symbol.isAnonymousFunction => processAnonymousFunction(c)
@@ -159,8 +206,7 @@ trait ClassDefProcessors
 
         def processAnonymousFunction(functionClassDef: ClassDef): js.Expression = {
             val applyDefDef = functionClassDef.impl.body.collect { case d: DefDef if d.symbol.isApplyMethod => d }.head
-            val parameters = applyDefDef.vparamss.flatten.map(v => localJsIdentifier(v.name))
-            js.FunctionExpression(None, parameters, unScoped(processReturnTree(applyDefDef.rhs)))
+            processDefDef(applyDefDef, isMethod = false)
         }
 
         def processIdent(identifier: Ident): js.Identifier = localJsIdentifier(identifier.name)
@@ -178,17 +224,12 @@ trait ClassDefProcessors
             }
         }
 
-        def processSelect(select: Select): js.Expression = {
-            // TODO
-            // TODO names
-            val selectName = select.name.toString
-            val processedQualifier = processExpressionTree(select.qualifier)
+        def processSuper(s: Super): js.Expression = {
+            js.CallExpression(memberChain(processExpressionTree(s.qual), localJsIdentifier("$super")), Nil)
+        }
 
-            if (selectName == "<init>") {
-                processedQualifier
-            } else {
-                js.MemberExpression(processedQualifier, js.Identifier(selectName))
-            }
+        def processSelect(select: Select): js.Expression = {
+            js.MemberExpression(processExpressionTree(select.qualifier), localJsIdentifier(select.name.toString))
         }
 
         def processApply(apply: Apply): js.Expression = apply.fun match {
@@ -207,11 +248,11 @@ trait ClassDefProcessors
             case f => js.CallExpression(processExpressionTree(f), processExpressionTrees(apply.args))
         }
 
-        def dispatchCallToCompanion(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
+        def dispatchCallToCompanion(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
             objectMethodCall(qualifier.tpe.companionSymbol, method, processExpressionTrees(qualifier +: args))
         }
 
-        def processAnyValOrStringMethodCall(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
+        def processAnyValOrStringMethodCall(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
             if (method.isAnyValOrStringOperator || method.isEqualityOperator) {
                 processAnyValOrStringOperator(method, qualifier, args.headOption)
             } else {
@@ -235,9 +276,7 @@ trait ClassDefProcessors
 
         def processAnyValOrStringOperator(symbol: Symbol, operand1: Tree, operand2: Option[Tree]): js.Expression = {
             // Convert the Scala operator name to JavaScript operator. Luckily, all are the same as in Scala.
-            val operator = equalityOperatorMap.foldLeft(symbol.nameString.stripPrefix("unary_")) { (o, r) =>
-                o.replace(r._1, r._2)
-            }
+            val operator = processOperator(symbol.nameString.stripPrefix("unary_"))
 
             // Chars, that are represented as strings, need to be explicitly converted to integers, so arithmetic
             // operations would work on them.
@@ -261,7 +300,7 @@ trait ClassDefProcessors
                     // All numbers are represented as doubles, so even if they're integral, their division can yield a
                     // double. E.g. 3 / 2 == 1.5. To ensure the same behavior as in Scala, division results have to be
                     // floored in case that the first operand is of integral type.
-                    methodCall(js.Identifier("Math"), "floor", expr)
+                    methodCall(js.Identifier("Math"), js.Identifier("floor"), expr)
                 }
                 case "&" | "|" | "^" if symbol.isBooleanValOperator => {
                     // The long-circuited logical operations aren't directly supported in JavaScript. But if they're
@@ -273,7 +312,7 @@ trait ClassDefProcessors
             }
         }
 
-        def processAnyMethodCall(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
+        def processAnyMethodCall(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
             val processedQualifier = processExpressionTree(qualifier)
             if (method.isEqualityOperator) {
                 val processedOperand2 = processExpressionTree(args.head)
@@ -282,7 +321,7 @@ trait ClassDefProcessors
                 method.nameString match {
                     case "==" | "equals" => equalityExpr
                     case "!=" => js.PrefixExpression("!", equalityExpr)
-                    case o => js.InfixExpression(processedQualifier, equalityOperatorMap(o), processedOperand2)
+                    case o => js.InfixExpression(processedQualifier, processOperator(o), processedOperand2)
                 }
             } else {
                 val methodName = method.nameString.replace("##", "hashCode")
@@ -290,7 +329,7 @@ trait ClassDefProcessors
             }
         }
 
-        def processFunctionMethodCall(method: Symbol, qualifier: Tree, args: Seq[Tree]): js.Expression = {
+        def processFunctionMethodCall(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
             val processedQualifier = processExpressionTree(qualifier)
             val processedArgs = args.map(processExpressionTree _)
             if (method.isApplyMethod) {
@@ -362,7 +401,7 @@ trait ClassDefProcessors
             }
         }
 
-        def processNew(n: New, args: Seq[Tree]): js.Expression = {
+        def processNew(n: New, args: List[Tree]): js.Expression = {
             js.NewExpression(js.CallExpression(typeJsIdentifier(n.tpe.underlying), processExpressionTrees(args)))
         }
 
@@ -444,7 +483,7 @@ trait ClassDefProcessors
             }
         }
 
-        def processCaseDef(caseDef: CaseDef, matchee: js.Expression): Seq[js.Statement] = {
+        def processCaseDef(caseDef: CaseDef, matchee: js.Expression): List[js.Statement] = {
             // The body is terminated with the return statement, so even if the body doesn't return anything, the
             // matching process is terminated.
             val processedBody = unScoped(processReturnTree(caseDef.body)) :+ js.ReturnStatement(None)
@@ -456,7 +495,7 @@ trait ClassDefProcessors
             processPattern(caseDef.pat, matchee, guardedBody)
         }
 
-        def processPattern(p: Tree, matchee: js.Expression, body: Seq[js.Statement]): Seq[js.Statement] = p match {
+        def processPattern(p: Tree, matchee: js.Expression, body: List[js.Statement]): List[js.Statement] = p match {
             case i: Ident => processIdentifierPattern(i, matchee, body)
             case t: Typed => processTypedPattern(t, matchee, body)
             case b: Bind => processBindPattern(b, matchee, body)
@@ -466,26 +505,41 @@ trait ClassDefProcessors
             }
         }
 
-        def processIdentifierPattern(identifier: Ident, matchee: js.Expression, body: Seq[js.Statement]) = {
+        def processIdentifierPattern(identifier: Ident, matchee: js.Expression, body: List[js.Statement]) = {
             if (identifier.name != nme.WILDCARD) {
                 error(s"Unexpected type of an identifier pattern ($identifier).")
             }
             body
         }
 
-        def processTypedPattern(typed: Typed, matchee: js.Expression, body: Seq[js.Statement]) = {
+        def processTypedPattern(typed: Typed, matchee: js.Expression, body: List[js.Statement]) = {
             val condition = swatMethodCall(localIdentifier("isInstanceOf"), matchee, typeJsIdentifier(typed.tpt.tpe))
             List(js.IfStatement(condition, body, Nil))
         }
 
-        def processBindPattern(bind: Bind, matchee: js.Expression, body: Seq[js.Statement]) = {
+        def processBindPattern(bind: Bind, matchee: js.Expression, body: List[js.Statement]) = {
             val binding = js.VariableStatement(localJsIdentifier(bind.name), Some(matchee))
             processPattern(bind.body, matchee, binding +: body)
+        }
+
+        def processOperator(operator: String): String = {
+            Map("equals" -> "==", "eq" -> "===", "ne" -> "!==").withDefault(o => o)(operator)
         }
     }
 
     private class ClassProcessor(c: ClassDef) extends ClassDefProcessor(c)
+
     private class TraitProcessor(c: ClassDef) extends ClassDefProcessor(c)
+
     private class ObjectProcessor(c: ClassDef) extends ClassDefProcessor(c)
-    private class PackageObjectProcessor(c: ClassDef) extends ClassDefProcessor(c)
+    {
+        override def processConstructor(constructorExpr: js.Expression): js.Statement = {
+            // The classDefSymbolIdentifier is used instead of the classDefTypeIdentifier, because object type name is
+            // the object name suffixed with the $ symbol. To distinguish the object type from the object itself, the
+            // classDefSymbolIdentifier is therefore used.
+            js.AssignmentStatement(classDefSymbolIdentifier, swatMethodCall("object", constructorExpr))
+        }
+    }
+
+    private class PackageObjectProcessor(c: ClassDef) extends ObjectProcessor(c)
 }

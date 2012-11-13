@@ -12,7 +12,7 @@ class JsCodeGenerator
         case _ => false
     }
 
-    private def astsAreEmpty(asts: Seq[Ast]): Boolean = asts.foldLeft(true)(_ && astIsEmpty(_))
+    private def astsAreEmpty(asts: List[Ast]): Boolean = asts.foldLeft(true)(_ && astIsEmpty(_))
 
     private def process(ast: Ast)(implicit indent: Indent): String = {
         if (astIsEmpty(ast)) {
@@ -28,7 +28,7 @@ class JsCodeGenerator
 
     private def process(ast: Option[Ast])(implicit indent: Indent): String = ast.map(process(_)).mkString
 
-    private def process(asts: Seq[Ast])(implicit indent: Indent): Seq[String] = {
+    private def process(asts: List[Ast])(implicit indent: Indent): List[String] = {
         val (liveAsts, deadAsts) = asts.span {
             case _: ReturnStatement | _: ThrowStatement => false
             case _ => true
@@ -104,7 +104,7 @@ class JsCodeGenerator
         }) + "\n"
     }
 
-    private def processBlock(stmts: Seq[Statement], enclosed: Boolean = true)(implicit indent: Indent): String = {
+    private def processBlock(stmts: List[Statement], enclosed: Boolean = true)(implicit indent: Indent): String = {
         if (stmts.isEmpty) {
             if (enclosed) "{ }" else ""
         } else {

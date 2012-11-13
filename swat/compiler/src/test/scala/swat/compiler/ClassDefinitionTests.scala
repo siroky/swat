@@ -68,24 +68,61 @@ class ClassDefinitionTests extends CompilerSuite
         """ shouldCompileTo Map(
             "A" -> """
                 swat.provide('A');
+                A.$init$ = (function() {
+                    var $self = this;
+                    $self.$super().$init$();
+                });
+                A = swat.constructor([A, java.lang.Object, scala.Any]);
             """,
+
             "$colon$colon$less$greater" -> """
                 swat.provide('$colon$colon$less$greater');
+                $colon$colon$less$greater.$init$ = (function() {
+                    var $self = this;
+                    $self.$super().$init$();
+                });
+                $colon$colon$less$greater = swat.constructor([$colon$colon$less$greater, java.lang.Object, scala.Any]);
             """,
+
             "foo.B" -> """
                 swat.provide('foo.B');
+                foo.B.$init$ = (function() {
+                    var $self = this;
+                    $self.$super().$init$();
+                });
+                foo.B = swat.constructor([foo.B, java.lang.Object, scala.Any]);
             """,
-            "foo.bar.$package$" -> """
-                swat.provide('foo.bar.$package$');
+
+            "foo.bar$" -> """
+                swat.provide('foo.bar$');
+                foo.bar$.$init$ = (function() {
+                    var $self = this;
+                    $self.$super().$init$();
+                });
+                foo.bar = swat.object(swat.constructor([foo.bar$, java.lang.Object, scala.Any]));
             """,
+
             "foo.bar.baz.C" -> """
                 swat.provide('foo.bar.baz.C');
+                foo.bar.baz.C.$init$ = (function() {
+                    var $self = this;
+                    $self.$super().$init$();
+                });
+                foo.bar.baz.C = swat.constructor([foo.bar.baz.C, java.lang.Object, scala.Any]);
             """,
+
             "foo.bar.baz.C$D" -> """
                 swat.provide('foo.bar.baz.C$D');
+                foo.bar.baz.C$D.$init$ = (function() {
+                    var $self = this;
+                    $self.$super().$init$();
+                });
+                foo.bar.baz.C$D = swat.constructor([foo.bar.baz.C$D, java.lang.Object, scala.Any]);
             """,
+
             "foo.bar.baz.C$E" -> """
                 swat.provide('foo.bar.baz.C$E');
+                foo.bar.baz.C$E = swat.constructor([foo.bar.baz.C$E, java.lang.Object, scala.Any]);
             """
         )
     }

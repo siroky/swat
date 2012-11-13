@@ -119,7 +119,7 @@ trait RichTrees
         }
     }
 
-    case class MatchBlock(init: Seq[Tree], cases: Seq[LabelDef])
+    case class MatchBlock(init: List[Tree], cases: List[LabelDef])
 
     implicit class RichLabelDef(l: LabelDef)
     {
@@ -148,5 +148,5 @@ trait RichTrees
         }
     }
 
-    case class Loop(expr: Tree, stats: Seq[Tree], isDoWhile: Boolean)
+    case class Loop(expr: Tree, stats: List[Tree], isDoWhile: Boolean)
 }

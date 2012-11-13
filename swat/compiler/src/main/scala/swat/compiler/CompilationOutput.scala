@@ -1,3 +1,3 @@
 package swat.compiler
 
-case class CompilationOutput(classOutputs: Map[String, js.Program], warnings: Seq[String], infos: Seq[String])
+case class CompilationOutput(classOutputs: Map[String, js.Program], warnings: List[String], infos: List[String])

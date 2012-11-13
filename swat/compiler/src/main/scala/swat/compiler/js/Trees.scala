@@ -4,7 +4,7 @@ trait Ast
 
 sealed abstract class Expression extends Ast
 
-case class CommaExpression(exprs: Seq[Expression]) extends Expression
+case class CommaExpression(exprs: List[Expression]) extends Expression
 {
     require(exprs.nonEmpty)
 }
@@ -17,15 +17,15 @@ case class BooleanLiteral(value: Boolean) extends Literal
 case class NumericLiteral[A <% Double](value: A) extends Literal
 case class StringLiteral(value: String) extends Literal
 case class RegExpLiteral(pattern: String, modifiers: String) extends Literal
-case class ArrayLiteral(items: Seq[Expression] = Nil) extends Literal
+case class ArrayLiteral(items: List[Expression] = Nil) extends Literal
 case class ObjectLiteral(items: Map[String, Expression] = Map.empty) extends Literal
 
 case class RawCodeExpression(code: String) extends Expression
 
 case class FunctionExpression(
     name: Option[Identifier],
-    parameters: Seq[Identifier],
-    body: Seq[Statement]
+    parameters: List[Identifier],
+    body: List[Statement]
 ) extends Expression
 
 case object ThisReference extends Expression
@@ -33,7 +33,7 @@ case object ThisReference extends Expression
 case class Identifier(name: String) extends Expression
 
 case class MemberExpression(expr: Expression, name: Identifier) extends Expression
-case class CallExpression(expr: Expression, parameters: Seq[Expression]) extends Expression
+case class CallExpression(expr: Expression, parameters: List[Expression]) extends Expression
 case class NewExpression(constructor: CallExpression) extends Expression
 
 case class PrefixExpression(operator: String, expr: Expression) extends Expression
@@ -41,7 +41,7 @@ case class InfixExpression(lhs: Expression, operator: String, rhs: Expression) e
 case class PostfixExpression(expr: Expression, operator: String) extends Expression
 case class ConditionalExpression(condition: Expression, thenExpr: Expression, elseExpr: Expression) extends Expression
 
-case class Program(elements: Seq[SourceElement] = Nil) extends Ast
+case class Program(elements: List[SourceElement] = Nil) extends Ast
 
 object Program
 {
@@ -52,7 +52,7 @@ sealed abstract class SourceElement extends Ast
 
 sealed abstract class Statement extends SourceElement
 
-case class Block(statements: Seq[Statement]) extends Statement
+case class Block(statements: List[Statement]) extends Statement
 {
     require(statements.nonEmpty)
 }
@@ -61,11 +61,11 @@ case class RawCodeBlock(code: String) extends Statement
 
 case class FunctionDeclaration(
     name: Identifier,
-    parameters: Seq[Identifier],
-    body: Seq[Statement]
+    parameters: List[Identifier],
+    body: List[Statement]
 ) extends Statement
 
-case class VariableStatement(variables: Seq[(Identifier, Option[Expression])]) extends Statement
+case class VariableStatement(variables: List[(Identifier, Option[Expression])]) extends Statement
 {
     require(variables.nonEmpty)
 }
@@ -84,13 +84,13 @@ case class AssignmentStatement(target: Expression, expr: Expression) extends Sta
 
 case class IfStatement(
     condition: Expression,
-    thenStmts: Seq[Statement],
-    elseStmts: Seq[Statement]
+    thenStmts: List[Statement],
+    elseStmts: List[Statement]
 ) extends Statement
 
 case class WhileStatement(
     condition: Expression,
-    body: Seq[Statement],
+    body: List[Statement],
     isDoWhile: Boolean = false
 ) extends Statement
 
@@ -98,13 +98,13 @@ case class ForStatement(
     initializer: Option[Expression],
     condition: Option[Expression],
     step: Option[Expression],
-    body: Seq[Statement]
+    body: List[Statement]
 ) extends Statement
 
 case class ForeachStatement(
     itemDeclaration: VariableStatement,
     container: Expression,
-    body: Seq[Statement]
+    body: List[Statement]
 ) extends Statement
 
 case object ContinueStatement extends Statement
@@ -113,22 +113,22 @@ case object BreakStatement extends Statement
 
 case class ReturnStatement(value: Option[Expression]) extends Statement
 
-case class WithStatement(environment: Expression, body: Seq[Statement]) extends Statement
+case class WithStatement(environment: Expression, body: List[Statement]) extends Statement
 
 case class SwitchStatement(
     expr: Expression,
-    cases: Seq[(Expression, Seq[Statement])],
-    default: Option[Seq[Statement]]
+    cases: List[(Expression, List[Statement])],
+    default: Option[List[Statement]]
 ) extends Statement
 
-case class LabelledStatement(name: Identifier, body: Seq[Statement]) extends Statement
+case class LabelledStatement(name: Identifier, body: List[Statement]) extends Statement
 
 case class ThrowStatement(expr: Expression) extends Statement
 
 case class TryStatement(
-    body: Seq[Statement],
-    catcher: Option[(Identifier, Seq[Statement])],
-    finalizer: Option[Seq[Statement]]
+    body: List[Statement],
+    catcher: Option[(Identifier, List[Statement])],
+    finalizer: Option[List[Statement]]
 ) extends Statement
 
 case object DebuggerStatement extends Statement

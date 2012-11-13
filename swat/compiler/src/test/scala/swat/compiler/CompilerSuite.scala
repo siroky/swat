@@ -86,8 +86,12 @@ trait CompilerSuite extends FunSuite
             override def compile(): CompilationOutput = {
                 val output = super.compile()
                 val functionBody = output.classOutputs.get(ident).flatMap {
-                    _.elements.collect {
-                        case AssignmentStatement(MemberExpression(_, Identifier("f")), f: FunctionExpression) => f.body
+                    _.elements.flatMap {
+                        case AssignmentStatement(MemberExpression(_, Identifier("f")), rhs) => rhs match {
+                            case CallExpression(_, List(_, f: FunctionExpression)) => Some(f.body.tail)
+                            case _ => None
+                        }
+                        case _ => None
                     }.headOption
                 }
 
