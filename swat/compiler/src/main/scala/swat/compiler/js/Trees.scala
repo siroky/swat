@@ -33,7 +33,7 @@ case object ThisReference extends Expression
 case class Identifier(name: String) extends Expression
 
 case class MemberExpression(expr: Expression, name: Identifier) extends Expression
-case class CallExpression(expr: Expression, parameters: List[Expression]) extends Expression
+case class CallExpression(expr: Expression, arguments: List[Expression]) extends Expression
 case class NewExpression(constructor: CallExpression) extends Expression
 
 case class PrefixExpression(operator: String, expr: Expression) extends Expression

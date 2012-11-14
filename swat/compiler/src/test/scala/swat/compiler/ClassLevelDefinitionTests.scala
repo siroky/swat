@@ -24,7 +24,15 @@ class ClassLevelDefinitionTests extends CompilerSuite
         """ shouldCompileTo Map(
             "T" -> """
                 swat.provide('T');
-                T.$init$ = (function() { var $self = this; });
+                T.$init$ = (function() {
+                    var $self = this;
+                    $super.$init$.call($self);
+                    $self.$fields.x = 'abc';
+                    $self.$fields.y = 123;
+                    $self.$fields.z = swat.memoize((function() {
+                        return (java.lang.String.length($self.x()) + $self.y());
+                    }));
+                });
                 T.x = swat.method([], (function() { return this.$fields.x; }));
                 T.y = swat.method([], (function() { return this.$fields.y; }));
                 T.y_$eq = swat.method([scala.Int], (function(x$1) { this.$fields.y = x$1; }));
@@ -35,7 +43,12 @@ class ClassLevelDefinitionTests extends CompilerSuite
                 swat.provide('C');
                 C.$init$ = (function() {
                     var $self = this;
-                    $self.$super().$init$();
+                    $super.$init$.call($self);
+                    $self.$fields.x = 'abc';
+                    $self.$fields.y = 123;
+                    $self.$fields.z = swat.memoize((function() {
+                        return (java.lang.String.length($self.x()) + $self.y());
+                    }));
                 });
                 C.x = swat.method([], (function() { return this.$fields.x; }));
                 C.y = swat.method([], (function() { return this.$fields.y; }));
@@ -47,13 +60,19 @@ class ClassLevelDefinitionTests extends CompilerSuite
                 swat.provide('O$');
                 O$.$init$ = (function() {
                     var $self = this;
-                    $self.$super().$init$();
+                    $super.$init$.call($self);
+                    $self.$fields.x = 'abc';
+                    $self.$fields.y = 123;
+                    $self.$fields.z =
+                    swat.memoize((function() {
+                        return (java.lang.String.length($self.x()) + $self.y());
+                    }));
                 });
                 O$.x = swat.method([], (function() { return this.$fields.x; }));
                 O$.y = swat.method([], (function() { return this.$fields.y; }));
                 O$.y_$eq = swat.method([scala.Int], (function(x$1) { this.$fields.y = x$1; }));
                 O$.z = swat.method([], (function() { return this.$fields.z(); }));
-                O = swat.object(swat.constructor([O$, java.lang.Object, scala.Any]));
+                O = swat.object([O$, java.lang.Object, scala.Any]);
             """
         )
     }

@@ -149,4 +149,11 @@ trait RichTrees
     }
 
     case class Loop(expr: Tree, stats: List[Tree], isDoWhile: Boolean)
+
+    implicit class RichClassDef(classDef: ClassDef)
+    {
+        def valDefs = classDef.impl.body.collect { case v: ValDef => v }
+
+        def defDefs = classDef.impl.body.collect { case d: DefDef => d }
+    }
 }

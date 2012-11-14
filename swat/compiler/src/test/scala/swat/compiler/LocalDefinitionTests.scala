@@ -70,17 +70,17 @@ class LocalDefinitionTests extends CompilerSuite
             g2()
             h(1, 2)
         """ fragmentShouldCompileTo """
-            function f1() { };
-            function f2() { };
-            function g1() {
+            var f1 = (function() { });
+            var f2 = (function() { });
+            var g1 = (function() {
                 return 123;
-            };
-            function g2() {
+            });
+            var g2 = (function() {
                 return 123;
-            };
-            function h(x, y) {
+            });
+            var h = (function(x, y) {
                 return (x + y);
-            };
+            });
 
             f1();
             f2();
