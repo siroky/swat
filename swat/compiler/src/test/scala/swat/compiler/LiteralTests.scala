@@ -124,36 +124,33 @@ class LiteralTests extends CompilerSuite
         """ fragmentShouldCompileTo """
             (function() {
                 return new scala.xml.Elem(null, 'foo', scala.xml.Null, scala.Predef.$scope(), false, (function() {
-                    var $buf = new scala.xml.NodeBuffer();
-                    $buf.$amp$plus(new scala.xml.Text('\n                '));
+                    var $buf = new scala.xml.NodeBuffer(); $buf.$amp$plus(new scala.xml.Text('\n                '), [scala.Any]);
                     $buf.$amp$plus((function() {
-                        return new scala.xml.Elem(null, 'foo', scala.xml.Null, scala.Predef.$scope(), true,
-                            scala.Predef.wrapRefArray(scala.Array.apply()));
-                    })());
-                    $buf.$amp$plus(new scala.xml.Text('\n                '));
+                        return new scala.xml.Elem(null, 'foo', scala.xml.Null, scala.Predef.$scope(), true, scala.Predef.wrapRefArray([], scala.xml.Node, [scala.Array]));
+                    })(), [scala.Any]);
+                    $buf.$amp$plus(new scala.xml.Text('\n                '), [scala.Any]);
                     $buf.$amp$plus((function() {
                         var $md = scala.xml.Null;
                         $md = new scala.xml.UnprefixedAttribute('attr', new scala.xml.Text('bar'), $md);
-                        return new scala.xml.Elem(null, 'foo', $md, scala.Predef.$scope(), true,
-                            scala.Predef.wrapRefArray(scala.Array.apply()));
-                    })());
-                    $buf.$amp$plus(new scala.xml.Text('\n                '));
+                        return new scala.xml.Elem(null, 'foo', $md, scala.Predef.$scope(), true, scala.Predef.wrapRefArray([], scala.xml.Node, [scala.Array]));
+                    })(), [scala.Any]);
+                    $buf.$amp$plus(new scala.xml.Text('\n                '), [scala.Any]);
                     $buf.$amp$plus((function() {
                         return new scala.xml.Elem(null, 'bar', scala.xml.Null, scala.Predef.$scope(), false, (function() {
                             var $buf = new scala.xml.NodeBuffer();
-                            $buf.$amp$plus(new scala.xml.Text('baz'));
+                            $buf.$amp$plus(new scala.xml.Text('baz'), [scala.Any]);
                             return $buf;
                         })());
-                    })());
-                    $buf.$amp$plus(new scala.xml.Text('\n                '));
+                    })(), [scala.Any]);
+                    $buf.$amp$plus(new scala.xml.Text('\n                '), [scala.Any]);
                     $buf.$amp$plus((function() {
                         return new scala.xml.Elem(null, 'bar', scala.xml.Null, scala.Predef.$scope(), false, (function() {
                             var $buf = new scala.xml.NodeBuffer();
-                            $buf.$amp$plus(new scala.xml.Text('baz'));
+                            $buf.$amp$plus(new scala.xml.Text('baz'), [scala.Any]);
                             return $buf;
                         })());
-                    })());
-                    $buf.$amp$plus(new scala.xml.Text('\n            '));
+                    })(), [scala.Any]);
+                    $buf.$amp$plus(new scala.xml.Text('\n            '), [scala.Any]);
                     return $buf;
                 })());
             })();
@@ -162,24 +159,22 @@ class LiteralTests extends CompilerSuite
             (function() {
                 new scala.xml.Elem(null, 'foo', scala.xml.Null, scala.Predef.$scope(), false, (function() {
                     var $buf = new scala.xml.NodeBuffer();
-                    $buf.$amp$plus(new scala.xml.Text('\n                '));
-                    $buf.$amp$plus(a);
-                    $buf.$amp$plus(new scala.xml.Text('\n                '));
+                    $buf.$amp$plus(new scala.xml.Text('\n                '), [scala.Any]);
+                    $buf.$amp$plus(a, [scala.Any]); $buf.$amp$plus(new scala.xml.Text('\n                '), [scala.Any]);
                     $buf.$amp$plus((function() {
                         var $md = scala.xml.Null;
                         $md = new scala.xml.UnprefixedAttribute('attr', a, $md);
-                        return new scala.xml.Elem(null, 'foo', $md, scala.Predef.$scope(), true,
-                            scala.Predef.wrapRefArray(scala.Array.apply()));
-                    })());
-                    $buf.$amp$plus(new scala.xml.Text('\n                '));
-                    $buf.$amp$plus(scala.collection.immutable.List.apply(scala.Predef.wrapRefArray(scala.Array.apply('x', 'y', 'z'))).map((function(v) {
-                            return new scala.xml.Elem(null, 'bar', scala.xml.Null, scala.Predef.$scope(), false, (function() {
-                                var $buf = new scala.xml.NodeBuffer();
-                                $buf.$amp$plus(v);
-                                return $buf;
-                            })());
-                        }), scala.collection.immutable.List.canBuildFrom()));
-                    $buf.$amp$plus(new scala.xml.Text('\n            '));
+                        return new scala.xml.Elem(null, 'foo', $md, scala.Predef.$scope(), true, scala.Predef.wrapRefArray([], scala.xml.Node, [scala.Array]));
+                    })(), [scala.Any]);
+                    $buf.$amp$plus(new scala.xml.Text('\n                '), [scala.Any]);
+                    $buf.$amp$plus(scala.collection.immutable.List.apply(scala.Predef.wrapRefArray(['x', 'y', 'z'], java.lang.String, [scala.Array]), java.lang.String, [scala.collection.Seq]).map((function(v) {
+                        return new scala.xml.Elem(null, 'bar', scala.xml.Null, scala.Predef.$scope(), false, (function() {
+                            var $buf = new scala.xml.NodeBuffer();
+                            $buf.$amp$plus(v, [scala.Any]);
+                            return $buf;
+                        })());
+                    }), scala.collection.immutable.List.canBuildFrom(scala.xml.Elem), scala.xml.Elem, scala.Any, [scala.Function1, scala.collection.generic.CanBuildFrom]), [scala.Any]);
+                    $buf.$amp$plus(new scala.xml.Text('\n            '), [scala.Any]);
                     return $buf;
                 })());
             })();

@@ -25,6 +25,7 @@ trait RichTrees
         def isChar = t.underlying =:= typeOf[Char]
         def isBoolean = t.underlying =:= typeOf[Boolean]
         def isFunction = isFunctionType(t.underlying)
+        def isArray = t.underlying <:< typeOf[Array[_]]
 
         def companionSymbol = s.companionSymbol
     }
@@ -32,7 +33,6 @@ trait RichTrees
     implicit class RichSymbol(s: Symbol)
     {
         def classSymbolKind = {
-            require(s.isClass)
             if (s.isPackageObjectClass) PackageObjectSymbol else
             if (s.isModuleClass) ObjectSymbol else
             if (s.isTrait) TraitSymbol else ClassSymbol

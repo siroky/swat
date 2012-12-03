@@ -247,8 +247,9 @@ trait ClassDefProcessors
             typeJsIdentifier(tpe)
         }
 
-        def processArrayValue(arrayValue: ArrayValue): js.Expression =
-            objectMethodCall(typeOf[Array[_]].companionSymbol, "apply", arrayValue.elems.map(processExpressionTree _))
+        def processArray(values: List[Tree]): js.Expression = js.ArrayLiteral(processExpressionTrees(values))
+
+        def processArrayValue(arrayValue: ArrayValue): js.Expression = processArray(arrayValue.elems)
 
         def processAnonymousFunction(functionClassDef: ClassDef): js.Expression = {
             val applyDefDef = functionClassDef.defDefs.filter(_.symbol.isApplyMethod).head
@@ -280,28 +281,47 @@ trait ClassDefProcessors
         }
 
         def processApply(apply: Apply): js.Expression = apply.fun match {
-            // Methods on types that compile to JavaScript primitive types.
-            case s @ Select(q, _) if q.tpe.isAnyValOrString => processAnyValOrStringMethodCall(s.symbol, q, apply.args)
+            // Generic method call.
+            case TypeApply(f, typeArgs) => processCall(f, apply.args ++ typeArgs)
+
+            // Constructor call.
+            case Select(n: New, _) => processNew(n, apply.args)
+
+            // Method call.
+            case f => processCall(f, apply.args)
+        }
+
+        def processCall(method: Tree, args: List[Tree]): js.Expression = method match {
+            // A local def call doesn't need the type hint like a method, because it can't be overloaded nor overriden.
+            case f if f.symbol.isLocal => js.CallExpression(processExpressionTree(f), processExpressionTrees(args))
+
+            // Methods on types that compile to JavaScript built-in types (primitive, function, array).
+            case s @ Select(q, _) if q.tpe.isAnyValOrString => processAnyValOrStringMethodCall(s.symbol, q, args)
+            case s @ Select(q, _) if q.tpe.isFunction => processFunctionMethodCall(s.symbol, q, args)
+            case s @ Select(q, _) if q.tpe.isArray => dispatchCallToCompanion(s.symbol, q, args)
 
             // Standard methods of the Any class.
-            case s @ Select(q, _) if s.symbol.isAnyMethodOrOperator => processAnyMethodCall(s.symbol, q, apply.args)
-            case TypeApply(s @ Select(q, _), typeArgs) if s.symbol.isAnyMethodOrOperator => {
-                processAnyMethodCall(s.symbol, q, apply.args ++ typeArgs)
-            }
-            case s @ Select(q, _) if q.tpe.isFunction => processFunctionMethodCall(s.symbol, q, apply.args)
+            case s @ Select(q, _) if s.symbol.isAnyMethodOrOperator => processAnyMethodCall(s.symbol, q, args)
 
             // Methods of the current class super classes.
-            case Select(Super(t: This, _), m) if t.symbol.tpe =:= classDef.symbol.tpe => {
-                superCall(localJsIdentifier(m), processExpressionTrees(apply.args))
+            case s @ Select(Super(t: This, _), m) if t.symbol.tpe =:= classDef.symbol.tpe => {
+                superCall(localJsIdentifier(m), processMethodArgs(s.symbol, s.qualifier, args))
             }
 
-            // TODO
-            case Select(n: New, selectName) if selectName.toString == "<init>" => processNew(n, apply.args)
-            case f => js.CallExpression(processExpressionTree(f), processExpressionTrees(apply.args))
+            // Method call.
+            case s @ Select(q, _) => js.CallExpression(processExpressionTree(s), processMethodArgs(s.symbol, q, args))
+        }
+
+        def processMethodArgs(method: Symbol, qualifier: Tree, args: List[Tree]): List[js.Expression] =  {
+            val methodType = method.asInstanceOf[MethodSymbol].typeAsMemberOf(qualifier.symbol.tpe)
+            val paramTypes = methodType.paramTypes.map(typeJsIdentifier _)
+            val typeHint = if (paramTypes.isEmpty) None else Some(js.ArrayLiteral(paramTypes))
+            processExpressionTrees(args) ++ typeHint.toList
         }
 
         def dispatchCallToCompanion(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
-            objectMethodCall(qualifier.tpe.companionSymbol, method, processExpressionTrees(qualifier +: args))
+            val processedArgs = processExpressionTree(qualifier) +: processMethodArgs(method, qualifier, args)
+            objectMethodCall(qualifier.tpe.companionSymbol, method, processedArgs)
         }
 
         def processAnyValOrStringMethodCall(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
@@ -377,15 +397,14 @@ trait ClassDefProcessors
                 }
             } else {
                 val methodName = method.nameString.replace("##", "hashCode")
-                swatMethodCall(localIdentifier(methodName), processExpressionTrees(qualifier +: args): _*)
+                val processedArgs = processExpressionTree(qualifier) +: processMethodArgs(method, qualifier, args)
+                swatMethodCall(localIdentifier(methodName), processedArgs: _*)
             }
         }
 
         def processFunctionMethodCall(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
-            val processedQualifier = processExpressionTree(qualifier)
-            val processedArgs = args.map(processExpressionTree _)
             if (method.isApplyMethod) {
-                js.CallExpression(processedQualifier, processedArgs)
+                js.CallExpression(processExpressionTree(qualifier), processExpressionTrees(args))
             } else {
                 dispatchCallToCompanion(method, qualifier, args)
             }
