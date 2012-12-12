@@ -61,7 +61,7 @@ trait ClassDefProcessors
         }
 
         def processMethodGroup(methods: List[DefDef]): js.Statement = {
-            val methodExpression = processDefDefGroup(methods, processDefDef(_: DefDef, includeSelf = true))
+            val methodExpression = processDefDefGroup(methods, processDefDef(_: DefDef))
             val qualifier = memberChain(classDefTypeIdentifier, localJsIdentifier(methods.head.name))
             js.AssignmentStatement(qualifier, methodExpression)
         }
@@ -77,42 +77,64 @@ trait ClassDefProcessors
         }
 
         def processConstructor(c: DefDef): js.Expression = {
-            val processedConstructor = processDefDef(c, includeSelf = true)
             if (c.symbol.isPrimaryConstructor) {
-                val body = processedConstructor.body match {
-                    // If the constructor body is "empty",  then a parent constructor call has to be added. Otherwise
-                    // it surely contains it.
-                    case b @ List(s, u @ js.ExpressionStatement(js.UndefinedLiteral)) if s == selfDeclaration => {
-                        s +: List(js.ExpressionStatement(superCall(constructorIdent, Nil))) :+ u
-                    }
-                    case b => b
-                }
-                val newBody = body.take(2) ++ fieldInitialization ++ body.drop(2)
-                js.FunctionExpression (None, processedConstructor.parameters, newBody)
+                processPrimaryConstructor(c)
             } else {
-                processedConstructor
+                processDefDef(c)
             }
         }
 
-        def processDefDef(defDef: DefDef, includeSelf: Boolean): js.FunctionExpression = {
+        def processPrimaryConstructor(c: DefDef): js.Expression = {
+            val processedConstructor = processDefDef(c)
+
+            // The self decalaration, super constructor call.
+            val bodyStart = processedConstructor.body match {
+                case List(s, js.ExpressionStatement(js.UndefinedLiteral)) => {
+                    // The body doesn't contain a call to super constructor, so it has to be added.
+                    List(s, js.ExpressionStatement(superCall(constructorIdent, Nil)))
+                }
+                case b => b
+            }
+
+            // Initialization of vals, vars and constructor parameters.
+            val fields = classDef.valDefs.filter(!_.symbol.isLazy)
+            val parameterIdentifiers = c.vparamss.flatten.map(p => localJsIdentifier(p.symbol.name))
+            val fieldInitialization = fields.map { f =>
+                val parameter = localJsIdentifier(f.symbol.name)
+                val value = processExpressionTree(f.rhs)
+                fieldSet(f.symbol, if (parameterIdentifiers.contains(parameter)) parameter else value)
+            }
+
+            // Initialization of lazy vals.
+            val lazyFieldInitialization = classDef.defDefs.filter(_.symbol.isLazy).map { defDef: DefDef =>
+                val value = defDef.rhs match {
+                    // Classes and objects have the following structure of lazy val getter.
+                    case Block(List(Assign(_, rhs), _*), _) => rhs
+                    case _ => defDef.rhs
+                }
+                fieldSet(defDef.symbol, value)
+            }
+
+            // Rest of the constructor body.
+            val bodyStatements = processStatementTrees(classDef.impl.body.filter(!_.isDef))
+            val body = bodyStart ++ fieldInitialization ++ lazyFieldInitialization ++ bodyStatements
+            js.FunctionExpression (None, processedConstructor.parameters, body)
+        }
+
+        def processDefDef(defDef: DefDef, includeSelf: Boolean = true): js.FunctionExpression = {
             val parameters = defDef.vparamss.flatten.map(p => localJsIdentifier(p.name))
-            val body =
-                if (defDef.hasSymbolWhich (s => s.isAccessor)) {
-                    List(processAccessorBody(defDef, parameters))
+            val self = if (includeSelf) List(selfDeclaration) else Nil
+            val processedBody =
+                if (defDef.symbol.isGetter && defDef.symbol.isLazy) {
+                    // Body of a lazy val (which is assigned to the corresponding field in the primary constructor)
+                    // can be replaced by simple return of the field, where the lazy val is stored.
+                    js.ReturnStatement(Some(fieldGet(defDef.symbol)))
+                } else if (defDef.rhs.tpe.isUnit) {
+                    processStatementTree(defDef.rhs)
                 } else {
-                    (if (includeSelf) List(selfDeclaration) else Nil) ++ unScoped(processReturnTree(defDef.rhs))
+                    processReturnTree(defDef.rhs)
                 }
-
-            js.FunctionExpression(None, parameters, body)
-        }
-
-        def processAccessorBody(accessor: DefDef, processedParameters: List[js.Identifier]): js.Statement = {
-            val field = symbolToField(js.ThisReference, accessor.symbol.accessed)
-            if (accessor.symbol.isGetter) {
-                js.ReturnStatement(Some(if (accessor.symbol.isLazy) js.CallExpression(field, Nil) else field))
-            } else {
-                js.AssignmentStatement(field, processedParameters.head)
-            }
+            js.FunctionExpression(None, parameters, self ++ unScoped(processedBody))
         }
 
         def processJsConstructor(superClasses: js.ArrayLiteral): js.Statement = {
@@ -121,20 +143,6 @@ trait ClassDefProcessors
 
         def symbolToField(qualifier: js.Expression, symbol: Symbol): js.Expression = {
             memberChain(qualifier, fieldsIdent, localJsIdentifier(symbol.name))
-        }
-
-        def fieldInitialization: List[js.Statement] = {
-            val fields = classDef.valDefs.filter(!_.symbol.isLazy).map(v => (v.symbol, processExpressionTree(v.rhs)))
-            val lazyFields = classDef.defDefs.filter(_.symbol.isLazy).map { defDef: DefDef =>
-                val value = defDef.rhs match {
-                    // Classes and object have the following structure of lazy val getter.
-                    case Block(List(Assign(_, rhs), _*), _) => rhs
-                    // Trait lazy val getters just contain the expression.
-                    case _ => defDef.rhs
-                }
-                (defDef.symbol, memoize(value))
-            }
-            (fields ++ lazyFields).map(v => js.AssignmentStatement(symbolToField(selfIdent, v._1), v._2))
         }
 
         def processTree(tree: Tree): js.Ast = tree match {
@@ -277,7 +285,11 @@ trait ClassDefProcessors
         }
 
         def processSelect(select: Select): js.Expression = {
-            js.MemberExpression(processExpressionTree(select.qualifier), localJsIdentifier(select.name.toString))
+            if (select.symbol.isField) {
+                fieldGet(select.symbol)
+            } else {
+                js.MemberExpression(processExpressionTree(select.qualifier), localJsIdentifier(select.name.toString))
+            }
         }
 
         def processApply(apply: Apply): js.Expression = apply.fun match {
@@ -600,6 +612,31 @@ trait ClassDefProcessors
         def superCall(methodName: js.Identifier, arguments: List[js.Expression]): js.Expression = {
             val call = memberChain(superIdent, methodName, js.Identifier("call"))
             js.CallExpression(call, selfIdent +: arguments)
+        }
+
+        def fieldGet(field: Symbol): js.Expression = {
+            if (field.isParametricField) {
+                val name = js.StringLiteral(localIdentifier(field.name))
+                swatMethodCall("getParameter", selfIdent, name, classDefTypeIdentifier)
+            } else {
+                // Val, var or lazy val.
+                val value = symbolToField(selfIdent, field)
+                if (field.isLazy) js.CallExpression(value, Nil) else value
+            }
+        }
+
+        def fieldSet(field: Symbol, value: Tree): js.Statement = {
+            fieldSet(field, if (field.isLazy) memoize(value) else processExpressionTree(value))
+        }
+
+        def fieldSet(field: Symbol, value: js.Expression): js.Statement = {
+            if (field.isParametricField) {
+                val name = js.StringLiteral(localIdentifier(field.name))
+                js.ExpressionStatement(swatMethodCall("setParameter", selfIdent, name, value, classDefTypeIdentifier))
+            } else {
+                // Val, var or lazy val.
+                js.AssignmentStatement(symbolToField(selfIdent, field), value)
+            }
         }
     }
 

@@ -3,7 +3,7 @@ package swat.compiler
 import frontend.ScalaAstProcessor
 import scala.tools.nsc.Global
 import tools.nsc.plugins.{PluginComponent, Plugin}
-import reflect.internal.Phase
+import scala.reflect.internal.{FatalError, Phase}
 
 class SwatCompilerPlugin(val global: Global)
     extends Plugin
@@ -40,7 +40,22 @@ class SwatCompilerPlugin(val global: Global)
 
         def newPhase(prev: Phase) = new StdPhase(prev) {
             def apply(unit: CompilationUnit) {
-                classOutputs = processCompilationUnit(unit)
+                // The compiler plugin shouldn't throw any exceptions. The errors should be reported using the
+                // Global.error function. If an exception is thrown out of the plugin, the compiler pollutes the output
+                // with long dump of the compilation unit AST, even though the exception may have been caused by a bug
+                // in the compiler plugin. To avoid that, all exceptions are consumed here and reported as an internal
+                // error of the SWAT compiler.
+                try {
+                    classOutputs = processCompilationUnit(unit)
+                } catch {
+                    case f: FatalError => swatCompilerError(f.msg.lines.toBuffer.last, f.getStackTrace)
+                    case t: Throwable => swatCompilerError(t.toString, t.getStackTrace)
+                }
+            }
+
+            def swatCompilerError(msg: String, stackTrace: Seq[StackTraceElement]) {
+                println(s"[swat compiler error]: $msg")
+                println(stackTrace.mkString("\n"))
             }
         }
     }

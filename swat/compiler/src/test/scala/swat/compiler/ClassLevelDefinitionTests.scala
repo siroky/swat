@@ -2,6 +2,90 @@ package swat.compiler
 
 class ClassLevelDefinitionTests extends CompilerSuite
 {
+    test("Constructors") {
+        """
+            class A {
+                println("Foo")
+            }
+
+            class B(val foo: String, val bar: Int) {
+                val baz: Boolean = true
+            }
+
+            class C(foo: String, bar: Int) {
+                def baz = foo
+            }
+
+            class D(val foo: Int) {
+                def this() = {
+                    this(0)
+                    println("Foo")
+                }
+                def this(foo: String) = this(foo.length)
+                def this(foo: Boolean) = this(if (foo) "true" else "false")
+            }
+        """ shouldCompileTo Map(
+            "A" -> """
+                swat.provide('A');
+                A.$init$ = (function() {
+                    var $self = this;
+                    $super.$init$.call($self);
+                    scala.Predef.println('Foo', [scala.Any]);
+                });
+                A = swat.constructor([A, java.lang.Object, scala.Any]);
+                   """,
+            "B" -> """
+                swat.provide('B');
+                B.$init$ = (function(foo, bar) {
+                    var $self = this;
+                    $super.$init$.call($self);
+                    $self.$fields.foo = foo;
+                    $self.$fields.bar = bar;
+                    $self.$fields.baz = true;
+                });
+                B.bar = swat.method([], (function() { var $self = this; return $self.$fields.bar; }));
+                B.baz = swat.method([], (function() { var $self = this; return $self.$fields.baz; }));
+                B.foo = swat.method([], (function() { var $self = this; return $self.$fields.foo; }));
+                B = swat.constructor([B, java.lang.Object, scala.Any]);
+                   """,
+            "C" -> """
+                swat.provide('C');
+                C.$init$ = (function(foo, bar) {
+                    var $self = this;
+                    $super.$init$.call($self);
+                    swat.setParameter($self, 'foo', foo, C);
+                    swat.setParameter($self, 'bar', bar, C);
+                });
+                C.baz = swat.method([], (function() { var $self = this; return swat.getParameter($self, 'foo', C); }));
+                C = swat.constructor([C, java.lang.Object, scala.Any]);
+                   """,
+            "D" -> """
+                swat.provide('D');
+                D.$init$ = swat.method([scala.Int],
+                    (function(foo) {
+                        var $self = this;
+                        $super.$init$.call($self);
+                        $self.$fields.foo = foo;
+                    }),
+                    [], (function() {
+                        var $self = this;
+                        $self.$init$(0, [scala.Int]);
+                        scala.Predef.println('Foo', [scala.Any]);
+                    }),
+                    [java.lang.String], (function(foo) {
+                        var $self = this;
+                        $self.$init$(java.lang.String.length(foo), [scala.Int]);
+                    }),
+                    [scala.Boolean], (function(foo) {
+                        var $self = this;
+                        $self.$init$((function() { if (foo) { return 'true'; } else { return 'false'; } })(), [java.lang.String]);
+                    }));
+                D.foo = swat.method([], (function() { var $self = this; return $self.$fields.foo; }));
+                D = swat.constructor([D, java.lang.Object, scala.Any]);
+                   """
+        )
+    }
+
     test("Vals, vars and lazy vals") {
         """
             trait T {
@@ -52,12 +136,12 @@ class ClassLevelDefinitionTests extends CompilerSuite
                         return (java.lang.String.length($self.x()) + $self.y());
                     }));
                 });
-                T.x = swat.method([], (function() { return this.$fields.x; }));
-                T.y = swat.method([], (function() { return this.$fields.y; }));
-                T.y_$eq = swat.method([scala.Int], (function(x$1) { this.$fields.y = x$1; }));
-                T.z = swat.method([], (function() { return this.$fields.z(); }));
+                T.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
+                T.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));
+                T.y_$eq = swat.method([scala.Int], (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
+                T.z = swat.method([], (function() { var $self = this; return $self.$fields.z(); }));
                 T = swat.constructor([T, java.lang.Object, scala.Any]);
-            """,
+                   """,
             "C" -> """
                 swat.provide('C');
                 C.$init$ = (function() {
@@ -69,12 +153,12 @@ class ClassLevelDefinitionTests extends CompilerSuite
                         return (java.lang.String.length($self.x()) + $self.y());
                     }));
                 });
-                C.x = swat.method([], (function() { return this.$fields.x; }));
-                C.y = swat.method([], (function() { return this.$fields.y; }));
-                C.y_$eq = swat.method([scala.Int], (function(x$1) { this.$fields.y = x$1; }));
-                C.z = swat.method([], (function() { return this.$fields.z(); }));
+                C.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
+                C.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));
+                C.y_$eq = swat.method([scala.Int], (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
+                C.z = swat.method([], (function() { var $self = this; return $self.$fields.z(); }));
                 C = swat.constructor([C, java.lang.Object, scala.Any]);
-            """,
+                   """,
             "O$" -> """
                 swat.provide('O$');
                 O$.$init$ = (function() {
@@ -107,12 +191,12 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     O.y_$eq(456, [scala.Int]);
                     O.z();
                 }));
-                O$.x = swat.method([], (function() { return this.$fields.x; }));
-                O$.y = swat.method([], (function() { return this.$fields.y; }));
-                O$.y_$eq = swat.method([scala.Int], (function(x$1) { this.$fields.y = x$1; }));
-                O$.z = swat.method([], (function() { return this.$fields.z(); }));
+                O$.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
+                O$.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));
+                O$.y_$eq = swat.method([scala.Int], (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
+                O$.z = swat.method([], (function() { var $self = this; return $self.$fields.z(); }));
                 O = swat.object([O$, java.lang.Object, scala.Any]);
-            """
+                    """
         )
     }
 
@@ -189,7 +273,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     })();
                     $self.d(1, 2, [scala.Int, scala.Int]); }));
 
-                    C.x = swat.method([], (function() { return this.$fields.x; }));
+                    C.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
                     C = swat.constructor([C, java.lang.Object, scala.Any]);
             """
         )

@@ -4,14 +4,6 @@
     <option name="PER_PROJECT_SETTINGS">
       <value>
         <option name="LINE_SEPARATOR" value="&#10;" />
-        <ScalaCodeStyleSettings>
-          <option name="PLACE_CLOSURE_PARAMETERS_ON_NEW_LINE" value="false" />
-          <option name="NOT_CONTINUATION_INDENT_FOR_PARAMS" value="true" />
-          <option name="MULTILINE_STRING_SUPORT" value="0" />
-          <option name="MULTI_LINE_QUOTES_ON_NEW_LINE" value="false" />
-          <option name="MULTI_LINE_STRING_MARGIN_INDENT" value="4" />
-          <option name="PROCESS_MARGIN_ON_COPY_PASTE" value="false" />
-        </ScalaCodeStyleSettings>
         <XML>
           <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
         </XML>

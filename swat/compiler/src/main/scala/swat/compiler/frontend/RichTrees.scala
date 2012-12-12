@@ -38,6 +38,10 @@ trait RichTrees
             if (s.isTrait) TraitSymbol else ClassSymbol
         }
 
+        def isField = Set("field", "value", "lazy value")(s.accurateKindString)
+
+        def isParametricField = isField && !s.hasGetter && !s.isLazy && !s.isStatic
+
         def isCompiled = !(isIgnored || isAdapter)
 
         def isIgnored = hasAnnotation(typeOf[api.ignored])

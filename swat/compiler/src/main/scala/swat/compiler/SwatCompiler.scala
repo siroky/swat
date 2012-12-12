@@ -34,13 +34,7 @@ class SwatCompiler(
         val reporter = new SilentReporter
         val compiler = new SwatGlobal(settings, reporter)
         val run = new compiler.Run()
-        try {
-            run.compile(List(sourceFile.path))
-        } catch {
-            case t: Throwable => {
-                println(t.getStackTrace.map(_.toString).mkString("\n"))
-            }
-        }
+        run.compile(List(sourceFile.path))
 
         if (reporter.errors.nonEmpty) {
             throw new CompilationException(reporter.errors.head)
