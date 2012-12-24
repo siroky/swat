@@ -43,7 +43,7 @@ ScalaObject = {
         return 42;
     }
 }
-ScalaObject = swat.constructor([ScalaObject]);
+ScalaObject = swat.type([ScalaObject]);
 
 var x = new ScalaObject();
 alert(x.hashCode());

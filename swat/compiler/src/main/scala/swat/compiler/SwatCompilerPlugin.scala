@@ -19,7 +19,7 @@ class SwatCompilerPlugin(val global: Global)
 
     private var options = CompilerOptions.default
 
-    private var classOutputs = Map.empty[String, js.Program]
+    private var classOutputs: Option[Map[String, js.Program]] = None
 
     override val optionsHelp = Some(CompilerOptions.help(name))
 
@@ -46,7 +46,9 @@ class SwatCompilerPlugin(val global: Global)
                 // in the compiler plugin. To avoid that, all exceptions are consumed here and reported as an internal
                 // error of the SWAT compiler.
                 try {
-                    classOutputs = processCompilationUnit(unit)
+                    val transformer = new explicitOuter.ExplicitOuterTransformer(unit)
+                    transformer.transformUnit(unit)
+                    classOutputs = Some(processCompilationUnit(unit))
                 } catch {
                     case f: FatalError => swatCompilerError(f.msg.lines.toBuffer.last, f.getStackTrace)
                     case t: Throwable => swatCompilerError(t.toString, t.getStackTrace)

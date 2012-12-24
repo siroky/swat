@@ -230,11 +230,11 @@ class ControlStructureTests extends CompilerSuite
             val x = throw new Exception("foo")
         """ fragmentShouldCompileTo """
             (function() {
-                throw new java.lang.Exception('foo');
+                throw new java.lang.Exception('foo', [java.lang.String]);
             })();
 
             var x = (function() {
-                throw new java.lang.Exception('foo');
+                throw new java.lang.Exception('foo', [java.lang.String]);
             })();
         """
     }

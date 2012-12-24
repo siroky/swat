@@ -3,6 +3,7 @@
   <component name="ScalaProjectSettings">
     <option name="addFullQualifiedImports" value="true" />
     <option name="collectionTypeHighlightingLevel" value="2" />
+    <option name="enableJavaToScalaConversion" value="false" />
     <option name="importsWithPrefix">
       <array>
         <option value="exclude:scala.collection.mutable.ArrayBuffer" />

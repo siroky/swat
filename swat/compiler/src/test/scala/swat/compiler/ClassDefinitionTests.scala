@@ -72,7 +72,7 @@ class ClassDefinitionTests extends CompilerSuite
                     var $self = this;
                     $super.$init$.call($self);
                 });
-                A = swat.constructor([A, java.lang.Object, scala.Any]);
+                A = swat.type([A, java.lang.Object, scala.Any]);
             """,
 
             "$colon$colon$less$greater" -> """
@@ -81,7 +81,7 @@ class ClassDefinitionTests extends CompilerSuite
                     var $self = this;
                     $super.$init$.call($self);
                 });
-                $colon$colon$less$greater = swat.constructor([$colon$colon$less$greater, java.lang.Object, scala.Any]);
+                $colon$colon$less$greater = swat.type([$colon$colon$less$greater, java.lang.Object, scala.Any]);
             """,
 
             "foo.B" -> """
@@ -90,7 +90,7 @@ class ClassDefinitionTests extends CompilerSuite
                     var $self = this;
                     $super.$init$.call($self);
                 });
-                foo.B = swat.constructor([foo.B, java.lang.Object, scala.Any]);
+                foo.B = swat.type([foo.B, java.lang.Object, scala.Any]);
             """,
 
             "foo.bar$" -> """
@@ -108,21 +108,109 @@ class ClassDefinitionTests extends CompilerSuite
                     var $self = this;
                     $super.$init$.call($self);
                 });
-                foo.bar.baz.C = swat.constructor([foo.bar.baz.C, java.lang.Object, scala.Any]);
+                foo.bar.baz.C = swat.type([foo.bar.baz.C, java.lang.Object, scala.Any]);
             """,
 
             "foo.bar.baz.C$D" -> """
                 swat.provide('foo.bar.baz.C$D');
-                foo.bar.baz.C$D.$init$ = (function() {
+                foo.bar.baz.C$D.$init$ = (function($outer) {
                     var $self = this;
                     $super.$init$.call($self);
+                    $self.$outer = $outer;
                 });
-                foo.bar.baz.C$D = swat.constructor([foo.bar.baz.C$D, java.lang.Object, scala.Any]);
-            """,
+                foo.bar.baz.C$D = swat.type([foo.bar.baz.C$D, java.lang.Object, scala.Any]);
+                                 """,
 
             "foo.bar.baz.C$E" -> """
                 swat.provide('foo.bar.baz.C$E');
-                foo.bar.baz.C$E = swat.constructor([foo.bar.baz.C$E, java.lang.Object, scala.Any]);
+                foo.bar.baz.C$E = swat.type([foo.bar.baz.C$E, java.lang.Object, scala.Any]);
+            """
+        )
+    }
+
+    test("Inner classes") {
+        """
+            class A {
+                def a = new A
+                def b = new B
+                def c = new C
+
+                class B {
+                    def a = new A
+                    def b = new B
+                    def c = new C
+                }
+
+                class C
+            }
+
+            object o {
+                val a = new A
+                val b = new a.B
+                val c = new a.C
+
+                def x() {
+                    val a = new A
+                    new a.B
+                    new o.a.B
+                }
+            }
+        """ shouldCompileTo Map(
+            "A" -> """
+                swat.provide('A');
+
+                A.$init$ = (function() { var $self = this; $super.$init$.call($self); });
+                A.a = swat.method([], (function() { var $self = this; return new A(); }));
+                A.b = swat.method([], (function() { var $self = this; return new A$B($self); }));
+                A.c = swat.method([], (function() { var $self = this; return new A$C($self); }));
+                A = swat.type([A, java.lang.Object, scala.Any]);
+            """,
+
+            "A$B" -> """
+                swat.provide('A$B');
+
+                A$B.$init$ = (function($outer) {
+                    var $self = this;
+                    $super.$init$.call($self);
+                    $self.$outer = $outer;
+                });
+                A$B.a = swat.method([], (function() { var $self = this; return new A(); }));
+                A$B.b = swat.method([], (function() { var $self = this; return new A$B($self.$outer); }));
+                A$B.c = swat.method([], (function() { var $self = this; return new A$C($self.$outer); }));
+                A$B = swat.type([A$B, java.lang.Object, scala.Any]);
+            """,
+
+            "A$C" -> """
+                swat.provide('A$C');
+
+                A$C.$init$ = (function($outer) {
+                    var $self = this;
+                    $super.$init$.call($self);
+                    $self.$outer = $outer;
+                });
+                A$C = swat.type([A$C, java.lang.Object, scala.Any]);
+            """,
+
+            "o$" -> """
+                swat.provide('o$');
+
+                o$.$init$ = (function() {
+                    var $self = this;
+                    $super.$init$.call($self);
+                    $self.$fields.a = new A();
+                    $self.$fields.b = new A$B($self.a());
+                    $self.$fields.c = new A$C($self.a());
+                });
+                o$.a = swat.method([], (function() { var $self = this; return $self.$fields.a; }));
+                o$.b = swat.method([], (function() { var $self = this; return $self.$fields.b; }));
+                o$.c = swat.method([], (function() { var $self = this; return $self.$fields.c; }));
+                o$.x = swat.method([], (function() {
+                    var $self = this;
+                    var a = new A();
+                    new A$B(a);
+                    new A$B(o.a());
+                }));
+                o = swat.object([o$, java.lang.Object, scala.Any]);
             """
         )
     }

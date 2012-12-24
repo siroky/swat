@@ -33,13 +33,23 @@ class SwatCompiler(
 
         val reporter = new SilentReporter
         val compiler = new SwatGlobal(settings, reporter)
-        val run = new compiler.Run()
-        run.compile(List(sourceFile.path))
+        try {
+            val run = new compiler.Run()
+            run.compile(List(sourceFile.path))
+        } catch {
+            case t: Throwable => {
+                if (compiler.swatCompilerPlugin.outputs.isEmpty) {
+                    // Rethrow only if the exception occurs before the SWAT compiler phase.
+                    throw t
+                }
+            }
+        }
 
-        if (reporter.errors.nonEmpty) {
+        val classOutputs = compiler.swatCompilerPlugin.outputs
+        if (reporter.errors.nonEmpty && classOutputs.isEmpty) {
             throw new CompilationException(reporter.errors.head)
         }
-        CompilationOutput(compiler.swatCompilerPlugin.outputs, reporter.warnings.toList, reporter.infos.toList)
+        CompilationOutput(classOutputs.get, reporter.warnings.toList, reporter.infos.toList)
     }
 
     private class SwatGlobal(settings: Settings, reporter: Reporter) extends Global(settings, reporter)

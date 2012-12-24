@@ -32,7 +32,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     $super.$init$.call($self);
                     scala.Predef.println('Foo', [scala.Any]);
                 });
-                A = swat.constructor([A, java.lang.Object, scala.Any]);
+                A = swat.type([A, java.lang.Object, scala.Any]);
                    """,
             "B" -> """
                 swat.provide('B');
@@ -46,7 +46,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                 B.bar = swat.method([], (function() { var $self = this; return $self.$fields.bar; }));
                 B.baz = swat.method([], (function() { var $self = this; return $self.$fields.baz; }));
                 B.foo = swat.method([], (function() { var $self = this; return $self.$fields.foo; }));
-                B = swat.constructor([B, java.lang.Object, scala.Any]);
+                B = swat.type([B, java.lang.Object, scala.Any]);
                    """,
             "C" -> """
                 swat.provide('C');
@@ -57,7 +57,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     swat.setParameter($self, 'bar', bar, C);
                 });
                 C.baz = swat.method([], (function() { var $self = this; return swat.getParameter($self, 'foo', C); }));
-                C = swat.constructor([C, java.lang.Object, scala.Any]);
+                C = swat.type([C, java.lang.Object, scala.Any]);
                    """,
             "D" -> """
                 swat.provide('D');
@@ -81,7 +81,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                         $self.$init$((function() { if (foo) { return 'true'; } else { return 'false'; } })(), [java.lang.String]);
                     }));
                 D.foo = swat.method([], (function() { var $self = this; return $self.$fields.foo; }));
-                D = swat.constructor([D, java.lang.Object, scala.Any]);
+                D = swat.type([D, java.lang.Object, scala.Any]);
                    """
         )
     }
@@ -140,7 +140,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                 T.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));
                 T.y_$eq = swat.method([scala.Int], (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
                 T.z = swat.method([], (function() { var $self = this; return $self.$fields.z(); }));
-                T = swat.constructor([T, java.lang.Object, scala.Any]);
+                T = swat.type([T, java.lang.Object, scala.Any]);
                    """,
             "C" -> """
                 swat.provide('C');
@@ -157,7 +157,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                 C.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));
                 C.y_$eq = swat.method([scala.Int], (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
                 C.z = swat.method([], (function() { var $self = this; return $self.$fields.z(); }));
-                C = swat.constructor([C, java.lang.Object, scala.Any]);
+                C = swat.type([C, java.lang.Object, scala.Any]);
                    """,
             "O$" -> """
                 swat.provide('O$');
@@ -274,7 +274,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     $self.d(1, 2, [scala.Int, scala.Int]); }));
 
                     C.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
-                    C = swat.constructor([C, java.lang.Object, scala.Any]);
+                    C = swat.type([C, java.lang.Object, scala.Any]);
             """
         )
     }

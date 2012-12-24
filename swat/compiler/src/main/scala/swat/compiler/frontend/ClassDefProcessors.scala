@@ -40,8 +40,13 @@ trait ClassDefProcessors
             // methods should be invoked).
             val defDefGroups = classDef.defDefs.groupBy(_.name.toString).toList.sortBy(_._1).map(_._2)
             val (constructorGroups, methodGroups) = defDefGroups.partition(_.head.symbol.isConstructor)
+
+            // Process the single constructor group.
             val constructorDeclaration = processConstructorGroup(constructorGroups.headOption).toList
-            val methodDeclarations = methodGroups.map(processMethodGroup _)
+
+            // Process the method group.
+            val methodGroupsToProcess = methodGroups.filter(!_.head.symbol.isOuterAccessor)
+            val methodDeclarations = methodGroupsToProcess.map(processMethodGroup _)
 
             // The JavaScript constructor function.
             val superClasses = classDef.symbol.baseClasses.map(c => typeJsIdentifier(c.tpe))
@@ -138,7 +143,7 @@ trait ClassDefProcessors
         }
 
         def processJsConstructor(superClasses: js.ArrayLiteral): js.Statement = {
-            js.AssignmentStatement(classDefTypeIdentifier, swatMethodCall("constructor", superClasses))
+            js.AssignmentStatement(classDefTypeIdentifier, swatMethodCall("type", superClasses))
         }
 
         def symbolToField(qualifier: js.Expression, symbol: Symbol): js.Expression = {
@@ -152,7 +157,7 @@ trait ClassDefProcessors
             case t: TypeTree => processTypeTree(t)
             case a: ArrayValue => processArrayValue(a)
             case i: Ident => processIdent(i)
-            case t: This => processThis(t)
+            case t: This => processThis(t.symbol)
             case s: Super => processSuper(s)
             case s: Select => processSelect(s)
             case a: Apply => processApply(a)
@@ -266,13 +271,13 @@ trait ClassDefProcessors
 
         def processIdent(identifier: Ident): js.Identifier = localJsIdentifier(identifier.name)
 
-        def processThis(t: This): js.Expression = {
-            if (t.symbol.isPackageClass) {
-                packageJsIdentifier(t.symbol)
+        def processThis(thisSymbol: Symbol): js.Expression = {
+            if (thisSymbol.isPackageClass) {
+                packageJsIdentifier(thisSymbol)
             } else {
-                // The t.symbol isn't a package, therefore it's the current class or an outer class.
+                // The thisSymbol isn't a package, therefore it's the current class or an outer class.
                 def getNestingDepth(innerClass: Symbol): Int = {
-                    if (innerClass == t.symbol) 0 else getNestingDepth(innerClass.owner) + 1
+                    if (innerClass == thisSymbol) 0 else getNestingDepth(innerClass.owner) + 1
                 }
                 val depth = getNestingDepth(classDef.symbol)
                 (1 to depth).foldLeft[js.Expression](selfIdent)((z, _) => js.MemberExpression(z, outerIdent))
@@ -285,19 +290,24 @@ trait ClassDefProcessors
         }
 
         def processSelect(select: Select): js.Expression = {
-            if (select.symbol.isField) {
-                fieldGet(select.symbol)
-            } else {
-                js.MemberExpression(processExpressionTree(select.qualifier), localJsIdentifier(select.name.toString))
+            val processedSelect = memberChain(processExpressionTree(select.qualifier), localJsIdentifier(select.name))
+            select.symbol match {
+                // A method invocation without the corresponding apply.
+                case m: MethodSymbol => js.CallExpression(processedSelect, Nil)
+                case s if s.isField => fieldGet(s)
+                case _ => processedSelect
             }
         }
 
         def processApply(apply: Apply): js.Expression = apply.fun match {
+            // Outer field getter.
+            case s: Select if s.symbol.isOuterAccessor => memberChain(processExpressionTree(s.qualifier), outerIdent)
+
             // Generic method call.
             case TypeApply(f, typeArgs) => processCall(f, apply.args ++ typeArgs)
 
             // Constructor call.
-            case Select(n: New, _) => processNew(n, apply.args)
+            case Select(n: New, _) => processNew(apply, n)
 
             // Method call.
             case f => processCall(f, apply.args)
@@ -317,22 +327,26 @@ trait ClassDefProcessors
 
             // Methods of the current class super classes.
             case s @ Select(Super(t: This, _), m) if t.symbol.tpe =:= classDef.symbol.tpe => {
-                superCall(localJsIdentifier(m), processMethodArgs(s.symbol, s.qualifier, args))
+                superCall(localJsIdentifier(m), processMethodArgs(s.symbol, Some(s.qualifier), args))
             }
 
             // Method call.
-            case s @ Select(q, _) => js.CallExpression(processExpressionTree(s), processMethodArgs(s.symbol, q, args))
+            case s @ Select(qualifier, name) => {
+                val methodExpr = memberChain(processExpressionTree(qualifier), localJsIdentifier(name))
+                js.CallExpression(methodExpr, processMethodArgs(s.symbol, Some(qualifier), args))
+            }
         }
 
-        def processMethodArgs(method: Symbol, qualifier: Tree, args: List[Tree]): List[js.Expression] =  {
-            val methodType = method.asInstanceOf[MethodSymbol].typeAsMemberOf(qualifier.symbol.tpe)
+        def processMethodArgs(method: Symbol, qualifier: Option[Tree], args: List[Tree]): List[js.Expression] =  {
+            val methodSymbol = method.asInstanceOf[MethodSymbol]
+            val methodType = qualifier.map(q => methodSymbol.typeAsMemberOf(q.symbol.tpe)).getOrElse(methodSymbol.tpe)
             val paramTypes = methodType.paramTypes.map(typeJsIdentifier _)
             val typeHint = if (paramTypes.isEmpty) None else Some(js.ArrayLiteral(paramTypes))
             processExpressionTrees(args) ++ typeHint.toList
         }
 
         def dispatchCallToCompanion(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
-            val processedArgs = processExpressionTree(qualifier) +: processMethodArgs(method, qualifier, args)
+            val processedArgs = processExpressionTree(qualifier) +: processMethodArgs(method, Some(qualifier), args)
             objectMethodCall(qualifier.tpe.companionSymbol, method, processedArgs)
         }
 
@@ -409,7 +423,7 @@ trait ClassDefProcessors
                 }
             } else {
                 val methodName = method.nameString.replace("##", "hashCode")
-                val processedArgs = processExpressionTree(qualifier) +: processMethodArgs(method, qualifier, args)
+                val processedArgs = processExpressionTree(qualifier) +: processMethodArgs(method, Some(qualifier), args)
                 swatMethodCall(localIdentifier(methodName), processedArgs: _*)
             }
         }
@@ -480,8 +494,17 @@ trait ClassDefProcessors
             }
         }
 
-        def processNew(n: New, args: List[Tree]): js.Expression = {
-            js.NewExpression(js.CallExpression(typeJsIdentifier(n.tpe.underlying), processExpressionTrees(args)))
+        def processNew(apply: Apply, n: New): js.Expression = {
+            val tpe = n.tpe.underlying
+            val constructors = tpe.members.toList.filter(c => c.isConstructor && c.owner == tpe.typeSymbol)
+            val args =
+                if (constructors.length > 1) {
+                    // If the created class has more than one constructor, a type hint has to be added
+                    processMethodArgs(apply.fun.symbol, None, apply.args)
+                } else {
+                    processExpressionTrees(apply.args)
+                }
+            js.NewExpression(js.CallExpression(typeJsIdentifier(n.tpe.underlying), args))
         }
 
         def processIf(condition: If): js.Expression = scoped {
@@ -630,7 +653,9 @@ trait ClassDefProcessors
         }
 
         def fieldSet(field: Symbol, value: js.Expression): js.Statement = {
-            if (field.isParametricField) {
+            if (field.isOuterAccessor) {
+                js.AssignmentStatement(memberChain(selfIdent, outerIdent), value)
+            } else if (field.isParametricField) {
                 val name = js.StringLiteral(localIdentifier(field.name))
                 js.ExpressionStatement(swatMethodCall("setParameter", selfIdent, name, value, classDefTypeIdentifier))
             } else {
