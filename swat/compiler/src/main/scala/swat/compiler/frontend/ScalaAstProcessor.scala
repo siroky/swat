@@ -20,17 +20,11 @@ trait ScalaAstProcessor
      */
     val ignoredPackages = List("<root>", "<empty>", "swat.runtime.client")
 
-    def processCompilationUnit(compilationUnit: CompilationUnit): Map[String, js.Program] = {
-        compilationUnit.body match {
-            case p: PackageDef => {
-                extractClassDefs(p).map(c => (typeIdentifier(c.symbol.tpe), processClassDef(c))).toMap
-            }
-            case _ => {
-                val fileName = compilationUnit.source.file.name
-                error(s"The source file $fileName must contain a package definition.")
-                Map.empty
-            }
+    def processUnitBody(body: Tree): Map[String, js.Program] = body match {
+        case p: PackageDef => {
+            extractClassDefs(p).map(c => (typeIdentifier(c.symbol.tpe), processClassDef(c))).toMap
         }
+        case _ => Map.empty
     }
 
     def extractClassDefs(tree: Tree): List[ClassDef] = tree match {
@@ -101,7 +95,10 @@ trait ScalaAstProcessor
     }
 
     def symbolIdentifier(symbol: Symbol): String = {
-        if (symbol.classSymbolKind == PackageObjectSymbol) {
+        if (symbol.owner.isLocal || symbol.owner.isMethod || symbol.isAnonymousClass) {
+            // A local or anonymous class has local name.
+            localIdentifier(symbol.name)
+        } else if (symbol.classSymbolKind == PackageObjectSymbol) {
             // The $package suffix is stripped.
             symbolIdentifier(symbol.owner)
         } else if (symbol.owner.isPackageClass) {

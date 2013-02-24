@@ -30,36 +30,33 @@ class SwatCompiler(
         settings.deprecation.value = true
         settings.unchecked.value = true
         settings.feature.value = true
+        settings.stopBefore.value = List("erasure")
 
         val reporter = new SilentReporter
         val compiler = new SwatGlobal(settings, reporter)
+        val run = new compiler.Run()
         try {
-            val run = new compiler.Run()
             run.compile(List(sourceFile.path))
         } catch {
-            case t: Throwable => {
-                if (compiler.swatCompilerPlugin.outputs.isEmpty) {
-                    // Rethrow only if the exception occurs before the SWAT compiler phase.
-                    throw t
-                }
-            }
+            case t: Throwable if compiler.swatPlugin.output.isEmpty => throw t
+            case _: Throwable =>
         }
 
-        val classOutputs = compiler.swatCompilerPlugin.outputs
+        val classOutputs = compiler.swatPlugin.output
         if (reporter.errors.nonEmpty && classOutputs.isEmpty) {
             throw new CompilationException(reporter.errors.head)
         }
-        CompilationOutput(classOutputs.get, reporter.warnings.toList, reporter.infos.toList)
+        CompilationOutput(classOutputs.getOrElse(Map.empty), reporter.warnings.toList, reporter.infos.toList)
     }
 
     private class SwatGlobal(settings: Settings, reporter: Reporter) extends Global(settings, reporter)
     {
-        val swatCompilerPlugin = new SwatCompilerPlugin(this)
+        val swatPlugin = new SwatCompilerPlugin(this)
 
         override protected def computeInternalPhases() {
             super.computeInternalPhases()
-            swatCompilerPlugin.processOptions(options.toList, identity _)
-            swatCompilerPlugin.components.foreach(phasesSet += _)
+            swatPlugin.processOptions(options.toList, identity _)
+            swatPlugin.components.foreach(phasesSet += _)
         }
     }
 

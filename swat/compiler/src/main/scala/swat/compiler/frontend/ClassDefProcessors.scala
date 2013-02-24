@@ -20,7 +20,7 @@ trait ClassDefProcessors
         }
     }
 
-    class ClassDefProcessor(private val classDef: ClassDef)
+    class ClassDefProcessor(protected val classDef: ClassDef)
     {
         val dependencies = mutable.ListBuffer.empty[(Type, Boolean)]
 
@@ -164,8 +164,9 @@ trait ClassDefProcessors
             case t: TypeApply => processTypeApply(t)
             case t: Typed => processTyped(t)
             case a: Assign => processAssign(a)
-            case v: ValDef => processValDef(v)
+            case v: ValDef => processLocalValDef(v)
             case d: DefDef => processLocalDefDef(d)
+            case c: ClassDef => processLocalClassDef(c)
             case i: If => processIf(i)
             case l: LabelDef => processLabelDef(l)
             case t: Throw => processThrow(t)
@@ -455,14 +456,15 @@ trait ClassDefProcessors
         def processAssign(assign: Assign): js.Statement =
             js.AssignmentStatement(processExpressionTree(assign.lhs), processExpressionTree(assign.rhs))
 
-        def processValDef(valDef: ValDef): js.Statement = {
-            if (valDef.symbol.isLazy && valDef.name.endsWith("$lzy")) {
-                // The val definition associated with the lazy val can be omitted as the value will be stored in the
-                // corresponding function (see processLocalDefDef method).
-                js.EmptyStatement
-            } else {
-                js.VariableStatement(localJsIdentifier(valDef.name), Some(processExpressionTree(valDef.rhs)))
-            }
+        def processLocalValDef(valDef: ValDef): js.Statement = valDef.symbol match {
+            // A val definition associated with a lazy val can be omitted as the value will be stored in the
+            // corresponding function (see processLocalDefDef method).
+            case s if s.isLazy && s.name.endsWith("$lzy") => js.EmptyStatement
+
+            // The val definition associated with a local object can be omitted.
+            case s if s.isModuleVar => js.EmptyStatement
+
+            case _ => js.VariableStatement(localJsIdentifier(valDef.name), Some(processExpressionTree(valDef.rhs)))
         }
 
         def processLazyVal(defDef: DefDef): js.Statement = defDef.rhs match {
@@ -476,7 +478,9 @@ trait ClassDefProcessors
         }
 
         def processLocalDefDef(defDef: DefDef): js.Statement = {
-            if (defDef.symbol.isLazy) {
+            if (defDef.symbol.isModule) {
+                js.EmptyStatement
+            } else if (defDef.symbol.isLazy) {
                 processLazyVal(defDef)
             } else {
                 // Check whether the function is nested in a local function with the same name which isn't supported.
@@ -492,6 +496,10 @@ trait ClassDefProcessors
 
                 js.VariableStatement(localJsIdentifier(defDef.name), Some(processDefDef(defDef, includeSelf = false)))
             }
+        }
+
+        def processLocalClassDef(classDef: ClassDef): js.Statement = {
+            js.Block(ClassDefProcessor(classDef).process())
         }
 
         def processNew(apply: Apply, n: New): js.Expression = {
@@ -672,10 +680,19 @@ trait ClassDefProcessors
     private class ObjectProcessor(c: ClassDef) extends ClassDefProcessor(c)
     {
         override def processJsConstructor(superClasses: js.ArrayLiteral): js.Statement = {
+            // A local object depends on the outer class so a reference to the outer class has to be passed to the
+            // constructor.
+            val constructor =
+                if (classDef.symbol.owner.isMethod) {
+                    swatMethodCall("object", selfIdent, superClasses)
+                } else {
+                    swatMethodCall("object", superClasses)
+                }
+
             // The classDefSymbolIdentifier is used instead of the classDefTypeIdentifier, because object type name is
             // the object name suffixed with the $ symbol. To distinguish the object type from the object itself, the
             // classDefSymbolIdentifier is therefore used.
-            js.AssignmentStatement(classDefSymbolIdentifier, swatMethodCall("object", superClasses))
+            js.AssignmentStatement(classDefSymbolIdentifier, constructor)
         }
     }
 

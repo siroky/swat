@@ -12,31 +12,25 @@ class SwatCompilerPlugin(val global: Global)
     import global._
 
     val name = "swat-compiler"
-
     val description = "Swat Compiler of Scala code into JavaScript."
-
     val components = List[PluginComponent](SwatCompilationComponent)
 
-    private var options = CompilerOptions.default
-
-    private var classOutputs: Option[Map[String, js.Program]] = None
-
+    var options = CompilerOptions.default
     override val optionsHelp = Some(CompilerOptions.help(name))
+
+    var output: Option[Map[String, js.Program]] = None
 
     override def processOptions(o: List[String], error: String => Unit) {
         super.processOptions(o, error)
         options = CompilerOptions(o)
     }
 
-    def outputs = classOutputs
-
     private object SwatCompilationComponent extends PluginComponent
     {
         val global: SwatCompilerPlugin.this.global.type = SwatCompilerPlugin.this.global
 
         val runsAfter = List("uncurry")
-
-        val phaseName = "swat-compilation"
+        val phaseName = "swat"
 
         def newPhase(prev: Phase) = new StdPhase(prev) {
             def apply(unit: CompilationUnit) {
@@ -46,17 +40,16 @@ class SwatCompilerPlugin(val global: Global)
                 // in the compiler plugin. To avoid that, all exceptions are consumed here and reported as an internal
                 // error of the SWAT compiler.
                 try {
-                    val transformer = new explicitOuter.ExplicitOuterTransformer(unit)
-                    transformer.transformUnit(unit)
-                    classOutputs = Some(processCompilationUnit(unit))
+                    new explicitOuter.ExplicitOuterTransformer(unit).transformUnit(unit)
+                    output = Some(processUnitBody(unit.body))
                 } catch {
-                    case f: FatalError => swatCompilerError(f.msg.lines.toBuffer.last, f.getStackTrace)
-                    case t: Throwable => swatCompilerError(t.toString, t.getStackTrace)
+                    case f: FatalError => swatError(f.msg.lines.toBuffer.last, f.getStackTrace)
+                    case t: Throwable => swatError(t.toString, t.getStackTrace)
                 }
             }
 
-            def swatCompilerError(msg: String, stackTrace: Seq[StackTraceElement]) {
-                println(s"[swat compiler error]: $msg")
+            def swatError(msg: String, stackTrace: Seq[StackTraceElement]) {
+                println(s"[swat error]: $msg")
                 println(stackTrace.mkString("\n"))
             }
         }
