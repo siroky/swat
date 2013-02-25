@@ -2,8 +2,8 @@ package swat.compiler.backend
 
 import swat.compiler.js._
 
-class JsCodeGenerator
-{
+class JsCodeGenerator {
+
     def astToCode(ast: Ast): String = process(ast)(Indent("    "))
 
     private def astIsEmpty(ast: Ast): Boolean = ast match {
@@ -34,7 +34,7 @@ class JsCodeGenerator
             case _ => true
         }
 
-        // Omit all statements after the first occurance of return or throw statement;
+        // Omit all statements after the first occurance of return or throw statement.
         (liveAsts ++ deadAsts.headOption.toList).map(process(_))
     }
 
@@ -167,7 +167,6 @@ class JsCodeGenerator
 
         value.map(replacementMap.withDefault(c => c)).mkString
     }
-
 }
 
 

@@ -99,7 +99,7 @@ class ClassDefinitionTests extends CompilerSuite
                     var $self = this;
                     $super.$init$.call($self);
                 });
-                foo.bar = swat.object([foo.bar$, java.lang.Object, scala.Any]);
+                foo.bar$ = swat.object([foo.bar$, java.lang.Object, scala.Any]);
             """,
 
             "foo.bar.baz.C" -> """
@@ -208,9 +208,9 @@ class ClassDefinitionTests extends CompilerSuite
                     var $self = this;
                     var a = new A();
                     new A$B(a);
-                    new A$B(o.a());
+                    new A$B(o().a());
                 }));
-                o = swat.object([o$, java.lang.Object, scala.Any]);
+                o$ = swat.object([o$, java.lang.Object, scala.Any]);
             """
         )
     }

@@ -4,8 +4,7 @@ trait Ast
 
 sealed abstract class Expression extends Ast
 
-case class CommaExpression(exprs: List[Expression]) extends Expression
-{
+case class CommaExpression(exprs: List[Expression]) extends Expression {
     require(exprs.nonEmpty)
 }
 
@@ -43,8 +42,7 @@ case class ConditionalExpression(condition: Expression, thenExpr: Expression, el
 
 case class Program(elements: List[SourceElement] = Nil) extends Ast
 
-object Program
-{
+object Program {
     def empty = Program()
 }
 
@@ -52,8 +50,7 @@ sealed abstract class SourceElement extends Ast
 
 sealed abstract class Statement extends SourceElement
 
-case class Block(statements: List[Statement]) extends Statement
-{
+case class Block(statements: List[Statement]) extends Statement {
     require(statements.nonEmpty)
 }
 
@@ -65,13 +62,11 @@ case class FunctionDeclaration(
     body: List[Statement]
 ) extends Statement
 
-case class VariableStatement(variables: List[(Identifier, Option[Expression])]) extends Statement
-{
+case class VariableStatement(variables: List[(Identifier, Option[Expression])]) extends Statement {
     require(variables.nonEmpty)
 }
 
-object VariableStatement
-{
+object VariableStatement {
     def apply(identifier: Identifier, value: Option[Expression]): VariableStatement =
         VariableStatement(List((identifier, value)))
 }

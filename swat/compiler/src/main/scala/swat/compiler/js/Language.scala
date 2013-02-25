@@ -1,7 +1,6 @@
 package swat.compiler.js
 
-object Language
-{
+object Language {
     val keywords = Set(
         "abstract", "boolean", "break", "byte", "case", "catch", "char", "class", "const", "continue", "debugger",
         "default", "delete", "do", "double", "else", "enum", "export", "extends", "false", "final", "finally", "float",

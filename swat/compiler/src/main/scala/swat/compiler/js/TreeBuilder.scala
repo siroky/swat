@@ -1,7 +1,7 @@
 package swat.compiler.js
 
-trait TreeBuilder
-{
+trait TreeBuilder {
+
     def memberChain(expr: Expression, identifiers: Identifier*): Expression = {
         require(identifiers.length > 0)
         identifiers.foldLeft[Expression](expr)(MemberExpression(_, _))

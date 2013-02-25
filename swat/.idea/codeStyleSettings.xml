@@ -14,7 +14,6 @@
           <option name="BLANK_LINES_AROUND_CLASS" value="0" />
           <option name="BLANK_LINES_AROUND_METHOD" value="0" />
           <option name="BLANK_LINES_AROUND_METHOD_IN_INTERFACE" value="0" />
-          <option name="CLASS_BRACE_STYLE" value="2" />
           <option name="ALIGN_MULTILINE_PARAMETERS" value="false" />
           <option name="WRAP_LONG_LINES" value="true" />
           <option name="METHOD_ANNOTATION_WRAP" value="0" />

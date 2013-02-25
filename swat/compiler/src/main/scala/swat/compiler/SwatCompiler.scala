@@ -10,8 +10,8 @@ import collection.mutable
 class SwatCompiler(
     val classPath: String,
     val classTarget: String,
-    val options: CompilerOptions)
-{
+    val options: CompilerOptions) {
+
     def compile(scalaCode: String): CompilationOutput = {
         val uuid = java.util.UUID.randomUUID
         val sourceFile = new File(new io.File(s"$uuid.scala"))
@@ -49,8 +49,8 @@ class SwatCompiler(
         CompilationOutput(classOutputs.getOrElse(Map.empty), reporter.warnings.toList, reporter.infos.toList)
     }
 
-    private class SwatGlobal(settings: Settings, reporter: Reporter) extends Global(settings, reporter)
-    {
+    private class SwatGlobal(settings: Settings, reporter: Reporter) extends Global(settings, reporter) {
+
         val swatPlugin = new SwatCompilerPlugin(this)
 
         override protected def computeInternalPhases() {
@@ -60,8 +60,8 @@ class SwatCompiler(
         }
     }
 
-    private class SilentReporter extends Reporter
-    {
+    private class SilentReporter extends Reporter {
+
         val errors = mutable.ListBuffer.empty[String]
         val warnings = mutable.ListBuffer.empty[String]
         val infos = mutable.ListBuffer.empty[String]

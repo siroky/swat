@@ -4,14 +4,12 @@ import swat.compiler.SwatCompilerPlugin
 import swat.compiler.js
 import collection.mutable
 
-trait ClassDefProcessors
-{
+trait ClassDefProcessors {
     self: SwatCompilerPlugin with ScalaAstProcessor =>
 
     import global._
 
-    object ClassDefProcessor
-    {
+    object ClassDefProcessor {
         def apply(classDef: ClassDef): ClassDefProcessor = classDef.symbol.classSymbolKind match {
             case ClassSymbol => new ClassProcessor(classDef)
             case TraitSymbol => new TraitProcessor(classDef)
@@ -20,11 +18,10 @@ trait ClassDefProcessors
         }
     }
 
-    class ClassDefProcessor(protected val classDef: ClassDef)
-    {
+    class ClassDefProcessor(protected val classDef: ClassDef) {
+
         val dependencies = mutable.ListBuffer.empty[(Type, Boolean)]
 
-        val classDefSymbolIdentifier = symbolJsIdentifier(classDef.symbol)
         val classDefTypeIdentifier = typeJsIdentifier(classDef.symbol.tpe)
 
         val selfIdent = localJsIdentifier("$self")
@@ -270,7 +267,13 @@ trait ClassDefProcessors
             processDefDef(applyDefDef, includeSelf = false)
         }
 
-        def processIdent(identifier: Ident): js.Identifier = localJsIdentifier(identifier.name)
+        def processIdent(identifier: Ident): js.Expression = {
+            if (identifier.symbol.isModule) {
+                objectAccessor(identifier.symbol)
+            } else {
+                localJsIdentifier(identifier.name)
+            }
+        }
 
         def processThis(thisSymbol: Symbol): js.Expression = {
             if (thisSymbol.isPackageClass) {
@@ -286,7 +289,6 @@ trait ClassDefProcessors
         }
 
         def processSuper(s: Super): js.Expression = {
-            // TODO shouldn't ever get invoked.
             js.CallExpression(memberChain(processExpressionTree(s.qual), superIdent), Nil)
         }
 
@@ -309,6 +311,9 @@ trait ClassDefProcessors
 
             // Constructor call.
             case Select(n: New, _) => processNew(apply, n)
+
+            // A local object constructor call can be omitted because every object access is via an accessor.
+            case f if f.symbol.isModule => objectAccessor(typeJsIdentifier(apply.tpe))
 
             // Method call.
             case f => processCall(f, apply.args)
@@ -348,7 +353,8 @@ trait ClassDefProcessors
 
         def dispatchCallToCompanion(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
             val processedArgs = processExpressionTree(qualifier) +: processMethodArgs(method, Some(qualifier), args)
-            objectMethodCall(qualifier.tpe.companionSymbol, method, processedArgs)
+            val companion = objectAccessor(qualifier.tpe.companionSymbol)
+            methodCall(companion, localJsIdentifier(method.name), processedArgs: _*)
         }
 
         def processAnyValOrStringMethodCall(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
@@ -382,7 +388,8 @@ trait ClassDefProcessors
             def processOperand(operand: Tree): js.Expression = {
                 val processedOperand = processExpressionTree(operand)
                 if (!symbol.isEqualityOperator && operand.tpe.isChar) {
-                    objectMethodCall(typeOf[Char].companionSymbol, localIdentifier("toInt"), List(processedOperand))
+                    val charCompanion = objectAccessor(typeOf[Char].companionSymbol)
+                    methodCall(charCompanion, localJsIdentifier("toInt"), processedOperand)
                 } else {
                     processedOperand
                 }
@@ -499,7 +506,10 @@ trait ClassDefProcessors
         }
 
         def processLocalClassDef(classDef: ClassDef): js.Statement = {
-            js.Block(ClassDefProcessor(classDef).process())
+            val processor = ClassDefProcessor(classDef)
+            val result = js.Block(processor.process())
+            dependencies ++= processor.dependencies
+            result
         }
 
         def processNew(apply: Apply, n: New): js.Expression = {
@@ -549,7 +559,7 @@ trait ClassDefProcessors
             val processedInit = processStatementTrees(matchBlock.init)
             val processedCases = matchBlock.cases.map { c =>
                 val body = unScoped(processReturnTree(c.rhs))
-                js.FunctionDeclaration(localJsIdentifier(c.name), c.params.map(processIdent _), body)
+                js.FunctionDeclaration(localJsIdentifier(c.name), c.params.map(i => localJsIdentifier(i.name)), body)
             }
 
             val firstCaseIdentifier = localJsIdentifier(matchBlock.cases.head.name)
@@ -677,22 +687,18 @@ trait ClassDefProcessors
 
     private class TraitProcessor(c: ClassDef) extends ClassDefProcessor(c)
 
-    private class ObjectProcessor(c: ClassDef) extends ClassDefProcessor(c)
-    {
+    private class ObjectProcessor(c: ClassDef) extends ClassDefProcessor(c) {
         override def processJsConstructor(superClasses: js.ArrayLiteral): js.Statement = {
             // A local object depends on the outer class so a reference to the outer class has to be passed to the
             // constructor.
             val constructor =
-                if (classDef.symbol.owner.isMethod) {
+                if (classDef.symbol.isLocalOrAnonymous) {
                     swatMethodCall("object", selfIdent, superClasses)
                 } else {
                     swatMethodCall("object", superClasses)
                 }
 
-            // The classDefSymbolIdentifier is used instead of the classDefTypeIdentifier, because object type name is
-            // the object name suffixed with the $ symbol. To distinguish the object type from the object itself, the
-            // classDefSymbolIdentifier is therefore used.
-            js.AssignmentStatement(classDefSymbolIdentifier, constructor)
+            js.AssignmentStatement(classDefTypeIdentifier, constructor)
         }
     }
 

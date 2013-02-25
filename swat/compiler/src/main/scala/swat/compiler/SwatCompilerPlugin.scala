@@ -5,10 +5,8 @@ import scala.tools.nsc.Global
 import tools.nsc.plugins.{PluginComponent, Plugin}
 import scala.reflect.internal.{FatalError, Phase}
 
-class SwatCompilerPlugin(val global: Global)
-    extends Plugin
-    with ScalaAstProcessor
-{
+class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcessor {
+
     import global._
 
     val name = "swat-compiler"

@@ -222,10 +222,10 @@ class LocalDefinitionTests extends CompilerSuite
                 $super.$init$.call($self);
                 $self.$outer = $outer;
             });
-            O = swat.object($self, [O$, java.lang.Object, scala.Any]);
+            O$ = swat.object($self, [O$, java.lang.Object, scala.Any]);
 
             var c = new C($self);
-            var o = O();
+            var o = O$();
 
             var a = (function() {
                 $anon.$init$ = (function($outer) {

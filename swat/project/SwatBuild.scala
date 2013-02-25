@@ -1,9 +1,9 @@
 import sbt._
 import Keys._
 
-object SwatBuild extends Build
-{
-    val swatScalaVersion = "2.10.0-RC3"
+object SwatBuild extends Build {
+
+    val swatScalaVersion = "2.10.0"
 
     val defaultSettings = Defaults.defaultSettings ++ Seq(
         scalaVersion := swatScalaVersion,
@@ -15,7 +15,7 @@ object SwatBuild extends Build
             "-language:implicitConversions"
         ),
         libraryDependencies ++= Seq(
-            "org.scalatest" % "scalatest_2.10.0-RC3" % "1.8-B1"
+            "org.scalatest" % "scalatest_2.10.0" % "1.8"
         ),
         resolvers ++= Seq(
             DefaultMavenRepository

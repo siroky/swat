@@ -3,14 +3,12 @@ package swat.compiler.frontend
 import swat.api
 import swat.compiler.{SwatCompilerPlugin, CompilationException}
 
-trait RichTrees
-{
+trait RichTrees {
     self: SwatCompilerPlugin =>
 
     import global._
 
-    implicit class RichType(t: Type)
-    {
+    implicit class RichType(t: Type) {
         import definitions._
 
         val s = t.underlying.typeSymbol
@@ -30,22 +28,20 @@ trait RichTrees
         def companionSymbol = s.companionSymbol
     }
 
-    implicit class RichSymbol(s: Symbol)
-    {
+    implicit class RichSymbol(s: Symbol) {
         def classSymbolKind = {
             if (s.isPackageObjectClass) PackageObjectSymbol else
             if (s.isModuleClass) ObjectSymbol else
             if (s.isTrait) TraitSymbol else ClassSymbol
         }
 
-        def isField = Set("field", "value", "lazy value")(s.accurateKindString)
+        def isLocalOrAnonymous = s.owner.isMethod || s.owner.isLocal || s.owner.isAnonymousClass
 
+        def isField = Set("field", "value", "lazy value")(s.accurateKindString)
         def isParametricField = isField && !s.hasGetter && !s.isLazy && !s.isStatic
 
         def isCompiled = !(isIgnored || isAdapter)
-
         def isIgnored = hasAnnotation(typeOf[api.ignored])
-
         def isAdapter = hasAnnotation(typeOf[api.adapter])
 
         def nativeAnnotation: Option[String] = typedAnnotation(typeOf[api.native]).map { i =>
@@ -65,9 +61,7 @@ trait RichTrees
         }
 
         def hasAnnotation(tpe: Type) = typedAnnotation(tpe).nonEmpty
-
         def typedAnnotation(tpe: Type) = typedAnnotations(tpe).headOption
-
         def typedAnnotations(tpe: Type) = s.annotations.filter(_.atp =:= tpe)
 
         def isApplyMethod = s.isMethod && s.nameString == "apply"
@@ -107,8 +101,7 @@ trait RichTrees
         }
     }
 
-    implicit class RichBlock(b: Block)
-    {
+    implicit class RichBlock(b: Block) {
         def toMatchBlock: Option[MatchBlock] = {
             val (init, labels) = (b.stats ++ List(b.expr)).span(!_.isInstanceOf[LabelDef])
             val cases = labels.collect {
@@ -125,8 +118,7 @@ trait RichTrees
 
     case class MatchBlock(init: List[Tree], cases: List[LabelDef])
 
-    implicit class RichLabelDef(l: LabelDef)
-    {
+    implicit class RichLabelDef(l: LabelDef) {
         def isLoop = toLoop.isEmpty
 
         def toLoop: Option[Loop] = {
@@ -154,10 +146,8 @@ trait RichTrees
 
     case class Loop(expr: Tree, stats: List[Tree], isDoWhile: Boolean)
 
-    implicit class RichClassDef(classDef: ClassDef)
-    {
+    implicit class RichClassDef(classDef: ClassDef) {
         def valDefs = classDef.impl.body.collect { case v: ValDef => v }
-
         def defDefs = classDef.impl.body.collect { case d: DefDef => d }
     }
 }

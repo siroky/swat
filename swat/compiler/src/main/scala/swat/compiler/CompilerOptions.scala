@@ -2,15 +2,13 @@ package swat.compiler
 
 import java.io.File
 
-case class CompilerOptions(target: Option[File])
-{
+case class CompilerOptions(target: Option[File]) {
     def toList = {
         target.map(t =>  "%s:%s".format(CompilerOptions.targetOption, t.getAbsolutePath)).toList
     }
 }
 
-object CompilerOptions
-{
+object CompilerOptions {
     val targetOption = "target"
 
     def help(pluginName: String): String = {

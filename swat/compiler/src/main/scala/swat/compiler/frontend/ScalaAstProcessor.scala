@@ -5,8 +5,7 @@ import swat.compiler.{SwatCompilerPlugin, js}
 trait ScalaAstProcessor
     extends js.TreeBuilder
     with RichTrees
-    with ClassDefProcessors
-{
+    with ClassDefProcessors {
     self: SwatCompilerPlugin =>
 
     import global._
@@ -22,7 +21,7 @@ trait ScalaAstProcessor
 
     def processUnitBody(body: Tree): Map[String, js.Program] = body match {
         case p: PackageDef => {
-            extractClassDefs(p).map(c => (typeIdentifier(c.symbol.tpe), processClassDef(c))).toMap
+            extractClassDefs(p).map(c => (typeIdentifier(c.symbol), processClassDef(c))).toMap
         }
         case _ => Map.empty
     }
@@ -35,8 +34,9 @@ trait ScalaAstProcessor
 
     def processClassDef(classDef: ClassDef): js.Program = {
         val classSymbol = classDef.symbol
+        val classType = classSymbol.tpe.underlying
 
-        val provide = List(processProvide(classSymbol.tpe.underlying))
+        val provide = if (classSymbol.isLocalOrAnonymous) Nil else List(processProvide(classType))
         val statements =
             classSymbol.nativeAnnotation.map { code =>
                 val requirements = classSymbol.dependencyAnnotations.map((processDependency _).tupled)
@@ -49,73 +49,28 @@ trait ScalaAstProcessor
         js.Program(provide ++ statements)
     }
 
-    def objectMethodCall(objectSymbol: Symbol, methodName: String, args: List[js.Expression]): js.Expression = {
-        objectMethodCall(objectSymbol, localJsIdentifier(methodName), args)
-    }
+    def objectAccessor(objectSymbol: Symbol): js.Expression = objectAccessor(typeJsIdentifier(objectSymbol))
+    def objectAccessor(objectExpression: js.Expression): js.Expression = js.CallExpression(objectExpression, Nil)
 
-    def objectMethodCall(objectSymbol: Symbol, methodSymbol: Symbol, args: List[js.Expression]): js.Expression = {
-        objectMethodCall(objectSymbol, localJsIdentifier(methodSymbol.name), args)
-    }
+    def swatMethodCall(methodName: String, args: js.Expression*): js.Expression =
+        methodCall(localJsIdentifier("swat"), localJsIdentifier(methodName), args: _*)
 
-    def objectMethodCall(objectSymbol: Symbol, methodName: js.Identifier, args: List[js.Expression]) = {
-        // TODO
-        methodCall(js.RawCodeExpression(objectSymbol.fullName), methodName, args: _*)
-    }
-
-    def swatMethodCall(methodName: String, args: js.Expression*): js.Expression = {
-        methodCall(localJsIdentifier("swat"), localJsIdentifier(methodName), args: _*) // TODO swat object.
-    }
-
-    def processDependency(dependencyType: Type, isHard: Boolean): js.Statement = {
+    def processDependency(dependencyType: Type, isHard: Boolean): js.Statement =
         js.ExpressionStatement(swatMethodCall(
             "require",
             js.StringLiteral(typeIdentifier(dependencyType)),
             js.BooleanLiteral(isHard)))
-    }
 
-    def processProvide(dependencyType: Type): js.Statement = {
+    def processProvide(dependencyType: Type): js.Statement =
         js.ExpressionStatement(swatMethodCall("provide", js.StringLiteral(typeIdentifier(dependencyType))))
-    }
-
-    def packageIdentifier(packageSymbol: Symbol): String = {
-        if (ignoredPackages.contains(packageSymbol.fullName)) {
-            ""
-        } else {
-            symbolIdentifier(packageSymbol)
-        }
-    }
-
-    def typeIdentifier(tpe: Type): String = {
-        val suffix = tpe.typeSymbol.classSymbolKind match {
-            case PackageObjectSymbol | ObjectSymbol => "$"
-            case _ => ""
-        }
-
-        symbolIdentifier(tpe.typeSymbol) + suffix
-    }
-
-    def symbolIdentifier(symbol: Symbol): String = {
-        if (symbol.owner.isLocal || symbol.owner.isMethod || symbol.isAnonymousClass) {
-            // A local or anonymous class has local name.
-            localIdentifier(symbol.name)
-        } else if (symbol.classSymbolKind == PackageObjectSymbol) {
-            // The $package suffix is stripped.
-            symbolIdentifier(symbol.owner)
-        } else if (symbol.owner.isPackageClass) {
-            val qualifier = packageIdentifier(symbol.owner) match {
-                case "" => ""
-                case i => i + "."
-            }
-            qualifier + localIdentifier(symbol.name)
-        } else {
-            typeIdentifier(symbol.owner.tpe) + "$" + symbol.name.toString
-        }
-    }
 
     def localIdentifier(name: String): String = {
         val cleanName = name.replace(" ", "").replace("<", "$").replace(">", "$")
         (if (js.Language.keywords(cleanName)) "$" else "") + cleanName
     }
+    def localIdentifier(name: Name): String = localIdentifier(name.toString)
+    def localJsIdentifier(name: Name): js.Identifier = localJsIdentifier(name.toString)
+    def localJsIdentifier(name: String): js.Identifier = js.Identifier(localIdentifier(name))
 
     private var counter = 0
     def freshLocalJsIdentifier(prefix: String) = {
@@ -123,10 +78,42 @@ trait ScalaAstProcessor
         js.Identifier(prefix + "$" + counter)
     }
 
-    def localIdentifier(name: Name): String = localIdentifier(name.toString)
-    def localJsIdentifier(name: Name): js.Identifier = localJsIdentifier(name.toString)
-    def localJsIdentifier(name: String): js.Identifier = js.Identifier(localIdentifier(name))
-    def symbolJsIdentifier(symbol: Symbol) = js.Identifier(symbolIdentifier(symbol))
-    def typeJsIdentifier(tpe: Type) = js.Identifier(typeIdentifier(tpe))
+    def packageIdentifier(packageSymbol: Symbol): String = {
+        if (ignoredPackages.contains(packageSymbol.fullName)) {
+            ""
+        } else {
+            separateNonEmptyPrefix(packageIdentifier(packageSymbol.owner), localIdentifier(packageSymbol.name))
+        }
+    }
     def packageJsIdentifier(packageSymbol: Symbol) = js.Identifier(packageIdentifier(packageSymbol))
+
+    def typeIdentifier(symbol: Symbol): String = {
+        val identifier =
+            if (symbol == NoSymbol) {
+                ""
+            } else if (symbol.isLocalOrAnonymous) {
+                localIdentifier(symbol.name)
+            } else if (symbol.classSymbolKind == PackageObjectSymbol) {
+                packageIdentifier(symbol.owner) // The $package suffix is stripped.
+            } else if (symbol.owner.isPackageClass) {
+                separateNonEmptyPrefix(packageIdentifier(symbol.owner), localIdentifier(symbol.name))
+            } else {
+                typeIdentifier(symbol.owner.tpe) + "$" + symbol.name.toString
+            }
+
+        val suffix = symbol.classSymbolKind match {
+            case PackageObjectSymbol | ObjectSymbol => "$"
+            case _ => ""
+        }
+
+        identifier + suffix
+    }
+    def typeIdentifier(tpe: Type): String = typeIdentifier(tpe.typeSymbol)
+    def typeJsIdentifier(tpe: Type): js.Identifier = typeJsIdentifier(tpe.typeSymbol)
+    def typeJsIdentifier(symbol: Symbol): js.Identifier = js.Identifier(typeIdentifier(symbol))
+
+    private def separateNonEmptyPrefix(prefix: String, suffix: String, separator: String = ".") = prefix match {
+        case "" => suffix
+        case _ => prefix + separator + suffix
+    }
 }
