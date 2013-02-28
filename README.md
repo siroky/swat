@@ -4,10 +4,10 @@ Aim of this project is to create a set of tools that will help to create rich in
 
 ## Components
 
-- Scala to JavaScript compiler.
+- ✔ Scala to JavaScript compiler.
 - Runtime that would support execution of the compiled code.
 - Port of the most important Scala Library classes to JavaScript.
-- Adapters of JavaScript objects and functions so they may be used within Scala code. And means of simple integration of existing libraries like jQuery, Google Closure Library etc.
+- ✔ Adapters of JavaScript objects and functions so they may be used within Scala code. And means of simple integration of existing libraries like jQuery, Google Closure Library etc.
 - Object graph serializer/deserializer to/from JSON.
 - Remote procedure call mechanism between the client-side and the server-side.
 - Classloader that can dynamically fetch compiled class definitions from the server on the fly.
