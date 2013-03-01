@@ -124,13 +124,13 @@ class ExpressionTests extends CompilerSuite
 
             var m = 'm';
             var n = 'n';
-            -scala.Char().toInt(m);
-            (scala.Char().toInt(m) * scala.Char().toInt(n));
-            ~scala.Char().toInt(m);
-            (scala.Char().toInt(m) & scala.Char().toInt(n));
-            (scala.Char().toInt(m) << scala.Char().toInt(n));
-            (scala.Char().toInt(m) < scala.Char().toInt(n));
-            (scala.Char().toInt(m) >= scala.Char().toInt(n));
+            -scala.Char$().toInt(m);
+            (scala.Char$().toInt(m) * scala.Char$().toInt(n));
+            ~scala.Char$().toInt(m);
+            (scala.Char$().toInt(m) & scala.Char$().toInt(n));
+            (scala.Char$().toInt(m) << scala.Char$().toInt(n));
+            (scala.Char$().toInt(m) < scala.Char$().toInt(n));
+            (scala.Char$().toInt(m) >= scala.Char$().toInt(n));
             (m == n);
             (m != n);
             (m == n);
@@ -155,8 +155,8 @@ class ExpressionTests extends CompilerSuite
         """ fragmentShouldCompileTo """
             var x = 1;
             swat.hashCode(x);
-            scala.Int().toByte(x);
-            scala.Int().toDouble(x);
+            scala.Int$().toByte(x);
+            scala.Int$().toDouble(x);
         """
     }
 
@@ -225,8 +225,8 @@ class ExpressionTests extends CompilerSuite
         """ fragmentShouldCompileTo """
             var x = 'a';
             swat.hashCode(x);
-            java.lang.String().length(x);
-            java.lang.String().substring(x, 3, [scala.Int]);
+            java.lang.String$().length(x);
+            java.lang.String$().substring(x, 3, [scala.Int]);
         """
     }
 }

@@ -192,8 +192,6 @@ trait ClassDefProcessors {
         }
 
         def processReturnTree(tree: Tree): js.Statement = {
-            val processedTree = processExpressionTree(tree)
-
             // If the type of the tree is Unit, then the tree appears on the return position of an expression, which
             // actually doesn't return anything. So the 'return' may be omitted.
             if (tree.tpe.isUnit) {
@@ -203,10 +201,10 @@ trait ClassDefProcessors {
                     // original value. However it's not possible to shadow and use a variable in one statement, which
                     // isn't itself scoped. The purpose is to get rid of unnecessary scoping.
                     case Block(statement :: Nil, Literal(Constant(_: Unit))) => processStatementTree(statement)
-                    case _ => js.ExpressionStatement(processedTree)
+                    case _ => processStatementTree(tree)
                 }
             } else {
-                js.ReturnStatement(Some(processedTree))
+                js.ReturnStatement(Some(processExpressionTree(tree)))
             }
         }
 
@@ -295,6 +293,9 @@ trait ClassDefProcessors {
         def processSelect(select: Select): js.Expression = {
             val processedSelect = memberChain(processExpressionTree(select.qualifier), localJsIdentifier(select.name))
             select.symbol match {
+                // An adapter object select.
+                case s if s.isObject && s.isAdapter => objectAccessor(s)
+
                 // A method invocation without the corresponding apply.
                 case m: MethodSymbol => js.CallExpression(processedSelect, Nil)
                 case s if s.isField => fieldGet(s)
@@ -302,7 +303,11 @@ trait ClassDefProcessors {
             }
         }
 
-        def processApply(apply: Apply): js.Expression = apply.fun match {
+        /**
+         * Processes an Apply AST. May return both Expression or Statement depending of the application type, because
+         * some applications lead to an assignment statement.
+         */
+        def processApply(apply: Apply) = apply.fun match {
             // Outer field getter.
             case s: Select if s.symbol.isOuterAccessor => memberChain(processExpressionTree(s.qualifier), outerIdent)
 
@@ -313,15 +318,35 @@ trait ClassDefProcessors {
             case Select(n: New, _) => processNew(apply, n)
 
             // A local object constructor call can be omitted because every object access is via an accessor.
-            case f if f.symbol.isModule => objectAccessor(typeJsIdentifier(apply.tpe))
+            case f if f.symbol.isModule => objectAccessor(apply.tpe.typeSymbol)
+
+            // An application on an adapter.
+            case s: Select if s.qualifier.tpe.typeSymbol.isAdapter => processAdapterApply(s, apply.args)
 
             // Method call.
             case f => processCall(f, apply.args)
         }
 
+        def processAdapterApply(function: Select, args: List[Tree]) = {
+            val symbol = function.symbol
+            if (symbol.isAccessor) {
+                val fieldName = localJsIdentifier(function.name.toString.stripSuffix("_$eq"))
+                val field = js.MemberExpression(processExpressionTree(function.qualifier), fieldName)
+                if (symbol.isGetter) {
+                    field
+                } else {
+                    js.AssignmentStatement(field, processExpressionTree(args.head))
+                }
+            } else if (symbol.isApplyMethod) {
+                functionCall(function.qualifier, args)
+            } else {
+                functionCall(function, args)
+            }
+        }
+
         def processCall(method: Tree, args: List[Tree]): js.Expression = method match {
-            // A local def call doesn't need the type hint like a method, because it can't be overloaded nor overriden.
-            case f if f.symbol.isLocal => js.CallExpression(processExpressionTree(f), processExpressionTrees(args))
+            // A local function call doesn't need the type hint, because it can't be overloaded.
+            case f if f.symbol.isLocal => functionCall(f, args)
 
             // Methods on types that compile to JavaScript built-in types (primitive, function, array).
             case s @ Select(q, _) if q.tpe.isAnyValOrString => processAnyValOrStringMethodCall(s.symbol, q, args)
@@ -341,6 +366,10 @@ trait ClassDefProcessors {
                 val methodExpr = memberChain(processExpressionTree(qualifier), localJsIdentifier(name))
                 js.CallExpression(methodExpr, processMethodArgs(s.symbol, Some(qualifier), args))
             }
+        }
+
+        def functionCall(function: Tree, args: List[Tree]): js.Expression = {
+            js.CallExpression(processExpressionTree(function), processExpressionTrees(args))
         }
 
         def processMethodArgs(method: Symbol, qualifier: Option[Tree], args: List[Tree]): List[js.Expression] =  {
@@ -438,7 +467,7 @@ trait ClassDefProcessors {
 
         def processFunctionMethodCall(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
             if (method.isApplyMethod) {
-                js.CallExpression(processExpressionTree(qualifier), processExpressionTrees(args))
+                functionCall(qualifier, args)
             } else {
                 dispatchCallToCompanion(method, qualifier, args)
             }

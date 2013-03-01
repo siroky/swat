@@ -4,7 +4,7 @@ import swat.api
 import swat.compiler.{SwatCompilerPlugin, CompilationException}
 
 trait RichTrees {
-    self: SwatCompilerPlugin =>
+    self: SwatCompilerPlugin with ScalaAstProcessor =>
 
     import global._
 
@@ -30,11 +30,12 @@ trait RichTrees {
 
     implicit class RichSymbol(s: Symbol) {
         def classSymbolKind = {
-            if (s.isPackageObjectClass) PackageObjectSymbol else
-            if (s.isModuleClass) ObjectSymbol else
+            if (s.isPackageObjectOrClass) PackageObjectSymbol else
+            if (s.isModuleOrModuleClass) ObjectSymbol else
             if (s.isTrait) TraitSymbol else ClassSymbol
         }
 
+        def isObject = Set(PackageObjectSymbol, ObjectSymbol)(s.classSymbolKind)
         def isLocalOrAnonymous = s.owner.isMethod || s.owner.isLocal || s.owner.isAnonymousClass
 
         def isField = Set("field", "value", "lazy value")(s.accurateKindString)
@@ -42,7 +43,9 @@ trait RichTrees {
 
         def isCompiled = !(isIgnored || isAdapter)
         def isIgnored = hasAnnotation(typeOf[api.ignored])
-        def isAdapter = hasAnnotation(typeOf[api.adapter]) || s.fullName.startsWith("swat.api.adapters")
+        def isAdapter = {
+            hasAnnotation(typeOf[api.adapter]) || adapterPackages.exists(p => s.fullName.startsWith(p))
+        }
 
         def nativeAnnotation: Option[String] = typedAnnotation(typeOf[api.native]).map { i =>
             i.stringArg(0).getOrElse {

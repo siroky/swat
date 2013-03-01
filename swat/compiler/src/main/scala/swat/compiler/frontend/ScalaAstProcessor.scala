@@ -1,6 +1,7 @@
 package swat.compiler.frontend
 
 import swat.compiler.{SwatCompilerPlugin, js}
+import swat.api.js.{JSON, console, document, window}
 
 trait ScalaAstProcessor
     extends js.TreeBuilder
@@ -11,13 +12,19 @@ trait ScalaAstProcessor
     import global._
 
     /**
-     * A list of packages that are stripped from the compiled JavaScript code. For example a class
+     * A set of packages that are stripped from the compiled JavaScript code. For example a class
      * swat.runtime.client.foo.bar.A is compiled to foo.bar.A. The main purpose is an easy integration of existing
      * libraries into the client code without naming collisions. This can be seen on the swat.runtime.client.scala
      * package where altered versions of Scala Library classes may be defined. Advantage is, that in the compiled
      * code, they seem like they were declared in the scala package.
      */
-    val ignoredPackages = List("<root>", "<empty>", "swat.runtime.client")
+    val ignoredPackages = Set("<root>", "<empty>", "swat.runtime.client")
+
+    /**
+     * A set of packages whose classes and objects are considered to be adapters even though they don't necessarily
+     * need to be annotated with the [[swat.api.adapter]] annotation.
+     */
+    val adapterPackages = Set("swat.api.js")
 
     def processUnitBody(body: Tree): Map[String, js.Program] = body match {
         case p: PackageDef => {
@@ -49,8 +56,13 @@ trait ScalaAstProcessor
         js.Program(provide ++ statements)
     }
 
-    def objectAccessor(objectSymbol: Symbol): js.Expression = objectAccessor(typeJsIdentifier(objectSymbol))
-    def objectAccessor(objectExpression: js.Expression): js.Expression = js.CallExpression(objectExpression, Nil)
+    def objectAccessor(objectSymbol: Symbol): js.Expression = {
+        if (objectSymbol.isAdapter) {
+            typeJsIdentifier(objectSymbol)
+        } else {
+            js.CallExpression(typeJsIdentifier(objectSymbol), Nil)
+        }
+    }
 
     def swatMethodCall(methodName: String, args: js.Expression*): js.Expression =
         methodCall(localJsIdentifier("swat"), localJsIdentifier(methodName), args: _*)
@@ -79,7 +91,7 @@ trait ScalaAstProcessor
     }
 
     def packageIdentifier(packageSymbol: Symbol): String = {
-        if (ignoredPackages.contains(packageSymbol.fullName)) {
+        if (ignoredPackages(packageSymbol.fullName) || adapterPackages(packageSymbol.fullName)) {
             ""
         } else {
             separateNonEmptyPrefix(packageIdentifier(packageSymbol.owner), localIdentifier(packageSymbol.name))
@@ -91,7 +103,7 @@ trait ScalaAstProcessor
         val identifier =
             if (symbol == NoSymbol) {
                 ""
-            } else if (symbol.isLocalOrAnonymous) {
+            } else if (symbol.isLocalOrAnonymous || symbol.isAdapter) {
                 localIdentifier(symbol.name)
             } else if (symbol.classSymbolKind == PackageObjectSymbol) {
                 packageIdentifier(symbol.owner) // The $package suffix is stripped.
@@ -101,10 +113,7 @@ trait ScalaAstProcessor
                 typeIdentifier(symbol.owner.tpe) + "$" + symbol.name.toString
             }
 
-        val suffix = symbol.classSymbolKind match {
-            case PackageObjectSymbol | ObjectSymbol => "$"
-            case _ => ""
-        }
+        val suffix = if (symbol.isObject && !symbol.isAdapter) "$" else ""
 
         identifier + suffix
     }

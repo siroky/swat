@@ -74,7 +74,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     }),
                     [java.lang.String], (function(foo) {
                         var $self = this;
-                        $self.$init$(java.lang.String().length(foo), [scala.Int]);
+                        $self.$init$(java.lang.String$().length(foo), [scala.Int]);
                     }),
                     [scala.Boolean], (function(foo) {
                         var $self = this;
@@ -133,7 +133,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     $self.$fields.x = 'abc';
                     $self.$fields.y = 123;
                     $self.$fields.z = swat.memoize((function() {
-                        return (java.lang.String().length($self.x()) + $self.y());
+                        return (java.lang.String$().length($self.x()) + $self.y());
                     }));
                 });
                 T.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
@@ -150,7 +150,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     $self.$fields.x = 'abc';
                     $self.$fields.y = 123;
                     $self.$fields.z = swat.memoize((function() {
-                        return (java.lang.String().length($self.x()) + $self.y());
+                        return (java.lang.String$().length($self.x()) + $self.y());
                     }));
                 });
                 C.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
@@ -168,7 +168,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     $self.$fields.y = 123;
                     $self.$fields.z =
                     swat.memoize((function() {
-                        return (java.lang.String().length($self.x()) + $self.y());
+                        return (java.lang.String$().length($self.x()) + $self.y());
                     }));
                 });
                 O$.test = swat.method([], (function() {
@@ -186,10 +186,10 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     c.y_$eq(456, [scala.Int]);
                     c.z();
 
-                    O().x();
-                    O().y();
-                    O().y_$eq(456, [scala.Int]);
-                    O().z();
+                    O$().x();
+                    O$().y();
+                    O$().y_$eq(456, [scala.Int]);
+                    O$().z();
                 }));
                 O$.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
                 O$.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));

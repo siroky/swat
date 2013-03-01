@@ -208,7 +208,7 @@ class ClassDefinitionTests extends CompilerSuite
                     var $self = this;
                     var a = new A();
                     new A$B(a);
-                    new A$B(o().a());
+                    new A$B(o$().a());
                 }));
                 o$ = swat.object([o$, java.lang.Object, scala.Any]);
             """
