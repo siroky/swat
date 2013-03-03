@@ -2,7 +2,7 @@ package swat.compiler
 
 class ClassDefinitionTests extends CompilerSuite
 {
-    /*test("Adapter classes and ignored classes aren't compiled") {
+    test("Adapter classes and ignored classes aren't compiled") {
         """
             import swat.api._
 
@@ -40,7 +40,7 @@ class ClassDefinitionTests extends CompilerSuite
             swat.require('java.lang.String', true);
             A = function() { };
         """)
-    }*/
+    }
 
     test("Definitions are properly qualified with respect to packages and outer classes") {
         """
