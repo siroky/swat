@@ -1,11 +1,12 @@
 package swat.compiler
 
-import scala.tools.nsc.{Global, Settings}
+import scala.tools.nsc.{SubComponent, Global, Settings}
 import scala.tools.nsc.io.File
 import java.io
 import tools.nsc.reporters.Reporter
 import reflect.internal.util.Position
 import collection.mutable
+import scala.tools.nsc.transform.Erasure
 
 class SwatCompiler(
     val classPath: String,
@@ -30,17 +31,11 @@ class SwatCompiler(
         settings.deprecation.value = true
         settings.unchecked.value = true
         settings.feature.value = true
-        settings.stopBefore.value = List("erasure")
 
         val reporter = new SilentReporter
         val compiler = new SwatGlobal(settings, reporter)
         val run = new compiler.Run()
-        try {
-            run.compile(List(sourceFile.path))
-        } catch {
-            case t: Throwable if compiler.swatPlugin.output.isEmpty => throw t
-            case _: Throwable =>
-        }
+        run.compile(List(sourceFile.path))
 
         val classOutputs = compiler.swatPlugin.output
         if (reporter.errors.nonEmpty && classOutputs.isEmpty) {
@@ -51,12 +46,30 @@ class SwatCompiler(
 
     private class SwatGlobal(settings: Settings, reporter: Reporter) extends Global(settings, reporter) {
 
-        val swatPlugin = new SwatCompilerPlugin(this)
+        object swatPlugin extends SwatCompilerPlugin(this)
+
+        object postponedErasure extends {
+            val global: SwatGlobal.this.type = SwatGlobal.this
+            val runsAfter = List("swat")
+            val runsRightAfter = Some("swat")
+        } with Erasure
 
         override protected def computeInternalPhases() {
             super.computeInternalPhases()
             swatPlugin.processOptions(options.toList, identity _)
-            swatPlugin.components.foreach(phasesSet += _)
+
+            // Add the swat compiler phases.
+            swatPlugin.components.foreach(c => addToPhasesSet(c, c.phaseName))
+
+            // Remove the old erasure that runs right after explicitouter and add new that runs after swat.
+            removeFromPhasesSet(erasure)
+            removeFromPhasesSet(specializeTypes) // TODO investigate
+            addToPhasesSet(postponedErasure, "erase types, add interfaces for traits")
+        }
+
+        protected def removeFromPhasesSet(sub: SubComponent) {
+            phasesSet -= sub
+            phasesDescMap -= sub
         }
     }
 

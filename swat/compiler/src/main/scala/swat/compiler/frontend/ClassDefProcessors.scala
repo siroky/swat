@@ -130,19 +130,17 @@ trait ClassDefProcessors {
         }
 
         def processDefDef(defDef: DefDef, includeSelf: Boolean = true): js.FunctionExpression = {
-            val parameters = defDef.vparamss.flatten.map(p => localJsIdentifier(p.name))
+            val processedParameters = defDef.vparamss.flatten.map(p => localJsIdentifier(p.name))
             val self = if (includeSelf) List(selfDeclaration) else Nil
             val processedBody =
                 if (defDef.symbol.isGetter && defDef.symbol.isLazy) {
                     // Body of a lazy val (which is assigned to the corresponding field in the primary constructor)
                     // can be replaced by simple return of the field, where the lazy val is stored.
                     js.ReturnStatement(Some(fieldGet(defDef.symbol)))
-                } else if (defDef.rhs.tpe.isUnit) {
-                    processStatementTree(defDef.rhs)
                 } else {
-                    processReturnTree(defDef.rhs)
+                    processReturnTree(defDef.rhs, defDef.tpt.tpe)
                 }
-            js.FunctionExpression(None, parameters, self ++ unScoped(processedBody))
+            js.FunctionExpression(None, processedParameters, self ++ unScoped(processedBody))
         }
 
         def processJsConstructor(superClasses: js.ArrayLiteral): js.Statement = {
@@ -197,10 +195,10 @@ trait ClassDefProcessors {
             }
         }
 
-        def processReturnTree(tree: Tree): js.Statement = {
+        def processReturnTree(tree: Tree, returnTpe: Type = null): js.Statement = {
             // If the type of the tree is Unit, then the tree appears on the return position of an expression, which
             // actually doesn't return anything. So the 'return' may be omitted.
-            if (tree.tpe.isUnit) {
+            if (Option(returnTpe).getOrElse(tree.tpe).isUnit) {
                 tree match {
                     // If the tree is a Block with structure { statement; (); } then the block that wraps the statement
                     // may be omitted. The scope protects from shadowing and using the shadowed value instead of the
@@ -385,8 +383,13 @@ trait ClassDefProcessors {
         def processMethodArgs(method: Symbol, qualifier: Option[Tree], args: List[Tree]): List[js.Expression] =  {
             val methodSymbol = method.asInstanceOf[MethodSymbol]
             val methodType = qualifier.map(q => methodSymbol.typeAsMemberOf(q.symbol.tpe)).getOrElse(methodSymbol.tpe)
-            val paramTypes = methodType.paramTypes.map(typeJsIdentifier _)
-            val typeHint = if (paramTypes.isEmpty) None else Some(js.ArrayLiteral(paramTypes))
+            val paramTypes = methodType.paramTypes
+
+            val firstParam = method.paramss.flatten.headOption
+            val firstParamIsOuter = firstParam.map(_.name.endsWith(nme.OUTER)).getOrElse(false)
+            val hintTypes = if (firstParamIsOuter) paramTypes.tail else paramTypes
+            val typeHint = if (hintTypes.isEmpty) None else Some(js.ArrayLiteral(hintTypes.map(typeJsIdentifier _)))
+
             processExpressionTrees(args) ++ typeHint.toList
         }
 
@@ -499,8 +502,9 @@ trait ClassDefProcessors {
             }
         }
 
-        def processAssign(assign: Assign): js.Statement =
+        def processAssign(assign: Assign): js.Statement = {
             js.AssignmentStatement(processExpressionTree(assign.lhs), processExpressionTree(assign.rhs))
+        }
 
         def processLocalValDef(valDef: ValDef): js.Statement = valDef.symbol match {
             // A val definition associated with a lazy val can be omitted as the value will be stored in the

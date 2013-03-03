@@ -11,7 +11,11 @@ trait RichTrees {
     implicit class RichType(t: Type) {
         import definitions._
 
-        val s = t.underlying.typeSymbol
+        if (t == null) {
+            val x= null
+        }
+
+        val s = Option(t.underlying).getOrElse(t).typeSymbol
 
         def isUnit = t.underlying =:= typeOf[Unit]
         def isAny = t.underlying =:= typeOf[Any]
