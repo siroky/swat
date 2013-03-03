@@ -3,8 +3,12 @@ package swat.compiler
 import frontend.ScalaAstProcessor
 import scala.tools.nsc.Global
 import tools.nsc.plugins.{PluginComponent, Plugin}
-import scala.reflect.internal.{StdNames, FatalError, Phase}
+import scala.reflect.internal.{FatalError, Phase}
 
+/**
+ * A compiler plugin that produces JavaScript that should behave equally to the input Scala AST.
+ * @param global The compiler where the plugin is plugged in.
+ */
 class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcessor {
     import global._
 
@@ -13,19 +17,18 @@ class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcess
     val components = List[PluginComponent](SwatCompilationComponent)
     var output: Option[Map[String, js.Program]] = None
 
-    var options = CompilerOptions.default
-    override val optionsHelp = Some(CompilerOptions.help(name))
-
-    override def processOptions(o: List[String], error: String => Unit) {
-        super.processOptions(o, error)
-        options = CompilerOptions(o)
-    }
-
+    /**
+     * The only component of the plugin.
+     */
     private object SwatCompilationComponent extends PluginComponent {
         val global: SwatCompilerPlugin.this.global.type = SwatCompilerPlugin.this.global
         val phaseName = "swat"
         val runsAfter = List("explicitouter")
 
+        /**
+         * Returns a phase that performs the JavaScript compilation.
+         * @param prev The previous phase.
+         */
         def newPhase(prev: Phase) = new StdPhase(prev) {
             def apply(unit: CompilationUnit) {
                 // The compiler plugin shouldn't throw any exceptions. The errors should be reported using the
@@ -40,11 +43,24 @@ class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcess
                     case t: Throwable => swatError(t.toString, t.getStackTrace)
                 }
             }
-
-            def swatError(msg: String, stackTrace: Seq[StackTraceElement]) {
-                println(s"[swat error]: $msg")
-                println(stackTrace.mkString("\n"))
-            }
         }
     }
+
+    /**
+     * Reports an error in the SWAT compiler itself.
+     * @param msg The error message.
+     * @param stackTrace Stack trace of the error.
+     */
+    def swatError(msg: String, stackTrace: Seq[StackTraceElement]) {
+        println(s"[swat error]: $msg")
+        println(stackTrace.mkString("\n"))
+    }
 }
+
+/**
+ * An output of the swat plugin phase compilation.
+ * @param classOutputs A map of compiled types with corresponding JavaScript programs.
+ * @param warnings A list of warnings that occurred during compilation.
+ * @param infos A list of infos that occurred during compilation.
+ */
+case class CompilationOutput(classOutputs: Map[String, js.Program], warnings: List[String], infos: List[String])

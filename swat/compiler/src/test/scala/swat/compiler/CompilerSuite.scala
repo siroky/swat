@@ -5,14 +5,12 @@ import org.scalatest.FunSuite
 import tools.nsc.io.Directory
 import swat.compiler.js._
 
-trait CompilerSuite extends FunSuite
-{
-    implicit protected def string2scalaCode(code: String)= new ScalaCode(code)
+trait CompilerSuite extends FunSuite {
 
+    implicit protected def string2scalaCode(code: String)= new ScalaCode(code)
     implicit protected def string2scalaCodeFragment(code: String) = new ScalaCodeFragment(code)
 
-    protected class ScalaCode(val code: String)
-    {
+    protected class ScalaCode(val code: String) {
         def shouldCompileTo(expectedCodes: Map[String, String]) {
             def normalizeCode(c: String) = {
                 c.lines.map(_.dropWhile(_ == ' ').reverse.dropWhile(_ == ' ').reverse).filter(!_.isEmpty).mkString(" ")
@@ -66,7 +64,7 @@ trait CompilerSuite extends FunSuite
             classTarget.createDirectory()
 
             try {
-                new SwatCompiler(classPath, classTarget.path, CompilerOptions(target = None)).compile(code)
+                new SwatCompiler(classPath, classTarget.path, None).compile(code)
             } catch {
                 case ce: CompilationException => {
                     fail(ce.getMessage)
@@ -78,8 +76,7 @@ trait CompilerSuite extends FunSuite
         }
     }
 
-    protected class ScalaCodeFragment(code: String)
-    {
+    protected class ScalaCodeFragment(code: String) {
         private val ident = "A"
 
         private val scalaCode = new ScalaCode(s"class A { def f() { $code } }") {
