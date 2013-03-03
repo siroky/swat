@@ -10,11 +10,17 @@ trait ClassDefProcessors {
     import global._
 
     object ClassDefProcessor {
-        def apply(classDef: ClassDef): ClassDefProcessor = classDef.symbol.classSymbolKind match {
-            case ClassSymbol => new ClassProcessor(classDef)
-            case TraitSymbol => new TraitProcessor(classDef)
-            case ObjectSymbol => new ObjectProcessor(classDef)
-            case PackageObjectSymbol => new PackageObjectProcessor(classDef)
+        def apply(classDef: ClassDef): ClassDefProcessor = {
+            val symbol = classDef.symbol
+            if (symbol.isPackageObjectOrClass) {
+                new PackageObjectProcessor(classDef)
+            } else if (symbol.isModuleOrModuleClass) {
+                new ObjectProcessor(classDef)
+            } else if (symbol.isTrait) {
+                new TraitProcessor(classDef)
+            } else {
+                new ClassProcessor(classDef)
+            }
         }
     }
 
@@ -327,20 +333,21 @@ trait ClassDefProcessors {
             case f => processCall(f, apply.args)
         }
 
-        def processAdapterApply(function: Select, args: List[Tree]) = {
-            val symbol = function.symbol
+        def processAdapterApply(method: Select, args: List[Tree]) = {
+            val symbol = method.symbol
             if (symbol.isAccessor) {
-                val fieldName = localJsIdentifier(function.name.toString.stripSuffix("_$eq"))
-                val field = js.MemberExpression(processExpressionTree(function.qualifier), fieldName)
+                val fieldName = localJsIdentifier(method.name.toString.stripSuffix("_$eq"))
+                val field = js.MemberExpression(processExpressionTree(method.qualifier), fieldName)
                 if (symbol.isGetter) {
                     field
                 } else {
                     js.AssignmentStatement(field, processExpressionTree(args.head))
                 }
             } else if (symbol.isApplyMethod) {
-                functionCall(function.qualifier, args)
+                functionCall(method.qualifier, args)
             } else {
-                functionCall(function, args)
+                val methodExpr = memberChain(processExpressionTree(method.qualifier), localJsIdentifier(method.name))
+                functionCall(methodExpr, args)
             }
         }
 
@@ -369,7 +376,10 @@ trait ClassDefProcessors {
         }
 
         def functionCall(function: Tree, args: List[Tree]): js.Expression = {
-            js.CallExpression(processExpressionTree(function), processExpressionTrees(args))
+            functionCall(processExpressionTree(function), args)
+        }
+        def functionCall(function: js.Expression, args: List[Tree]): js.Expression = {
+            js.CallExpression(function, processExpressionTrees(args))
         }
 
         def processMethodArgs(method: Symbol, qualifier: Option[Tree], args: List[Tree]): List[js.Expression] =  {

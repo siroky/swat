@@ -46,7 +46,23 @@ class AdapterTests extends CompilerSuite
             swat.api.js.eval("code")
             swat.api.js.isNaN(123)
         """ fragmentShouldCompileTo """
+            NaN;
+            eval('code');
+            isNaN(123);
+        """
+    }
 
-                                    """
+    test("Overloaded methods aren't provided the type hint") {
+        """
+            val r = new swat.api.js.browser.XMLHttpRequest()
+            r.open("GET", "http://api.com")
+            r.open("GET", "http://api.com", true)
+            r.open("GET", "http://api.com", true, "username", "password")
+        """ fragmentShouldCompileTo """
+            var r = new XMLHttpRequest();
+            r.open('GET', 'http://api.com');
+            r.open('GET', 'http://api.com', true);
+            r.open('GET', 'http://api.com', true, 'username', 'password');
+        """
     }
 }

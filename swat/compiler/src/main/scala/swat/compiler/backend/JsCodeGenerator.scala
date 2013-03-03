@@ -127,7 +127,10 @@ class JsCodeGenerator {
             }
             case ThisReference => "this"
             case Identifier(name) => name
-            case MemberExpression(expr, name) => process(expr) + "." + process(name)
+            case MemberExpression(expr, name) => process(expr) match {
+                case "" => process(name)
+                case e => e + "." + process(name)
+            }
             case CallExpression(expr, parameters) => process(expr) + process(parameters).mkString("(", ", ", ")")
             case NewExpression(constructor) => "new " + process(constructor)
             case PrefixExpression(operator, expr) => operator + process(expr)

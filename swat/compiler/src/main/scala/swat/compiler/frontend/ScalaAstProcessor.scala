@@ -103,16 +103,23 @@ trait ScalaAstProcessor
         val identifier =
             if (symbol == NoSymbol) {
                 ""
-            } else if (symbol.isLocalOrAnonymous || symbol.isAdapter) {
+            } else if (symbol.isLocalOrAnonymous) {
                 localIdentifier(symbol.name)
-            } else if (symbol.classSymbolKind == PackageObjectSymbol) {
-                packageIdentifier(symbol.owner) // The $package suffix is stripped.
+            } else if (symbol.isAdapter) {
+                val stripPackage = symbol.adapterAnnotation.getOrElse(true)
+                if (stripPackage && symbol.isPackageObjectOrClass && adapterPackages(symbol.owner.fullName)) {
+                    ""
+                } else {
+                    val prefix = if (stripPackage) "" else packageIdentifier(symbol.owner)
+                    separateNonEmptyPrefix(prefix, localIdentifier(symbol.name))
+                }
+            } else if (symbol.isPackageObjectOrClass) {
+                packageIdentifier(symbol.owner)
             } else if (symbol.owner.isPackageClass) {
                 separateNonEmptyPrefix(packageIdentifier(symbol.owner), localIdentifier(symbol.name))
             } else {
                 typeIdentifier(symbol.owner.tpe) + "$" + symbol.name.toString
             }
-
         val suffix = if (symbol.isObject && !symbol.isAdapter) "$" else ""
 
         identifier + suffix
@@ -121,7 +128,7 @@ trait ScalaAstProcessor
     def typeJsIdentifier(tpe: Type): js.Identifier = typeJsIdentifier(tpe.typeSymbol)
     def typeJsIdentifier(symbol: Symbol): js.Identifier = js.Identifier(typeIdentifier(symbol))
 
-    private def separateNonEmptyPrefix(prefix: String, suffix: String, separator: String = ".") = prefix match {
+    def separateNonEmptyPrefix(prefix: String, suffix: String, separator: String = ".") = prefix match {
         case "" => suffix
         case _ => prefix + separator + suffix
     }
