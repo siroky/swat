@@ -15,12 +15,13 @@ object SwatBuild extends Build {
             "-language:implicitConversions"
         ),
         libraryDependencies ++= Seq(
-            "org.scalatest" % "scalatest_2.10.0" % "1.8"
+            "org.scalatest" % "scalatest_2.10.0" % "1.8" % "test"
         ),
         resolvers ++= Seq(
             DefaultMavenRepository
         ),
-        version := "0.3"
+        organization := "swat",
+        version := "0.3-SNAPSHOT"
     )
 
     lazy val swatProject =
@@ -33,11 +34,11 @@ object SwatBuild extends Build {
         )
 
     lazy val apiProject =
-        Project("api", file("api"), settings = defaultSettings)
+        Project("swat-api", file("api"), settings = defaultSettings)
 
     lazy val compilerProject =
         Project(
-            "compiler", file("compiler"), settings = defaultSettings ++ Seq(
+            "swat-compiler", file("compiler"), settings = defaultSettings ++ Seq(
                 libraryDependencies ++= Seq(
                     "org.scala-lang" % "scala-compiler" % swatScalaVersion
                 )
@@ -48,8 +49,30 @@ object SwatBuild extends Build {
 
     lazy val runtimeProject =
         Project(
-            "runtime", file("runtime"), settings = defaultSettings
+            "swat-runtime", file("runtime"), settings = defaultSettings ++ Seq(
+                (compile in Compile) <<= (compile in Compile, managedClasspath in Compile, unmanagedClasspath in Compile, dependencyClasspath in Compile) map { (analysis, mcp, ucp, dcp) =>
+                    try {
+                        println("[info] Swat compilation started.")
+
+                        val separator = System.getProperty("path.separator")
+                        val cp = (mcp ++ ucp ++ dcp).map(_.data.getPath).distinct.mkString(separator)
+                        val compiler = new swat.compiler.SwatCompiler(cp, None, Some("./src/main/resources"))
+                        val sourceFiles = analysis.stamps.sources.keys.toList
+                        compiler.compile(sourceFiles)
+
+                        println("[info] Swat compilation successfully finished.")
+                    } catch {
+                        case t: Throwable => {
+                            println("[error] Swat compilation error.")
+                            println(t.getMessage)
+                            println(t.getStackTrace.mkString("\n"))
+                        }
+                    }
+
+                    analysis
+                }
+            )
         ).dependsOn(
-            compilerProject
+            apiProject
         )
 }

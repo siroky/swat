@@ -2,7 +2,6 @@ package swat.compiler
 
 import backend.JsCodeGenerator
 import org.scalatest.FunSuite
-import tools.nsc.io.Directory
 import swat.compiler.js._
 
 trait CompilerSuite extends FunSuite {
@@ -30,7 +29,7 @@ trait CompilerSuite extends FunSuite {
 
         protected def shouldCompileTo[A](expectedOutputs: Map[String, A], astProcessor: js.Ast => A) {
             val compilationOutput = compile()
-            val actualOutputs = compilationOutput.classOutputs.mapValues(astProcessor)
+            val actualOutputs = compilationOutput.typeOutputs.mapValues(astProcessor)
             val e = expectedOutputs.toSet
             val a = actualOutputs.toSet
             val difference = (a diff e) union (e diff a)
@@ -52,26 +51,21 @@ trait CompilerSuite extends FunSuite {
         }
 
         protected def compile(): CompilationOutput = {
-            // Inherit the compiler class path from the from the current classpath.
+            // Inherit the compiler class path from the from the current classpath. All dependencies of the compiled
+            // tests are added as dependencies of the compiler itself so they're in the current class path.
             val urls = java.lang.Thread.currentThread.getContextClassLoader match {
                 case cl: java.net.URLClassLoader => cl.getURLs.toList
                 case _ => fail("Couldn't provide the current classpath to the compiler.")
             }
             val classPath = urls.map(_.getFile).mkString(java.io.File.pathSeparator)
 
-            // Create a temporary class target.
-            val classTarget = new Directory(new java.io.File(java.util.UUID.randomUUID.toString))
-            classTarget.createDirectory()
-
             try {
-                new SwatCompiler(classPath, classTarget.path, None).compile(code)
+                new SwatCompiler(classPath, None, None).compile(code)
             } catch {
                 case ce: CompilationException => {
                     fail(ce.getMessage)
                     null
                 }
-            } finally {
-                classTarget.deleteRecursively()
             }
         }
     }
@@ -82,7 +76,7 @@ trait CompilerSuite extends FunSuite {
         private val scalaCode = new ScalaCode(s"class A { def f() { $code } }") {
             override def compile(): CompilationOutput = {
                 val output = super.compile()
-                val functionBody = output.classOutputs.get(ident).flatMap {
+                val functionBody = output.typeOutputs.get(ident).flatMap {
                     _.elements.flatMap {
                         case AssignmentStatement(MemberExpression(_, Identifier("f")), rhs) => rhs match {
                             case CallExpression(_, List(_, f: FunctionExpression)) => Some(f.body.tail)

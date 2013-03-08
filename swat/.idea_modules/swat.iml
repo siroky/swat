@@ -32,9 +32,9 @@
     <orderEntry type="library" name="org.scalatest_scalatest_2.10.0_1.8" level="project" />
     <orderEntry type="library" name="org.scala-lang_scala-actors_2.10.0" level="project" />
     <orderEntry type="library" name="org.scala-lang_scala-reflect_2.10.0" level="project" />
-    <orderEntry type="module" module-name="api" exported="" />
-    <orderEntry type="module" module-name="compiler" exported="" />
-    <orderEntry type="module" module-name="runtime" exported="" />
+    <orderEntry type="module" module-name="swat-api" exported="" />
+    <orderEntry type="module" module-name="swat-compiler" exported="" />
+    <orderEntry type="module" module-name="swat-runtime" exported="" />
   </component>
 </module>
 

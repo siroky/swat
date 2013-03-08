@@ -1,22 +1,22 @@
 package swat.compiler
 
 import scala.tools.nsc.{SubComponent, Global, Settings}
-import scala.tools.nsc.io.File
-import java.io
+import scala.tools.nsc.io.{File, Directory}
 import tools.nsc.reporters.Reporter
 import reflect.internal.util.Position
 import collection.mutable
 import scala.tools.nsc.transform.Erasure
+import swat.compiler.backend.JsCodeGenerator
 
 /**
  * A Scala compiler that, on the top of the standard Scala compiler, includes the [[swat.compiler.SwatCompilerPlugin]]
  * plugin producing JavaScript that should behave equally to the input Scala AST. Implemented as a wrapper of an
  * extended Scala compiler.
  * @param classPath Classpath for the compiled sources.
- * @param classTarget Target directory where the class files are stored.
+ * @param classTarget Target directory where the class files are optionally stored. If None then they're thrown away.
  * @param javaScriptTarget The target directory where the generated JavaScript files optionally are stored.
  */
-class SwatCompiler(val classPath: String, val classTarget: String, val javaScriptTarget: Option[String]) {
+class SwatCompiler(val classPath: String, val classTarget: Option[String], val javaScriptTarget: Option[String]) {
 
     /**
      * Compiles the specified source code.
@@ -24,24 +24,27 @@ class SwatCompiler(val classPath: String, val classTarget: String, val javaScrip
      * @return A compilation output.
      */
     def compile(scalaCode: String): CompilationOutput = {
-        val uuid = java.util.UUID.randomUUID
-        val sourceFile = new File(new io.File(s"$uuid.scala"))
+        val sourceFile = new File (new java.io.File(s"${java.util.UUID.randomUUID}.scala"))
         try {
             sourceFile.writeAll(scalaCode)
-            compile(sourceFile)
+            compile(List(sourceFile.jfile))
         } finally {
             sourceFile.delete()
         }
     }
 
     /**
-     * Compiles the specified file.
-     * @param sourceFile The Scala source file to compile.
+     * Compiles the specified files.
+     * @param sourceFiles The Scala source files to compile.
      * @return A compilation output.
      */
-    def compile(sourceFile: File): CompilationOutput = {
+    def compile(sourceFiles: List[java.io.File]): CompilationOutput = {
+        // If the class target is unspecified, create a temporary directory and delete it afterwards.
+        val target = new Directory(new java.io.File(classTarget.getOrElse(java.util.UUID.randomUUID.toString)))
+        target.createDirectory()
+
         val settings = new Settings()
-        settings.outdir.value = classTarget
+        settings.outdir.value = target.path
         settings.classpath.value = classPath
         settings.deprecation.value = true
         settings.unchecked.value = true
@@ -50,13 +53,36 @@ class SwatCompiler(val classPath: String, val classTarget: String, val javaScrip
         val reporter = new SilentReporter
         val compiler = new SwatGlobal(settings, reporter)
         val run = new compiler.Run()
-        run.compile(List(sourceFile.path))
+        try {
+            run.compile(sourceFiles.map(_.getPath))
+        } finally {
+            if (classTarget.isEmpty) {
+                target.deleteRecursively()
+            }
+        }
 
-        val classOutputs = compiler.swatPlugin.output
-        if (reporter.errors.nonEmpty && classOutputs.isEmpty) {
+        val output = compiler.swatPlugin.output
+        if (reporter.errors.nonEmpty) {
             throw new CompilationException(reporter.errors.head)
         }
-        CompilationOutput(classOutputs.getOrElse(Map.empty), reporter.warnings.toList, reporter.infos.toList)
+
+        produceJavaScript(output)
+        CompilationOutput(output, reporter.warnings.toList, reporter.infos.toList)
+    }
+
+    /**
+     * If the javaScriptTarget is specified, produces a file for each type in the specified type outputs.
+     */
+    private def produceJavaScript(typeOutputs: Map[String, js.Program]) {
+        // If the javaScriptTarget is specified, create the JavaScript files there.
+        javaScriptTarget.foreach { target =>
+            val codeGenerator = new JsCodeGenerator
+            typeOutputs.mapValues(codeGenerator.astToCode _).foreach { case (typeIdentifier, program) =>
+                val typeFile = new File(new java.io.File(target + "/" + typeIdentifier.replace(".", "/") + ".js"))
+                typeFile.parent.createDirectory()
+                typeFile.writeAll(program)
+            }
+        }
     }
 
     /**

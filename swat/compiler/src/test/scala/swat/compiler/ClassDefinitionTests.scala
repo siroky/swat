@@ -128,7 +128,7 @@ class ClassDefinitionTests extends CompilerSuite
         )
     }
 
-    /*test("Inner classes") {
+    test("Inner classes") {
         """
             class A {
                 def a = new A
@@ -213,5 +213,5 @@ class ClassDefinitionTests extends CompilerSuite
                 o$ = swat.object([o$, java.lang.Object, scala.Any]);
             """
         )
-    }*/
+    }
 }

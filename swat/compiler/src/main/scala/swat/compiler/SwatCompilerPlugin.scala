@@ -15,7 +15,7 @@ class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcess
     val name = "swat-compiler"
     val description = "Swat Compiler of Scala code into JavaScript."
     val components = List[PluginComponent](SwatCompilationComponent)
-    var output: Option[Map[String, js.Program]] = None
+    var output: Map[String, js.Program] = Map.empty
 
     /**
      * The only component of the plugin.
@@ -37,7 +37,7 @@ class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcess
                 // in the compiler plugin. To avoid that, all exceptions are consumed here and reported as an internal
                 // error of the SWAT compiler.
                 try {
-                    output = Some(processUnitBody(unit.body))
+                    output = processUnitBody(unit.body)
                 } catch {
                     case f: FatalError => swatError(f.msg.lines.toBuffer.last, f.getStackTrace)
                     case t: Throwable => swatError(t.toString, t.getStackTrace)
@@ -59,8 +59,8 @@ class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcess
 
 /**
  * An output of the swat plugin phase compilation.
- * @param classOutputs A map of compiled types with corresponding JavaScript programs.
+ * @param typeOutputs A map of compiled types with corresponding JavaScript programs.
  * @param warnings A list of warnings that occurred during compilation.
  * @param infos A list of infos that occurred during compilation.
  */
-case class CompilationOutput(classOutputs: Map[String, js.Program], warnings: List[String], infos: List[String])
+case class CompilationOutput(typeOutputs: Map[String, js.Program], warnings: List[String], infos: List[String])

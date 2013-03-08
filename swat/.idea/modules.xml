@@ -2,11 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/api.iml" filepath="$PROJECT_DIR$/.idea_modules/api.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/compiler.iml" filepath="$PROJECT_DIR$/.idea_modules/compiler.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/runtime.iml" filepath="$PROJECT_DIR$/.idea_modules/runtime.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat.iml" filepath="$PROJECT_DIR$/.idea_modules/swat.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-api.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-build.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-compiler.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-compiler.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-runtime.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-runtime.iml" />
     </modules>
   </component>
 </project>
