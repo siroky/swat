@@ -29,6 +29,7 @@ trait ClassDefProcessors {
         val dependencies = mutable.ListBuffer.empty[(Type, Boolean)]
 
         val classDefTypeIdentifier = typeJsIdentifier(classDef.symbol.tpe)
+        val classDefTypeName = js.StringLiteral(classDefTypeIdentifier.name)
 
         val selfIdent = localJsIdentifier("$self")
         val outerIdent = localJsIdentifier("$outer")
@@ -37,7 +38,15 @@ trait ClassDefProcessors {
         val constructorIdent = localJsIdentifier("$init$")
         val selfDeclaration = js.VariableStatement(selfIdent, Some(js.ThisReference))
 
-        def process(): List[js.Statement] = {
+        def addDeclarationDependency(tpe: Type) {
+            dependencies += tpe -> true
+        }
+
+        def addRuntimeDependency(tpe: Type) {
+            dependencies += tpe -> false
+        }
+
+        def process(): (Dependencies, List[js.Statement]) = {
             // Group the methods by their names and process all the methods in a group together (merge overloaded
             // methods into a single method. In its body, it determines by parameter types which one of the overloaded
             // methods should be invoked).
@@ -52,10 +61,13 @@ trait ClassDefProcessors {
             val methodDeclarations = methodGroupsToProcess.map(processMethodGroup _)
 
             // The JavaScript constructor function.
-            val superClasses = classDef.symbol.baseClasses.map(c => typeJsIdentifier(c.tpe))
-            val jsConstructorDeclaration = processJsConstructor(js.ArrayLiteral(superClasses))
+            val superClasses = classDef.symbol.baseClasses
+            val superClassIdentifiers = superClasses.map(c => typeJsIdentifier(c.tpe))
+            val jsConstructorDeclaration = processJsConstructor(js.ArrayLiteral(superClassIdentifiers))
+            superClasses.foreach(c => addDeclarationDependency(c.tpe))
 
-            constructorDeclaration ++ methodDeclarations :+ jsConstructorDeclaration
+            // Return the dependencies of the class and all statements.
+            (dependencies, constructorDeclaration ++ methodDeclarations :+ jsConstructorDeclaration)
         }
 
         def processConstructorGroup(constructors: Option[List[DefDef]]): Option[js.Statement] = {
@@ -78,8 +90,10 @@ trait ClassDefProcessors {
             // Each method is processed and a type hint containing types of the method formal parameters is
             // added. E.g. function(i) { ... }, [Int], function(s1, s2) { ... }, [String, String].
             val methodBuilderArguments = defDefs.flatMap { defDef =>
-                val parameterTypes = defDef.vparamss.flatten.map(p => typeJsIdentifier(p.tpt.tpe))
-                List(js.ArrayLiteral(parameterTypes), defDefProcessor(defDef))
+                val parameterTypes = defDef.vparamss.flatten.map(p => p.tpt.tpe)
+                parameterTypes.foreach(addRuntimeDependency _)
+                val parameterIdentifiers = parameterTypes.map(typeJsIdentifier _)
+                List(js.ArrayLiteral(parameterIdentifiers), defDefProcessor(defDef))
             }
             swatMethodCall("method", methodBuilderArguments: _*)
         }
@@ -144,7 +158,7 @@ trait ClassDefProcessors {
         }
 
         def processJsConstructor(superClasses: js.ArrayLiteral): js.Statement = {
-            js.AssignmentStatement(classDefTypeIdentifier, swatMethodCall("type", superClasses))
+            js.AssignmentStatement(classDefTypeIdentifier, swatMethodCall("type", classDefTypeName, superClasses))
         }
 
         def symbolToField(qualifier: js.Expression, symbol: Symbol): js.Expression = {
@@ -245,7 +259,7 @@ trait ClassDefProcessors {
             case d: Double => js.NumericLiteral(d)
             case ErrorType => js.UndefinedLiteral
             case t: Type => {
-                dependencies += t -> false
+                addRuntimeDependency(t)
                 swatMethodCall("classOf", typeJsIdentifier(t))
             }
             case l => {
@@ -256,7 +270,7 @@ trait ClassDefProcessors {
 
         def processTypeTree(typeTree: TypeTree): js.Expression = {
             val tpe = typeTree.tpe.underlying
-            dependencies += tpe -> false
+            addRuntimeDependency(tpe)
             typeJsIdentifier(tpe)
         }
 
@@ -271,6 +285,7 @@ trait ClassDefProcessors {
 
         def processIdent(identifier: Ident): js.Expression = {
             if (identifier.symbol.isModule) {
+                addRuntimeDependency(identifier.tpe)
                 objectAccessor(identifier.symbol)
             } else {
                 localJsIdentifier(identifier.name)
@@ -298,7 +313,12 @@ trait ClassDefProcessors {
             val processedSelect = memberChain(processExpressionTree(select.qualifier), localJsIdentifier(select.name))
             select.symbol match {
                 // An adapter object select.
-                case s if s.isObject && s.isAdapter => objectAccessor(s)
+                case s if s.isObject => {
+                    if (!s.isAdapter) {
+                        addRuntimeDependency(s.tpe)
+                    }
+                    objectAccessor(s)
+                }
 
                 // A method invocation without the corresponding apply.
                 case m: MethodSymbol => js.CallExpression(processedSelect, Nil)
@@ -308,7 +328,7 @@ trait ClassDefProcessors {
         }
 
         /**
-         * Processes an Apply AST. May return both Expression or Statement depending of the application type, because
+         * Processes an Apply AST. May return both Expression or Statement depending on the application type, because
          * some applications lead to an assignment statement.
          */
         def processApply(apply: Apply) = apply.fun match {
@@ -316,13 +336,19 @@ trait ClassDefProcessors {
             case s: Select if s.symbol.isOuterAccessor => memberChain(processExpressionTree(s.qualifier), outerIdent)
 
             // Generic method call.
-            case TypeApply(f, typeArgs) => processCall(f, apply.args ++ typeArgs)
+            case TypeApply(f, typeArgs) => {
+                typeArgs.foreach(a => addRuntimeDependency(a.tpe))
+                processCall(f, apply.args ++ typeArgs)
+            }
 
             // Constructor call.
             case Select(n: New, _) => processNew(apply, n)
 
             // A local object constructor call can be omitted because every object access is via an accessor.
-            case f if f.symbol.isModule => objectAccessor(apply.tpe.typeSymbol)
+            case f if f.symbol.isModule => {
+                addRuntimeDependency(apply.tpe)
+                objectAccessor(apply.tpe.typeSymbol)
+            }
 
             // An application on an adapter.
             case s: Select if s.qualifier.tpe.typeSymbol.isAdapter => processAdapterApply(s, apply.args)
@@ -395,8 +421,9 @@ trait ClassDefProcessors {
 
         def dispatchCallToCompanion(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
             val processedArgs = processExpressionTree(qualifier) +: processMethodArgs(method, Some(qualifier), args)
-            val companion = objectAccessor(qualifier.tpe.companionSymbol)
-            methodCall(companion, localJsIdentifier(method.name), processedArgs: _*)
+            val companion = qualifier.tpe.companionSymbol
+            addRuntimeDependency(companion.tpe)
+            methodCall(objectAccessor(companion), localJsIdentifier(method.name), processedArgs: _*)
         }
 
         def processAnyValOrStringMethodCall(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
@@ -430,8 +457,9 @@ trait ClassDefProcessors {
             def processOperand(operand: Tree): js.Expression = {
                 val processedOperand = processExpressionTree(operand)
                 if (!symbol.isEqualityOperator && operand.tpe.isChar) {
-                    val charCompanion = objectAccessor(typeOf[Char].companionSymbol)
-                    methodCall(charCompanion, localJsIdentifier("toInt"), processedOperand)
+                    val charCompanion = (typeOf[Char].companionSymbol)
+                    addRuntimeDependency(charCompanion.tpe)
+                    methodCall(objectAccessor(charCompanion), localJsIdentifier("toInt"), processedOperand)
                 } else {
                     processedOperand
                 }
@@ -549,14 +577,15 @@ trait ClassDefProcessors {
         }
 
         def processLocalClassDef(classDef: ClassDef): js.Statement = {
-            val processor = ClassDefProcessor(classDef)
-            val result = js.Block(processor.process())
-            dependencies ++= processor.dependencies
-            result
+            val (classDependencies, statements) = processClassDef(classDef)
+            dependencies ++= classDependencies
+            js.Block(statements)
         }
 
         def processNew(apply: Apply, n: New): js.Expression = {
             val tpe = n.tpe.underlying
+            addRuntimeDependency(tpe)
+
             val constructors = tpe.members.toList.filter(c => c.isConstructor && c.owner == tpe.typeSymbol)
             val args =
                 if (constructors.length > 1) {
@@ -734,14 +763,9 @@ trait ClassDefProcessors {
         override def processJsConstructor(superClasses: js.ArrayLiteral): js.Statement = {
             // A local object depends on the outer class so a reference to the outer class has to be passed to the
             // constructor.
-            val constructor =
-                if (classDef.symbol.isLocalOrAnonymous) {
-                    swatMethodCall("object", selfIdent, superClasses)
-                } else {
-                    swatMethodCall("object", superClasses)
-                }
-
-            js.AssignmentStatement(classDefTypeIdentifier, constructor)
+            val commonArgs = List(classDefTypeName, superClasses)
+            val args = commonArgs ++ (if (classDef.symbol.isLocalOrAnonymous) List(selfIdent) else Nil)
+            js.AssignmentStatement(classDefTypeIdentifier, swatMethodCall("object", args: _*))
         }
     }
 

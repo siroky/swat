@@ -3,13 +3,12 @@ package swat.compiler.frontend
 import swat.compiler.{SwatCompilerPlugin, js}
 import swat.api.js.{JSON, console, document, window}
 
-trait ScalaAstProcessor
-    extends js.TreeBuilder
-    with RichTrees
-    with ClassDefProcessors {
+trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProcessors {
     self: SwatCompilerPlugin =>
 
     import global._
+
+    type Dependencies = Seq[(Type, Boolean)]
 
     /**
      * A set of packages that are stripped from the compiled JavaScript code. For example a class
@@ -28,7 +27,16 @@ trait ScalaAstProcessor
 
     def processUnitBody(body: Tree): Map[String, js.Program] = body match {
         case p: PackageDef => {
-            extractClassDefs(p).map(c => (typeIdentifier(c.symbol), processClassDef(c))).toMap
+            extractClassDefs(p).map { classDef =>
+                val classSymbol = classDef.symbol
+                val classType = classSymbol.tpe.underlying
+                val classIdentifier = typeIdentifier(classSymbol)
+                val (dependencies, statements) = processClassDef(classDef)
+                val provide = processProvide(classType)
+                val requires = processDependencies(dependencies, classIdentifier)
+                val program = js.Program(provide :: requires ++ statements)
+                (classIdentifier, program)
+            }.toMap
         }
         case _ => Map.empty
     }
@@ -39,21 +47,31 @@ trait ScalaAstProcessor
         case _ => Nil
     }
 
-    def processClassDef(classDef: ClassDef): js.Program = {
+    def processClassDef(classDef: ClassDef): (Dependencies, List[js.Statement]) = {
         val classSymbol = classDef.symbol
-        val classType = classSymbol.tpe.underlying
+        classSymbol.nativeAnnotation.map { code =>
+            (classSymbol.dependencyAnnotations, List(js.RawCodeBlock(code)))
+        }.getOrElse {
+            ClassDefProcessor(classDef).process()
+        }
+    }
 
-        val provide = if (classSymbol.isLocalOrAnonymous) Nil else List(processProvide(classType))
-        val statements =
-            classSymbol.nativeAnnotation.map { code =>
-                val requirements = classSymbol.dependencyAnnotations.map((processDependency _).tupled)
-                val declarations = List(js.RawCodeBlock(code))
-                requirements ++ declarations
-            }.getOrElse {
-                ClassDefProcessor(classDef).process()
-            }
+    def processProvide(dependencyType: Type): js.Statement = {
+        js.ExpressionStatement(swatMethodCall("provide", js.StringLiteral(typeIdentifier(dependencyType))))
+    }
 
-        js.Program(provide ++ statements)
+    def processDependencies(dependencies: Dependencies, excludedTypeIdentifier: String): List[js.Statement] = {
+        // Group the dependencies by their type identifiers.
+        val grouped = dependencies.map(d => (typeIdentifier(d._1), d._2)).groupBy(_._1) - excludedTypeIdentifier
+
+        // For each dependent type, use the strongest dependency (i.e. declaration dependency).
+        val strongest = grouped.mapValues(_.map(_._2).reduce(_ || _)).toList.sortBy(_._1)
+
+        // Produce the swat.require statements.
+        strongest.map { case (typeIdentifier, isDeclaration) =>
+            val expr = swatMethodCall("require", js.StringLiteral(typeIdentifier), js.BooleanLiteral(isDeclaration))
+            js.ExpressionStatement(expr)
+        }
     }
 
     def objectAccessor(objectSymbol: Symbol): js.Expression = {
@@ -66,15 +84,6 @@ trait ScalaAstProcessor
 
     def swatMethodCall(methodName: String, args: js.Expression*): js.Expression =
         methodCall(localJsIdentifier("swat"), localJsIdentifier(methodName), args: _*)
-
-    def processDependency(dependencyType: Type, isHard: Boolean): js.Statement =
-        js.ExpressionStatement(swatMethodCall(
-            "require",
-            js.StringLiteral(typeIdentifier(dependencyType)),
-            js.BooleanLiteral(isHard)))
-
-    def processProvide(dependencyType: Type): js.Statement =
-        js.ExpressionStatement(swatMethodCall("provide", js.StringLiteral(typeIdentifier(dependencyType))))
 
     def localIdentifier(name: String): String = {
         val cleanName = name.replace(" ", "").replace("<", "$").replace(">", "$")

@@ -114,7 +114,7 @@ class LiteralTests extends CompilerSuite
         """ fragmentShouldCompileTo """
             var a = 'foo';
             var b = 'bar';
-            var c = new scala.StringContext(scala.Predef.wrapRefArray(['interpolated a: ', ' interpolatede b: ', ''], java.lang.String, [scala.Array])).s(scala.Predef.genericWrapArray([a, b], scala.Any, [scala.Array]), [scala.collection.Seq]);
+            var c = new scala.StringContext(scala.Predef$().wrapRefArray(['interpolated a: ', ' interpolatede b: ', ''], java.lang.String, [scala.Array])).s(scala.Predef$().genericWrapArray([a, b], scala.Any, [scala.Array]), [scala.collection.Seq]);
         """
     }
 }

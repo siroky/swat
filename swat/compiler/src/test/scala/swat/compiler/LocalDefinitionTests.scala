@@ -207,22 +207,22 @@ class LocalDefinitionTests extends CompilerSuite
                 val y = 20
             }
         """ fragmentShouldCompileTo """
-            T = swat.type([T, java.lang.Object, scala.Any]);
-            U = swat.type([U, java.lang.Object, scala.Any]);
+            T = swat.type('T', [T, java.lang.Object, scala.Any]);
+            U = swat.type('U', [U, java.lang.Object, scala.Any]);
 
             C.$init$ = (function($outer) {
                 var $self = this;
                 $super.$init$.call($self);
                 $self.$outer = $outer;
             });
-            C = swat.type([C, T, java.lang.Object, scala.Any]);
+            C = swat.type('C', [C, T, java.lang.Object, scala.Any]);
 
             O$.$init$ = (function($outer) {
                 var $self = this;
                 $super.$init$.call($self);
                 $self.$outer = $outer;
             });
-            O$ = swat.object($self, [O$, java.lang.Object, scala.Any]);
+            O$ = swat.object('O$', [O$, java.lang.Object, scala.Any], $self);
 
             var c = new C($self);
             var o = O$();
@@ -233,7 +233,7 @@ class LocalDefinitionTests extends CompilerSuite
                     $super.$init$.call($self, $outer);
                     $self.$outer = $outer;
                 });
-                $anon = swat.type([$anon, U, C, T, java.lang.Object, scala.Any]);
+                $anon = swat.type('$anon', [$anon, U, C, T, java.lang.Object, scala.Any]);
                 return new $anon($self);
             })();
 
@@ -247,7 +247,7 @@ class LocalDefinitionTests extends CompilerSuite
                 });
                 $anon.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
                 $anon.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));
-                $anon = swat.type([$anon, java.lang.Object, scala.Any]);
+                $anon = swat.type('$anon', [$anon, java.lang.Object, scala.Any]);
                 return new $anon($self);
             })();
         """
