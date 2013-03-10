@@ -51,16 +51,8 @@ trait CompilerSuite extends FunSuite {
         }
 
         protected def compile(): CompilationOutput = {
-            // Inherit the compiler class path from the from the current classpath. All dependencies of the compiled
-            // tests are added as dependencies of the compiler itself so they're in the current class path.
-            val urls = java.lang.Thread.currentThread.getContextClassLoader match {
-                case cl: java.net.URLClassLoader => cl.getURLs.toList
-                case _ => fail("Couldn't provide the current classpath to the compiler.")
-            }
-            val classPath = urls.map(_.getFile).mkString(java.io.File.pathSeparator)
-
             try {
-                new SwatCompiler(classPath, None, None).compile(code)
+                new SwatCompiler(None, None, None).compile(code)
             } catch {
                 case ce: CompilationException => {
                     fail(ce.getMessage)

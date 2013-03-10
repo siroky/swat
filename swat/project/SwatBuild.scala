@@ -15,7 +15,7 @@ object SwatBuild extends Build {
             "-language:implicitConversions"
         ),
         libraryDependencies ++= Seq(
-            "org.scalatest" % "scalatest_2.10.0" % "1.8" % "test"
+            "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test"
         ),
         resolvers ++= Seq(
             DefaultMavenRepository
@@ -36,12 +36,20 @@ object SwatBuild extends Build {
     lazy val apiProject =
         Project("swat-api", file("api"), settings = defaultSettings)
 
+    val swatTask = TaskKey[Unit]("swat")
+
     lazy val compilerProject =
         Project(
             "swat-compiler", file("compiler"), settings = defaultSettings ++ Seq(
                 libraryDependencies ++= Seq(
                     "org.scala-lang" % "scala-compiler" % swatScalaVersion
-                )
+                ),
+                swatTask <<= (fullClasspath in Compile, runner, sourceDirectory in Compile, target in Compile) map { (cp, runner, src, target) =>
+                    val logger = ConsoleLogger()
+                    Run.executeTrapExit({
+                        Run.run("swat.compiler.Main", cp.map(_.data), Seq("./runtime/src"), logger)(runner)
+                    }, logger )
+                }
             )
         ).dependsOn(
             apiProject
@@ -50,7 +58,8 @@ object SwatBuild extends Build {
     lazy val runtimeProject =
         Project(
             "swat-runtime", file("runtime"), settings = defaultSettings ++ Seq(
-                (compile in Compile) <<= (compile in Compile, managedClasspath in Compile, unmanagedClasspath in Compile, dependencyClasspath in Compile) map { (analysis, mcp, ucp, dcp) =>
+                /* Can't be currently used as the SBT requires its plugins to be built against the same version of scala.
+				(compile in Compile) <<= (compile in Compile, managedClasspath in Compile, unmanagedClasspath in Compile, dependencyClasspath in Compile) map { (analysis, mcp, ucp, dcp) =>
                     try {
                         println("[info] Swat compilation started.")
 
@@ -70,7 +79,7 @@ object SwatBuild extends Build {
                     }
 
                     analysis
-                }
+                }*/
             )
         ).dependsOn(
             apiProject
