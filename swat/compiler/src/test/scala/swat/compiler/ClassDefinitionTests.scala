@@ -192,9 +192,9 @@ class ClassDefinitionTests extends CompilerSuite
                     swat.require('scala.Any', true);
 
                     A.$init$ = (function() { var $self = this; $super.$init$.call($self); });
-                    A.a = swat.method([], (function() { var $self = this; return new A(); }));
-                    A.b = swat.method([], (function() { var $self = this; return new A$B($self); }));
-                    A.c = swat.method([], (function() { var $self = this; return new A$C($self); }));
+                    A.a = swat.method('', (function() { var $self = this; return new A(); }));
+                    A.b = swat.method('', (function() { var $self = this; return new A$B($self); }));
+                    A.c = swat.method('', (function() { var $self = this; return new A$C($self); }));
                     A = swat.type('A', [A, java.lang.Object, scala.Any]);
                 """,
 
@@ -211,9 +211,9 @@ class ClassDefinitionTests extends CompilerSuite
                         $super.$init$.call($self);
                         $self.$outer = $outer;
                     });
-                    A$B.a = swat.method([], (function() { var $self = this; return new A(); }));
-                    A$B.b = swat.method([], (function() { var $self = this; return new A$B($self.$outer); }));
-                    A$B.c = swat.method([], (function() { var $self = this; return new A$C($self.$outer); }));
+                    A$B.a = swat.method('', (function() { var $self = this; return new A(); }));
+                    A$B.b = swat.method('', (function() { var $self = this; return new A$B($self.$outer); }));
+                    A$B.c = swat.method('', (function() { var $self = this; return new A$C($self.$outer); }));
                     A$B = swat.type('A$B', [A$B, java.lang.Object, scala.Any]);
                 """,
 
@@ -247,10 +247,10 @@ class ClassDefinitionTests extends CompilerSuite
                         $self.$fields.b = new A$B($self.a());
                         $self.$fields.c = new A$C($self.a());
                     });
-                    o$.a = swat.method([], (function() { var $self = this; return $self.$fields.a; }));
-                    o$.b = swat.method([], (function() { var $self = this; return $self.$fields.b; }));
-                    o$.c = swat.method([], (function() { var $self = this; return $self.$fields.c; }));
-                    o$.x = swat.method([], (function() {
+                    o$.a = swat.method('', (function() { var $self = this; return $self.$fields.a; }));
+                    o$.b = swat.method('', (function() { var $self = this; return $self.$fields.b; }));
+                    o$.c = swat.method('', (function() { var $self = this; return $self.$fields.c; }));
+                    o$.x = swat.method('', (function() {
                         var $self = this;
                         var a = new A();
                         new A$B(a);

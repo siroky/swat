@@ -30,12 +30,12 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
             extractClassDefs(p).map { classDef =>
                 val classSymbol = classDef.symbol
                 val classType = classSymbol.tpe.underlying
-                val classIdentifier = typeIdentifier(classSymbol)
+                val classIdent = typeIdentifier(classSymbol)
                 val (dependencies, statements) = processClassDef(classDef)
                 val provide = processProvide(classType)
-                val requires = processDependencies(dependencies, classIdentifier)
+                val requires = processDependencies(dependencies, classIdent)
                 val program = js.Program(provide :: requires ++ statements)
-                (classIdentifier, program)
+                (classIdent, program)
             }.toMap
         }
         case _ => Map.empty
@@ -60,9 +60,10 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
         js.ExpressionStatement(swatMethodCall("provide", js.StringLiteral(typeIdentifier(dependencyType))))
     }
 
-    def processDependencies(dependencies: Dependencies, excludedTypeIdentifier: String): List[js.Statement] = {
+    def processDependencies(dependencies: Dependencies, excludedTypeIdent: String): List[js.Statement] = {
         // Group the dependencies by their type identifiers.
-        val grouped = dependencies.map(d => (typeIdentifier(d._1), d._2)).groupBy(_._1) - excludedTypeIdentifier
+        val filtered = dependencies.filter(d => !d._1.typeSymbol.isAdapter)
+        val grouped = filtered.map(d => (typeIdentifier(d._1), d._2)).groupBy(_._1) - excludedTypeIdent
 
         // For each dependent type, use the strongest dependency (i.e. declaration dependency).
         val strongest = grouped.mapValues(_.map(_._2).reduce(_ || _)).toList.sortBy(_._1)

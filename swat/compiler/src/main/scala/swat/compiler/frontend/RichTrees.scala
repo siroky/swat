@@ -42,7 +42,7 @@ trait RichTrees {
         def isCompiled = !(isIgnored || isAdapter)
         def isIgnored = hasAnnotation(typeOf[api.ignored])
         def isAdapter = {
-            hasAnnotation(typeOf[api.adapter]) || adapterPackages.exists(p => s.fullName.startsWith(p))
+            hasAnnotation(typeOf[api.adapter]) || adapterPackages.exists(p => s.fullName.startsWith(p) || p.startsWith(s.fullName))
         }
 
         def adapterAnnotation: Option[Boolean] = typedAnnotation(typeOf[api.adapter]).map { s =>

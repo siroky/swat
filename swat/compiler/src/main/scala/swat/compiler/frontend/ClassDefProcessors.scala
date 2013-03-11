@@ -92,8 +92,8 @@ trait ClassDefProcessors {
             val methodBuilderArguments = defDefs.flatMap { defDef =>
                 val parameterTypes = defDef.vparamss.flatten.map(p => p.tpt.tpe)
                 parameterTypes.foreach(addRuntimeDependency _)
-                val parameterIdentifiers = parameterTypes.map(typeJsIdentifier _)
-                List(js.ArrayLiteral(parameterIdentifiers), defDefProcessor(defDef))
+                val parameterIdents = parameterTypes.map(typeIdentifier _)
+                List(js.StringLiteral(parameterIdents.mkString(", ")), defDefProcessor(defDef))
             }
             swatMethodCall("method", methodBuilderArguments: _*)
         }
@@ -312,11 +312,8 @@ trait ClassDefProcessors {
         def processSelect(select: Select): js.Expression = {
             val processedSelect = memberChain(processExpressionTree(select.qualifier), localJsIdentifier(select.name))
             select.symbol match {
-                // An adapter object select.
                 case s if s.isObject => {
-                    if (!s.isAdapter) {
-                        addRuntimeDependency(s.tpe)
-                    }
+                    addRuntimeDependency(s.tpe)
                     objectAccessor(s)
                 }
 
@@ -414,7 +411,8 @@ trait ClassDefProcessors {
             val firstParam = method.paramss.flatten.headOption
             val firstParamIsOuter = firstParam.map(_.name.endsWith(nme.OUTER)).getOrElse(false)
             val hintTypes = if (firstParamIsOuter) paramTypes.tail else paramTypes
-            val typeHint = if (hintTypes.isEmpty) None else Some(js.ArrayLiteral(hintTypes.map(typeJsIdentifier _)))
+            val hintIdents = hintTypes.map(typeIdentifier _)
+            val typeHint = if (hintTypes.isEmpty) None else Some(js.StringLiteral(hintIdents.mkString(", ")))
 
             processExpressionTrees(args) ++ typeHint.toList
         }

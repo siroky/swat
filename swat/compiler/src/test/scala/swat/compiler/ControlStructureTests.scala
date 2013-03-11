@@ -230,11 +230,11 @@ class ControlStructureTests extends CompilerSuite
             val x = throw new Exception("foo")
         """ fragmentShouldCompileTo """
             (function() {
-                throw new java.lang.Exception('foo', [java.lang.String]);
+                throw new java.lang.Exception('foo', 'java.lang.String');
             })();
 
             var x = (function() {
-                throw new java.lang.Exception('foo', [java.lang.String]);
+                throw new java.lang.Exception('foo', 'java.lang.String');
             })();
         """
     }
@@ -302,7 +302,7 @@ class ControlStructureTests extends CompilerSuite
                     return 'bar';
                 } catch (e$1) {
                     if (swat.isInstanceOf(e$1, java.lang.RuntimeException)) {
-                        scala.Predef$().println('runtime exception', [scala.Any]);
+                        scala.Predef$().println('runtime exception', 'scala.Any');
                         return;
                     }
                     throw e$1;
@@ -323,16 +323,16 @@ class ControlStructureTests extends CompilerSuite
                 } catch (e$2) {
                     if (swat.isInstanceOf(e$2, java.lang.RuntimeException)) {
                         var r = e$2;
-                        scala.Predef$().println('runtime exception', [scala.Any]);
+                        scala.Predef$().println('runtime exception', 'scala.Any');
                         return;
                     }
                     if (swat.isInstanceOf(e$2, java.lang.Exception)) {
                         var e = e$2;
-                        scala.Predef$().println('exeption', [scala.Any]);
+                        scala.Predef$().println('exeption', 'scala.Any');
                         return;
                     }
                     if (swat.isInstanceOf(e$2, java.lang.Throwable)) {
-                        scala.Predef$().println('unknown exception', [scala.Any]);
+                        scala.Predef$().println('unknown exception', 'scala.Any');
                         return;
                     }
                     throw e$2;
@@ -349,7 +349,7 @@ class ControlStructureTests extends CompilerSuite
                             var x5 = swat.asInstanceOf(x4, java.lang.Exception);
                             return (function() {
                                 if ((x5.getMessage() == 'foo')) {
-                                    return matchEnd8(scala.Predef$().println('exception with foo message', [scala.Any]));
+                                    return matchEnd8(scala.Predef$().println('exception with foo message', 'scala.Any'));
                                 } else {
                                     return case10();
                                 }
@@ -378,7 +378,7 @@ class ControlStructureTests extends CompilerSuite
                             var x7 = swat.asInstanceOf(x6, java.lang.Exception);
                             return (function() {
                                 if ((x7.getMessage() == 'foo')) {
-                                    return matchEnd11(scala.Predef$().println('exception with foo message', [scala.Any]));
+                                    return matchEnd11(scala.Predef$().println('exception with foo message', 'scala.Any'));
                                 } else {
                                     return case13();
                                 }
@@ -390,7 +390,7 @@ class ControlStructureTests extends CompilerSuite
                     function case13() {
                         if ((x6 !== null)) {
                             var x8 = x6;
-                            return matchEnd11(scala.Predef$().println('unknown exception', [scala.Any]));
+                            return matchEnd11(scala.Predef$().println('unknown exception', 'scala.Any'));
                         } else {
                             return case14();
                         }
@@ -412,7 +412,7 @@ class ControlStructureTests extends CompilerSuite
                     return 'baz';
                 } catch (e$3) {
                     if (swat.isInstanceOf(e$3, java.lang.Throwable)) {
-                        scala.Predef$().println('unknown exception', [scala.Any]);
+                        scala.Predef$().println('unknown exception', 'scala.Any');
                         return;
                     }
                     throw e$3;

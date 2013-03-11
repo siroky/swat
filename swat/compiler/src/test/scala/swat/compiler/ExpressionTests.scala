@@ -226,7 +226,7 @@ class ExpressionTests extends CompilerSuite
             var x = 'a';
             swat.hashCode(x);
             java.lang.String$().length(x);
-            java.lang.String$().substring(x, 3, [scala.Int]);
+            java.lang.String$().substring(x, 3, 'scala.Int');
         """
     }
 }

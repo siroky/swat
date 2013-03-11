@@ -16,3 +16,6 @@ swat/.idea/misc.xml
 swat/.idea/highlighting.xml
 swat/.idea/dictionaries
 swat/.idea/libraries
+
+# Eclipse files.
+.cache

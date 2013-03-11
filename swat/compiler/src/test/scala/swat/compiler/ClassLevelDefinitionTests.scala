@@ -35,7 +35,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     A.$init$ = (function() {
                         var $self = this;
                         $super.$init$.call($self);
-                        scala.Predef$().println('Foo', [scala.Any]);
+                        scala.Predef$().println('Foo', 'scala.Any');
                     });
                     A = swat.type('A', [A, java.lang.Object, scala.Any]);
                 """,
@@ -52,9 +52,9 @@ class ClassLevelDefinitionTests extends CompilerSuite
                         $self.$fields.bar = bar;
                         $self.$fields.baz = true;
                     });
-                    B.bar = swat.method([], (function() { var $self = this; return $self.$fields.bar; }));
-                    B.baz = swat.method([], (function() { var $self = this; return $self.$fields.baz; }));
-                    B.foo = swat.method([], (function() { var $self = this; return $self.$fields.foo; }));
+                    B.bar = swat.method('', (function() { var $self = this; return $self.$fields.bar; }));
+                    B.baz = swat.method('', (function() { var $self = this; return $self.$fields.baz; }));
+                    B.foo = swat.method('', (function() { var $self = this; return $self.$fields.foo; }));
                     B = swat.type('B', [B, java.lang.Object, scala.Any]);
                 """,
             "C" ->
@@ -69,7 +69,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                         swat.setParameter($self, 'foo', foo, C);
                         swat.setParameter($self, 'bar', bar, C);
                     });
-                    C.baz = swat.method([], (function() { var $self = this; return swat.getParameter($self, 'foo', C); }));
+                    C.baz = swat.method('', (function() { var $self = this; return swat.getParameter($self, 'foo', C); }));
                     C = swat.type('C', [C, java.lang.Object, scala.Any]);
                 """,
             "D" ->
@@ -83,26 +83,26 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     swat.require('scala.Int', false);
                     swat.require('scala.Predef$', false);
 
-                    D.$init$ = swat.method([scala.Int],
+                    D.$init$ = swat.method('scala.Int',
                         (function(foo) {
                             var $self = this;
                             $super.$init$.call($self);
                             $self.$fields.foo = foo;
                         }),
-                        [], (function() {
+                        '', (function() {
                             var $self = this;
-                            $self.$init$(0, [scala.Int]);
-                            scala.Predef$().println('Foo', [scala.Any]);
+                            $self.$init$(0, 'scala.Int');
+                            scala.Predef$().println('Foo', 'scala.Any');
                         }),
-                        [java.lang.String], (function(foo) {
+                        'java.lang.String', (function(foo) {
                             var $self = this;
-                            $self.$init$(java.lang.String$().length(foo), [scala.Int]);
+                            $self.$init$(java.lang.String$().length(foo), 'scala.Int');
                         }),
-                        [scala.Boolean], (function(foo) {
+                        'scala.Boolean', (function(foo) {
                             var $self = this;
-                            $self.$init$((function() { if (foo) { return 'true'; } else { return 'false'; } })(), [java.lang.String]);
+                            $self.$init$((function() { if (foo) { return 'true'; } else { return 'false'; } })(), 'java.lang.String');
                         }));
-                    D.foo = swat.method([], (function() { var $self = this; return $self.$fields.foo; }));
+                    D.foo = swat.method('', (function() { var $self = this; return $self.$fields.foo; }));
                     D = swat.type('D', [D, java.lang.Object, scala.Any]);
                 """
         )
@@ -164,10 +164,10 @@ class ClassLevelDefinitionTests extends CompilerSuite
                             return (java.lang.String$().length($self.x()) + $self.y());
                         }));
                     });
-                    T.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
-                    T.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));
-                    T.y_$eq = swat.method([scala.Int], (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
-                    T.z = swat.method([], (function() { var $self = this; return $self.$fields.z(); }));
+                    T.x = swat.method('', (function() { var $self = this; return $self.$fields.x; }));
+                    T.y = swat.method('', (function() { var $self = this; return $self.$fields.y; }));
+                    T.y_$eq = swat.method('scala.Int', (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
+                    T.z = swat.method('', (function() { var $self = this; return $self.$fields.z(); }));
                     T = swat.type('T', [T, java.lang.Object, scala.Any]);
                 """,
             "C" ->
@@ -187,10 +187,10 @@ class ClassLevelDefinitionTests extends CompilerSuite
                             return (java.lang.String$().length($self.x()) + $self.y());
                         }));
                     });
-                    C.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
-                    C.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));
-                    C.y_$eq = swat.method([scala.Int], (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
-                    C.z = swat.method([], (function() { var $self = this; return $self.$fields.z(); }));
+                    C.x = swat.method('', (function() { var $self = this; return $self.$fields.x; }));
+                    C.y = swat.method('', (function() { var $self = this; return $self.$fields.y; }));
+                    C.y_$eq = swat.method('scala.Int', (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
+                    C.z = swat.method('', (function() { var $self = this; return $self.$fields.z(); }));
                     C = swat.type('C', [C, java.lang.Object, scala.Any]);
                 """,
             "O$" ->
@@ -212,30 +212,30 @@ class ClassLevelDefinitionTests extends CompilerSuite
                             return (java.lang.String$().length($self.x()) + $self.y());
                         }));
                     });
-                    O$.test = swat.method([], (function() {
+                    O$.test = swat.method('', (function() {
                         var $self = this;
 
                         var t = null;
                         t.x();
                         t.y();
-                        t.y_$eq(456, [scala.Int]);
+                        t.y_$eq(456, 'scala.Int');
                         t.z();
 
                         var c = new C();
                         c.x();
                         c.y();
-                        c.y_$eq(456, [scala.Int]);
+                        c.y_$eq(456, 'scala.Int');
                         c.z();
 
                         O$().x();
                         O$().y();
-                        O$().y_$eq(456, [scala.Int]);
+                        O$().y_$eq(456, 'scala.Int');
                         O$().z();
                     }));
-                    O$.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
-                    O$.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));
-                    O$.y_$eq = swat.method([scala.Int], (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
-                    O$.z = swat.method([], (function() { var $self = this; return $self.$fields.z(); }));
+                    O$.x = swat.method('', (function() { var $self = this; return $self.$fields.x; }));
+                    O$.y = swat.method('', (function() { var $self = this; return $self.$fields.y; }));
+                    O$.y_$eq = swat.method('scala.Int', (function(x$1) { var $self = this; $self.$fields.y = x$1; }));
+                    O$.z = swat.method('', (function() { var $self = this; return $self.$fields.z(); }));
                     O$ = swat.object('O$', [O$, java.lang.Object, scala.Any]);
                 """
         )
@@ -283,47 +283,47 @@ class ClassLevelDefinitionTests extends CompilerSuite
                         $super.$init$.call($self);
                         $self.$fields.x = 123;
                     });
-                    C.a = swat.method([], (function() {
+                    C.a = swat.method('', (function() {
                         var $self = this;
                     }));
-                    C.b = swat.method([scala.Int, scala.Int], (function(i, j) {
+                    C.b = swat.method('scala.Int, scala.Int', (function(i, j) {
                         var $self = this;
                     }));
-                    C.c = swat.method([scala.Int, scala.collection.Seq], (function(i, js) {
+                    C.c = swat.method('scala.Int, scala.collection.Seq', (function(i, js) {
                         var $self = this;
                     }));
-                    C.d = swat.method([scala.Int, scala.Int], (function(i, j) {
+                    C.d = swat.method('scala.Int, scala.Int', (function(i, j) {
                         var $self = this;
                     }));
-                    C.d$default$1 = swat.method([], (function() { var $self = this; return $self.x(); }));
-                    C.d$default$2 = swat.method([], (function() { var $self = this; return ($self.x() + $self.x()); }));
+                    C.d$default$1 = swat.method('', (function() { var $self = this; return $self.x(); }));
+                    C.d$default$2 = swat.method('', (function() { var $self = this; return ($self.x() + $self.x()); }));
 
-                    C.test = swat.method([], (function() {
+                    C.test = swat.method('', (function() {
                         var $self = this;
                         $self.a();
-                        $self.b(1, 2, [scala.Int, scala.Int]);
-                        $self.b(1, 2, [scala.Int, scala.Int]);
+                        $self.b(1, 2, 'scala.Int, scala.Int');
+                        $self.b(1, 2, 'scala.Int, scala.Int');
                         (function() {
                             var x$1 = 2;
                             var x$2 = 1;
-                            $self.b(x$2, x$1, [scala.Int, scala.Int]);
+                            $self.b(x$2, x$1, 'scala.Int, scala.Int');
                         })();
-                        $self.c(1, scala.Predef$().wrapIntArray([], [scala.Array]), [scala.Int, scala.collection.Seq]);
-                        $self.c(1, scala.Predef$().wrapIntArray([2], [scala.Array]), [scala.Int, scala.collection.Seq]);
-                        $self.c(1, scala.Predef$().wrapIntArray([2, 3], [scala.Array]), [scala.Int, scala.collection.Seq]);
-                        $self.c(1, scala.collection.immutable.List$().apply(scala.Predef$().wrapIntArray([2, 3], [scala.Array]), scala.Int, [scala.collection.Seq]), [scala.Int, scala.collection.Seq]);
-                        $self.d($self.d$default$1(), $self.d$default$2(), [scala.Int, scala.Int]);
-                        $self.d(1, $self.d$default$2(), [scala.Int, scala.Int]);
-                        $self.d(1, $self.d$default$2(), [scala.Int, scala.Int]);
+                        $self.c(1, scala.Predef$().wrapIntArray([], 'scala.Array'), 'scala.Int, scala.collection.Seq');
+                        $self.c(1, scala.Predef$().wrapIntArray([2], 'scala.Array'), 'scala.Int, scala.collection.Seq');
+                        $self.c(1, scala.Predef$().wrapIntArray([2, 3], 'scala.Array'), 'scala.Int, scala.collection.Seq');
+                        $self.c(1, scala.collection.immutable.List$().apply(scala.Predef$().wrapIntArray([2, 3], 'scala.Array'), scala.Int, 'scala.collection.Seq'), 'scala.Int, scala.collection.Seq');
+                        $self.d($self.d$default$1(), $self.d$default$2(), 'scala.Int, scala.Int');
+                        $self.d(1, $self.d$default$2(), 'scala.Int, scala.Int');
+                        $self.d(1, $self.d$default$2(), 'scala.Int, scala.Int');
                         (function() {
                             var x$3 = 2;
                             var x$4 = $self.d$default$1();
-                            $self.d(x$4, x$3, [scala.Int, scala.Int]);
+                            $self.d(x$4, x$3, 'scala.Int, scala.Int');
                         })();
-                        $self.d(1, 2, [scala.Int, scala.Int]);
+                        $self.d(1, 2, 'scala.Int, scala.Int');
                     }));
 
-                    C.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
+                    C.x = swat.method('', (function() { var $self = this; return $self.$fields.x; }));
                     C = swat.type('C', [C, java.lang.Object, scala.Any]);
                 """
         )

@@ -245,8 +245,8 @@ class LocalDefinitionTests extends CompilerSuite
                     $self.$fields.y = 20;
                     $self.$outer = $outer;
                 });
-                $anon.x = swat.method([], (function() { var $self = this; return $self.$fields.x; }));
-                $anon.y = swat.method([], (function() { var $self = this; return $self.$fields.y; }));
+                $anon.x = swat.method('', (function() { var $self = this; return $self.$fields.x; }));
+                $anon.y = swat.method('', (function() { var $self = this; return $self.$fields.y; }));
                 $anon = swat.type('$anon', [$anon, java.lang.Object, scala.Any]);
                 return new $anon($self);
             })();
