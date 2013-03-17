@@ -545,7 +545,7 @@ trait ClassDefProcessors {
 
         def processLazyVal(defDef: DefDef): js.Statement = defDef.rhs match {
             case Block(List(Assign(_, rhs)), _) => {
-                js.VariableStatement(localJsIdentifier(defDef.name), Some(memoize(rhs)))
+                js.VariableStatement(localJsIdentifier(defDef.name), Some(lazify(rhs)))
             }
             case _ => {
                 error("Unexpected lazy val initializer (%s)".format(defDef.rhs))
@@ -716,8 +716,8 @@ trait ClassDefProcessors {
             Map("equals" -> "==", "eq" -> "===", "ne" -> "!==").withDefault(o => o)(operator)
         }
 
-        def memoize(expr: Tree): js.Expression = {
-            swatMethodCall("memoize", js.FunctionExpression(None, Nil, unScoped(processReturnTree(expr))))
+        def lazify(expr: Tree): js.Expression = {
+            swatMethodCall("lazify", js.FunctionExpression(None, Nil, unScoped(processReturnTree(expr))))
         }
 
         def superCall(methodName: js.Identifier, arguments: List[js.Expression]): js.Expression = {
@@ -728,7 +728,8 @@ trait ClassDefProcessors {
         def fieldGet(field: Symbol): js.Expression = {
             if (field.isParametricField) {
                 val name = js.StringLiteral(localIdentifier(field.name))
-                swatMethodCall("getParameter", selfIdent, name, classDefTypeIdentifier)
+                val typeHint = js.StringLiteral(classDefTypeIdentifier.name)
+                swatMethodCall("getParameter", selfIdent, name, typeHint)
             } else {
                 // Val, var or lazy val.
                 val value = symbolToField(selfIdent, field)
@@ -737,7 +738,7 @@ trait ClassDefProcessors {
         }
 
         def fieldSet(field: Symbol, value: Tree): js.Statement = {
-            fieldSet(field, if (field.isLazy) memoize(value) else processExpressionTree(value))
+            fieldSet(field, if (field.isLazy) lazify(value) else processExpressionTree(value))
         }
 
         def fieldSet(field: Symbol, value: js.Expression): js.Statement = {
@@ -745,7 +746,8 @@ trait ClassDefProcessors {
                 js.AssignmentStatement(memberChain(selfIdent, outerIdent), value)
             } else if (field.isParametricField) {
                 val name = js.StringLiteral(localIdentifier(field.name))
-                js.ExpressionStatement(swatMethodCall("setParameter", selfIdent, name, value, classDefTypeIdentifier))
+                val typeHint = js.StringLiteral(classDefTypeIdentifier.name)
+                js.ExpressionStatement(swatMethodCall("setParameter", selfIdent, name, value, typeHint))
             } else {
                 // Val, var or lazy val.
                 js.AssignmentStatement(symbolToField(selfIdent, field), value)

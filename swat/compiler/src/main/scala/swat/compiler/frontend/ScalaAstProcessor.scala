@@ -32,9 +32,9 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
                 val classType = classSymbol.tpe.underlying
                 val classIdent = typeIdentifier(classSymbol)
                 val (dependencies, statements) = processClassDef(classDef)
-                val provide = processProvide(classType)
-                val requires = processDependencies(dependencies, classIdent)
-                val program = js.Program(provide :: requires ++ statements)
+                val processedProvide = processProvide(classType)
+                val processedDependencies = processDependencies(dependencies, classIdent)
+                val program = js.Program(processedProvide :: processedDependencies ++ statements)
                 (classIdent, program)
             }.toMap
         }
@@ -69,8 +69,8 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
         val strongest = grouped.mapValues(_.map(_._2).reduce(_ || _)).toList.sortBy(_._1)
 
         // Produce the swat.require statements.
-        strongest.map { case (typeIdentifier, isDeclaration) =>
-            val expr = swatMethodCall("require", js.StringLiteral(typeIdentifier), js.BooleanLiteral(isDeclaration))
+        strongest.map { case (typeIdentifier, isHard) =>
+            val expr = swatMethodCall("require", js.StringLiteral(typeIdentifier), js.BooleanLiteral(isHard))
             js.ExpressionStatement(expr)
         }
     }

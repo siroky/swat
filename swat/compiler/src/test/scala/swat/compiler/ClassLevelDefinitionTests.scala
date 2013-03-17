@@ -66,10 +66,10 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     C.$init$ = (function(foo, bar) {
                         var $self = this;
                         $super.$init$.call($self);
-                        swat.setParameter($self, 'foo', foo, C);
-                        swat.setParameter($self, 'bar', bar, C);
+                        swat.setParameter($self, 'foo', foo, 'C');
+                        swat.setParameter($self, 'bar', bar, 'C');
                     });
-                    C.baz = swat.method('', (function() { var $self = this; return swat.getParameter($self, 'foo', C); }));
+                    C.baz = swat.method('', (function() { var $self = this; return swat.getParameter($self, 'foo', 'C'); }));
                     C = swat.type('C', [C, java.lang.Object, scala.Any]);
                 """,
             "D" ->
@@ -160,7 +160,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                         $super.$init$.call($self);
                         $self.$fields.x = 'abc';
                         $self.$fields.y = 123;
-                        $self.$fields.z = swat.memoize((function() {
+                        $self.$fields.z = swat.lazify((function() {
                             return (java.lang.String$().length($self.x()) + $self.y());
                         }));
                     });
@@ -183,7 +183,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                         $super.$init$.call($self);
                         $self.$fields.x = 'abc';
                         $self.$fields.y = 123;
-                        $self.$fields.z = swat.memoize((function() {
+                        $self.$fields.z = swat.lazify((function() {
                             return (java.lang.String$().length($self.x()) + $self.y());
                         }));
                     });
@@ -208,7 +208,7 @@ class ClassLevelDefinitionTests extends CompilerSuite
                         $self.$fields.x = 'abc';
                         $self.$fields.y = 123;
                         $self.$fields.z =
-                        swat.memoize((function() {
+                        swat.lazify((function() {
                             return (java.lang.String$().length($self.x()) + $self.y());
                         }));
                     });

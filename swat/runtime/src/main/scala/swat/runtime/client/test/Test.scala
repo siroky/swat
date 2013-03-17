@@ -1,4 +1,4 @@
-package swat.runtime.client
+package swat.runtime.client.test
 
 import swat.api.js._
 

@@ -44,9 +44,9 @@ class LocalDefinitionTests extends CompilerSuite
             y
             z
         """ fragmentShouldCompileTo """
-            var x = swat.memoize((function() { return 123; }));
-            var y = swat.memoize((function() { return 456; }));
-            var z = swat.memoize((function() { return ((x() + y()) + 789); }));
+            var x = swat.lazify((function() { return 123; }));
+            var y = swat.lazify((function() { return 456; }));
+            var z = swat.lazify((function() { return ((x() + y()) + 789); }));
 
             x();
             y();
