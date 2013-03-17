@@ -7,6 +7,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-build.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-build.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-compiler.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-compiler.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-runtime.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-runtime.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-web.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-web.iml" />
     </modules>
   </component>
 </project>

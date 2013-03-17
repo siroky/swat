@@ -1,9 +1,11 @@
 import sbt._
 import Keys._
+import play.Project._
 
 object SwatBuild extends Build {
 
     val swatScalaVersion = "2.10.0"
+    val swatVersion = "0.3-SNAPSHOT"
 
     val defaultSettings = Defaults.defaultSettings ++ Seq(
         scalaVersion := swatScalaVersion,
@@ -21,7 +23,7 @@ object SwatBuild extends Build {
             DefaultMavenRepository
         ),
         organization := "swat",
-        version := "0.3-SNAPSHOT"
+        version := swatVersion
     )
 
     lazy val swatProject =
@@ -60,6 +62,13 @@ object SwatBuild extends Build {
             "swat-runtime", file("runtime"), settings = defaultSettings
         ).dependsOn(
             apiProject
+        )
+
+    lazy val webProject =
+        play.Project(
+            "swat-web", swatVersion, Nil, path = file("web")
+        ).dependsOn(
+            runtimeProject
         )
 
     /* Can't be currently used as the SBT requires its plugins to be built against the same version of scala.

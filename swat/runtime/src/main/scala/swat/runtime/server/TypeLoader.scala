@@ -98,7 +98,7 @@ object TypeLoader {
         val sourcePath = typeIdentifier.replace(".", "/") + ".js"
         val sourceStream = Option(getClass.getClassLoader.getResourceAsStream(sourcePath))
         sourceStream.map(s => Source.fromInputStream(s).getLines().mkString("\n")).getOrElse {
-            throw TypeLoadingException(s"Can't find source file of type '$typeIdentifier'.")
+            throw TypeLoadingException(s"Cannot find source file of type '$typeIdentifier'.")
         }
     }
 }
