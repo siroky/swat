@@ -3,10 +3,10 @@ swat.require('java.lang.Object', true);
 swat.require('scala.Any', true);
 test.A.$init$ = (function(x) {
     var $self = this;
-    $super.$init$.call($self);
+    swat.invokeSuper($self, '$init$', [], 'test.A');
     $self.$fields.x = x;
 });
-test.A.x = swat.method('', (function() {
+test.A.x = swat.method('test.A.x', '', (function() {
     var $self = this;
     return $self.$fields.x;
 }));

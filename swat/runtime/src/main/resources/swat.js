@@ -57,7 +57,7 @@ swat.declare = function(path) {
 };
 
 /** Extends the specified target object with all directly owned properties of the source object. */
-swat.extend: function(target, source) {
+swat.extend = function(target, source) {
     for (var k in source) {
         if (source.hasOwnProperty(k)) {
             target[k] = source[k];
@@ -101,8 +101,8 @@ swat.lazify = function(f) {
 swat.type = function(typeIdentifier, hierarchy) {
     // The type constructor function dispatches directly to the Scala constructor.
     var constructor = function() {
-        this.$super = constructor.prototype;
-        this.$init.apply(this, arguments);
+        this.constructor = constructor;
+        this.$init$.apply(this, arguments);
     };
 
     // Because of the usage (e.g. A = swat.type('A' [A, java.lang.Object, scala.Any]) everything from the type has to
@@ -115,11 +115,13 @@ swat.type = function(typeIdentifier, hierarchy) {
     for (var i = 0; i < hierarchy.length; i++) {
         swat.extend(p, hierarchy[i]);
         p.prototype = {};
-        p.$super = p.prototype;
         p = p.prototype;
     }
 
-    // TODO initialize the metaclass.
+    // Set the metaclass of the type. Currently just type identifier.
+    var type = typeIdentifier;
+    constructor.$type = type;
+    constructor.prototype.$type = type;
 
     return constructor;
 };
@@ -128,27 +130,31 @@ swat.type = function(typeIdentifier, hierarchy) {
  * Returns an overloadable method. The different versions are distinguishable using type hints. If none of the type
  * hints matches the type hint provided during runtime, the version of the method defined in the super type is invoked.
  */
-swat.method = function() {
-    var functions = swat.toArray(arguments);
+swat.method = function(methodIdentifier) {
+    var overloads = swat.toArray(arguments).splice(1);
+    var index = methodIdentifier.lastIndexOf(".");
+    var typeIdentifier = methodIdentifier.substring(0, index);
+    var methodName = methodIdentifier.substring(index + 1);
+
     return function() {
         var args = swat.toArray(arguments);
         if (args.length == 0) {
-            swat.error('Method called without a type hint (' + functions + ')');
+            swat.error('Method called without a type hint (' + overloads + ')');
         }
         var typeHint = args[args.length - 1];
-        if (!swat.isString(typeHint)) {
+        if (!swat.isJsString(typeHint)) {
             swat.error('Method called with an invalid type hint (' + typeHint + ')');
         }
 
         // Try to find the function which has the same type hint and invoke it.
-        for (var i = 0, i < functions.length; i += 2) {
-            if (functions[i] === typeHint) {
-                return functions[i + 1].apply(this, args);
+        for (var i = 0; i < overloads.length; i += 2) {
+            if (overloads[i] === typeHint) {
+                return overloads[i + 1].apply(this, args);
             }
         }
 
         // Otherwise call the super type version.
-        // TODO
+        swat.invokeSuper(this, methodName, args, typeIdentifier);
     };
 }
 
@@ -158,13 +164,17 @@ swat.object = function(typeIdentifier, hierarchy, outer) {
     return swat.lazify(function() { return constructor(outer); });
 };
 
+swat.invokeSuper = function(obj, methodName, args, typeIdentifier, superTypeIdentifier) {
+    // TODO
+}
+
 /** Returns a parametric field of the specified object in the specified type context. */
 swat.getParameter = function(obj, parameterName, typeHint) {
     return obj.$params[parameterName][typeHint];
 };
 
 /** Sets a parametric field of the specified object in the specified type context. */
-swat.setParameter = function(obj, parameterName, value typeHint) {
+swat.setParameter = function(obj, parameterName, value, typeHint) {
     if (swat.isUndefined(obj.$params[parameterName])) {
         obj.$params[parameterName] = {};
     }

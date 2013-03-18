@@ -212,14 +212,14 @@ class LocalDefinitionTests extends CompilerSuite
 
             C.$init$ = (function($outer) {
                 var $self = this;
-                $super.$init$.call($self);
+                swat.invokeSuper($self, '$init$', [], 'C');
                 $self.$outer = $outer;
             });
             C = swat.type('C', [C, T, java.lang.Object, scala.Any]);
 
             O$.$init$ = (function($outer) {
                 var $self = this;
-                $super.$init$.call($self);
+                swat.invokeSuper($self, '$init$', [], 'O$');
                 $self.$outer = $outer;
             });
             O$ = swat.object('O$', [O$, java.lang.Object, scala.Any], $self);
@@ -230,7 +230,7 @@ class LocalDefinitionTests extends CompilerSuite
             var a = (function() {
                 $anon.$init$ = (function($outer) {
                     var $self = this;
-                    $super.$init$.call($self, $outer);
+                    swat.invokeSuper($self, '$init$', [$outer], '$anon');
                     $self.$outer = $outer;
                 });
                 $anon = swat.type('$anon', [$anon, U, C, T, java.lang.Object, scala.Any]);
@@ -240,13 +240,13 @@ class LocalDefinitionTests extends CompilerSuite
             var b = (function() {
                 $anon.$init$ = (function($outer) {
                     var $self = this;
-                    $super.$init$.call($self);
+                    swat.invokeSuper($self, '$init$', [], '$anon');
                     $self.$fields.x = 10;
                     $self.$fields.y = 20;
                     $self.$outer = $outer;
                 });
-                $anon.x = swat.method('', (function() { var $self = this; return $self.$fields.x; }));
-                $anon.y = swat.method('', (function() { var $self = this; return $self.$fields.y; }));
+                $anon.x = swat.method('$anon.x', '', (function() { var $self = this; return $self.$fields.x; }));
+                $anon.y = swat.method('$anon.y', '', (function() { var $self = this; return $self.$fields.y; }));
                 $anon = swat.type('$anon', [$anon, java.lang.Object, scala.Any]);
                 return new $anon($self);
             })();

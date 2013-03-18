@@ -6,16 +6,16 @@ swat.require('test.A', true);
 swat.require('test.Printer', false);
 test.B.$init$ = (function(y, x) {
     var $self = this;
-    $super.$init$.call($self, x, 'java.lang.String');
+    swat.invokeSuper($self, '$init$', [x, 'java.lang.String'], 'test.B');
     $self.$fields.y = y;
     swat.setParameter($self, 'x', x, 'test.B');
 });
-test.B.foo = swat.method('', (function() {
+test.B.foo = swat.method('test.B.foo', '', (function() {
     var $self = this;
     var printer = new test.Printer();
-    printer.print(($self.y() + swat.asInstanceOf($super.x.call($self), java.lang.String)), 'java.lang.String');
+    printer.print(($self.y() + swat.asInstanceOf(swat.invokeSuper($self, 'x', [], 'test.B'), java.lang.String)), 'java.lang.String');
 }));
-test.B.y = swat.method('', (function() {
+test.B.y = swat.method('test.B.y', '', (function() {
     var $self = this;
     return $self.$fields.y;
 }));

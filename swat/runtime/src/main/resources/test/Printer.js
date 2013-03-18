@@ -4,9 +4,9 @@ swat.require('java.lang.String', false);
 swat.require('scala.Any', true);
 test.Printer.$init$ = (function() {
     var $self = this;
-    $super.$init$.call($self);
+    swat.invokeSuper($self, '$init$', [], 'test.Printer');
 });
-test.Printer.print = swat.method('java.lang.String', (function(message) {
+test.Printer.print = swat.method('test.Printer.print', 'java.lang.String', (function(message) {
     var $self = this;
     console.log(message);
 }));

@@ -28,8 +28,9 @@ trait ClassDefProcessors {
 
         val dependencies = mutable.ListBuffer.empty[(Type, Boolean)]
 
-        val classDefTypeIdentifier = typeJsIdentifier(classDef.symbol.tpe)
-        val classDefTypeName = js.StringLiteral(classDefTypeIdentifier.name)
+        val thisTypeIdentifier = typeIdentifier(classDef.symbol.tpe)
+        val thisTypeJsIdentifier = js.Identifier(thisTypeIdentifier)
+        val thisTypeString = js.StringLiteral(thisTypeIdentifier)
 
         val selfIdent = localJsIdentifier("$self")
         val outerIdent = localJsIdentifier("$outer")
@@ -76,26 +77,27 @@ trait ClassDefProcessors {
                 case Some(cs) => Some(processDefDefGroup(cs, processConstructor _))
                 case _ => None
             }
-            val qualifier = memberChain(classDefTypeIdentifier, constructorIdent)
+            val qualifier = memberChain(thisTypeJsIdentifier, constructorIdent)
             constructorExpression.map(e => js.AssignmentStatement(qualifier, e))
         }
 
         def processMethodGroup(methods: List[DefDef]): js.Statement = {
             val methodExpression = processDefDefGroup(methods, processDefDef(_: DefDef))
-            val qualifier = memberChain(classDefTypeIdentifier, localJsIdentifier(methods.head.name))
+            val qualifier = memberChain(thisTypeJsIdentifier, localJsIdentifier(methods.head.name))
             js.AssignmentStatement(qualifier, methodExpression)
         }
 
         def processDefDefGroup(defDefs: List[DefDef], defDefProcessor: DefDef => js.Expression): js.Expression = {
             // Each method is processed and a type hint containing types of the method formal parameters is
-            // added. E.g. function(i) { ... }, [Int], function(s1, s2) { ... }, [String, String].
-            val methodBuilderArguments = defDefs.flatMap { defDef =>
+            // added. E.g. [Int], function(i) { ... },  [String, String], function(s1, s2) { ... }.
+            val overloads = defDefs.flatMap { defDef =>
                 val parameterTypes = defDef.vparamss.flatten.map(p => p.tpt.tpe)
                 parameterTypes.foreach(addRuntimeDependency _)
                 val parameterIdents = parameterTypes.map(typeIdentifier _)
                 List(js.StringLiteral(parameterIdents.mkString(", ")), defDefProcessor(defDef))
             }
-            swatMethodCall("method", methodBuilderArguments: _*)
+            val methodIdentifier = js.StringLiteral(thisTypeIdentifier + "." + localIdentifier(defDefs.head.name))
+            swatMethodCall("method", (methodIdentifier :: overloads): _*)
         }
 
         def processConstructor(c: DefDef): js.Expression = {
@@ -113,7 +115,7 @@ trait ClassDefProcessors {
             val bodyStart = processedConstructor.body match {
                 case List(s, js.ExpressionStatement(js.UndefinedLiteral)) => {
                     // The body doesn't contain a call to super constructor, so it has to be added.
-                    List(s, js.ExpressionStatement(superCall(constructorIdent, Nil)))
+                    List(s, js.ExpressionStatement(superCall(None, constructorIdent.name, Nil)))
                 }
                 case b => b
             }
@@ -158,7 +160,7 @@ trait ClassDefProcessors {
         }
 
         def processJsConstructor(superClasses: js.ArrayLiteral): js.Statement = {
-            js.AssignmentStatement(classDefTypeIdentifier, swatMethodCall("type", classDefTypeName, superClasses))
+            js.AssignmentStatement(thisTypeJsIdentifier, swatMethodCall("type", thisTypeString, superClasses))
         }
 
         def symbolToField(qualifier: js.Expression, symbol: Symbol): js.Expression = {
@@ -385,8 +387,10 @@ trait ClassDefProcessors {
             case s @ Select(q, _) if s.symbol.isAnyMethodOrOperator => processAnyMethodCall(s.symbol, q, args)
 
             // Methods of the current class super classes.
-            case s @ Select(Super(t: This, _), m) if t.symbol.tpe =:= classDef.symbol.tpe => {
-                superCall(localJsIdentifier(m), processMethodArgs(s.symbol, Some(s.qualifier), args))
+            case s @ Select(Super(t: This, mixName), methodName) if t.symbol.tpe =:= classDef.symbol.tpe => {
+                val arguments = processMethodArgs(s.symbol, Some(s.qualifier), args)
+                val mix = if (mixName.isEmpty) None else Some(mixName.toString)
+                superCall(mix, localIdentifier(methodName), arguments)
             }
 
             // Method call.
@@ -720,16 +724,17 @@ trait ClassDefProcessors {
             swatMethodCall("lazify", js.FunctionExpression(None, Nil, unScoped(processReturnTree(expr))))
         }
 
-        def superCall(methodName: js.Identifier, arguments: List[js.Expression]): js.Expression = {
-            val call = memberChain(superIdent, methodName, js.Identifier("call"))
-            js.CallExpression(call, selfIdent +: arguments)
+        def superCall(mixName: Option[String], methodName: String, args: List[js.Expression]): js.Expression = {
+            val method = js.StringLiteral(methodName)
+            val arguments = js.ArrayLiteral(args)
+            val typeHints = thisTypeString :: mixName.map(js.StringLiteral(_)).toList
+            swatMethodCall("invokeSuper", (selfIdent :: method :: arguments :: typeHints): _*)
         }
 
         def fieldGet(field: Symbol): js.Expression = {
             if (field.isParametricField) {
                 val name = js.StringLiteral(localIdentifier(field.name))
-                val typeHint = js.StringLiteral(classDefTypeIdentifier.name)
-                swatMethodCall("getParameter", selfIdent, name, typeHint)
+                swatMethodCall("getParameter", selfIdent, name, thisTypeString)
             } else {
                 // Val, var or lazy val.
                 val value = symbolToField(selfIdent, field)
@@ -746,8 +751,7 @@ trait ClassDefProcessors {
                 js.AssignmentStatement(memberChain(selfIdent, outerIdent), value)
             } else if (field.isParametricField) {
                 val name = js.StringLiteral(localIdentifier(field.name))
-                val typeHint = js.StringLiteral(classDefTypeIdentifier.name)
-                js.ExpressionStatement(swatMethodCall("setParameter", selfIdent, name, value, typeHint))
+                js.ExpressionStatement(swatMethodCall("setParameter", selfIdent, name, value, thisTypeString))
             } else {
                 // Val, var or lazy val.
                 js.AssignmentStatement(symbolToField(selfIdent, field), value)
@@ -763,9 +767,9 @@ trait ClassDefProcessors {
         override def processJsConstructor(superClasses: js.ArrayLiteral): js.Statement = {
             // A local object depends on the outer class so a reference to the outer class has to be passed to the
             // constructor.
-            val commonArgs = List(classDefTypeName, superClasses)
+            val commonArgs = List(thisTypeString, superClasses)
             val args = commonArgs ++ (if (classDef.symbol.isLocalOrAnonymous) List(selfIdent) else Nil)
-            js.AssignmentStatement(classDefTypeIdentifier, swatMethodCall("object", args: _*))
+            js.AssignmentStatement(thisTypeJsIdentifier, swatMethodCall("object", args: _*))
         }
     }
 
