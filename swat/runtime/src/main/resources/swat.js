@@ -13,16 +13,16 @@ swat.jsToString = function(obj) { return Object.prototype.toString.call(obj); };
 swat.isJsObject = function(obj) { return obj === Object(obj); };
 
 /** Returns whether the specified object is a JavaScript array. */
-swat.isJsArray = function(obj) { return swat.jsToString(obj) == "[object Array]"; };
+swat.isJsArray = function(obj) { return swat.jsToString(obj) == '[object Array]'; };
 
 /** Returns whether the specified object is a JavaScript function. */
-swat.isJsFunction = function(obj) { return swat.jsToString(obj) == "[object Function]"; };
+swat.isJsFunction = function(obj) { return swat.jsToString(obj) == '[object Function]'; };
 
 /** Returns whether the specified object is a JavaScript string. */
-swat.isJsString = function(obj) { return swat.jsToString(obj) == "[object String]"; };
+swat.isJsString = function(obj) { return swat.jsToString(obj) == '[object String]'; };
 
 /** Returns whether the specified object is a JavaScript number. */
-swat.isJsNumber = function(obj) { return swat.jsToString(obj) == "[object Number]"; };
+swat.isJsNumber = function(obj) { return swat.jsToString(obj) == '[object Number]'; };
 
 /** Returns whether the specified object is a JavaScript boolean. */
 swat.isJsBoolean = function(obj) { return obj === true || obj === false || swat.jsToString(obj) == '[object Boolean]'; };
@@ -41,20 +41,32 @@ swat.error = function(message) {
     console.log(message);
 };
 
-/** Makes sure that all components of the specified path are declared. */
-swat.declare = function(path) {
-    var parentPath = window;
+/** Traverses all objects on the specified path. The visitor function gets an owning object and name of the field. */
+swat.traverse = function(path, visitor) {
+    var parent = window;
     while (path != '') {
         var index = path.indexOf('.');
         var name = (index >= 0) ? path.substring(0, index) : path;
         path = (index >= 0) ? path.substring(index + 1) : '';
-
-        if (swat.isUndefined(parentPath[name])) {
-            parentPath[name] = {};
-        }
-        parentPath = parentPath[name];
+        visitor(parent, name);
+        parent = parent[name];
     }
+}
+
+/** Makes sure that all objects on the specified path are declared. */
+swat.declare = function(path) {
+    swat.traverse(path, function(parent, name) {
+        if (swat.isUndefined(parent[name])) {
+            parent[name] = {};
+        }
+    });
 };
+
+/** Returns an object corresponding to the path. */
+swat.access = function(path) {
+    var result = undefined;
+    swat.traverse(path, function(parent, name) { result = parent[name]; });
+}
 
 /** Extends the specified target object with all directly owned properties of the source object. */
 swat.extend = function(target, source) {
@@ -97,33 +109,50 @@ swat.lazify = function(f) {
     return l;
 };
 
+/**
+ * Creates a prototype object for the specified type hierarchy while chaining the prototypes in a way that
+ * Sub <: Super => SubPrototype.prototype == SuperPrototype. Initializes both the internal prototype links that are
+ * used during method resolution and explicit prototype links via '$prototype' field so the prototype hierarchy can
+ * be traversed programatically.
+ */
+swat.typePrototype = function(hierarchy) {
+    var prototype = {};
+    for (var i = hierarchy.length - 1; i >= 0; i--) {
+        // Create a new object (i.e. child prototype) with the current prototype as its prototype.
+        var childConstructor = function() {};
+        childConstructor.prototype = prototype;
+        var childPrototype = new childConstructor();
+        childPrototype.$prototype = prototype;
+
+        // Extend the child prototype with its methods and continue.
+        swat.extend(childPrototype, hierarchy[i]);
+        prototype = childPrototype;
+    }
+    return prototype;
+}
+
 /** Returns type constructor for the specified type and linearized type hierarchy starting with the type. */
 swat.type = function(typeIdentifier, hierarchy) {
+    var prototype = swat.typePrototype(hierarchy);
+
     // The type constructor function dispatches directly to the Scala constructor.
-    var constructor = function() {
-        this.constructor = constructor;
+    var typeConstructor = function() {
+        this.$prototype = prototype;
         this.$init$.apply(this, arguments);
     };
+    typeConstructor.prototype = prototype;
+    prototype.constructor = typeConstructor;
 
     // Because of the usage (e.g. A = swat.type('A' [A, java.lang.Object, scala.Any]) everything from the type has to
     // copied to the type constructor.
-    swat.extend(constructor, hierarchy[0]);
-
-    // Initialize the prototype chain. Each item in the chain corresponds to a type in the hierarchy, methods of each
-    // type are copied to the corresponding prototype.
-    var p = constructor.prototype;
-    for (var i = 0; i < hierarchy.length; i++) {
-        swat.extend(p, hierarchy[i]);
-        p.prototype = {};
-        p = p.prototype;
-    }
+    swat.extend(typeConstructor, hierarchy[0]);
 
     // Set the metaclass of the type. Currently just type identifier.
-    var type = typeIdentifier;
-    constructor.$type = type;
-    constructor.prototype.$type = type;
+    var meta = typeIdentifier;
+    typeConstructor.$type = meta;
+    prototype.$type = meta;
 
-    return constructor;
+    return typeConstructor;
 };
 
 /**
@@ -132,7 +161,7 @@ swat.type = function(typeIdentifier, hierarchy) {
  */
 swat.method = function(methodIdentifier) {
     var overloads = swat.toArray(arguments).splice(1);
-    var index = methodIdentifier.lastIndexOf(".");
+    var index = methodIdentifier.lastIndexOf('.');
     var typeIdentifier = methodIdentifier.substring(0, index);
     var methodName = methodIdentifier.substring(index + 1);
 
@@ -164,8 +193,33 @@ swat.object = function(typeIdentifier, hierarchy, outer) {
     return swat.lazify(function() { return constructor(outer); });
 };
 
+/** Invokes super version of the specified method defined above the specified type in the inheritance hierarchy. */
 swat.invokeSuper = function(obj, methodName, args, typeIdentifier, superTypeIdentifier) {
-    // TODO
+    var method = undefined;
+    if (swat.isDefined(superTypeIdentifier)) {
+        // The type where the method can be found is specified.
+        method = swat.access(superTypeIdentifier)[methodName];
+    } else {
+        // First method with the same name has to be found in the prototype hierarchy above the typeIdentifier.
+        var visitedType = false;
+        var p = obj.$prototype;
+        while (swat.isDefined(p)) {
+            if (visitedType && p.hasOwnProperty(methodName)) {
+                method = p[methodName];
+                break;
+            } else if (p.$type == typeIdentifier) {
+                visitedType = true;
+            }
+            p = p.$prototype;
+        }
+    }
+
+    // Invoke the method.
+    if (swat.isDefined(method)) {
+        return method.apply(obj, args);
+    } else {
+        swat.error('Cannot invoke super method ' + methodName + ' in type ' + typeIdentifier + '.')
+    }
 }
 
 /** Returns a parametric field of the specified object in the specified type context. */
