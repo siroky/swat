@@ -389,7 +389,7 @@ trait ClassDefProcessors {
             // Methods of the current class super classes.
             case s @ Select(Super(t: This, mixName), methodName) if t.symbol.tpe =:= classDef.symbol.tpe => {
                 val arguments = processMethodArgs(s.symbol, Some(s.qualifier), args)
-                val mix = if (mixName.isEmpty) None else Some(mixName.toString)
+                val mix = if (mixName.isEmpty) None else Some(typeIdentifier(s.symbol.owner.tpe))
                 superCall(mix, localIdentifier(methodName), arguments)
             }
 
@@ -707,6 +707,7 @@ trait ClassDefProcessors {
         }
 
         def processTypedPattern(typed: Typed, matchee: js.Expression, body: List[js.Statement]) = {
+            addRuntimeDependency(typed.tpt.tpe)
             val condition = swatMethodCall(localIdentifier("isInstanceOf"), matchee, typeJsIdentifier(typed.tpt.tpe))
             List(js.IfStatement(condition, body, Nil))
         }

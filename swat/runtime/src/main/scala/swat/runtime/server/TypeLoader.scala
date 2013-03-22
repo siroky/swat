@@ -95,10 +95,12 @@ object TypeLoader {
      * Returns content of the source file corresponding to the specified type.
      */
     private def getSource(typeIdentifier: String): String = {
-        val sourcePath = typeIdentifier.replace(".", "/") + ".js"
-        val sourceStream = Option(getClass.getClassLoader.getResourceAsStream(sourcePath))
+        val pathPrefix = typeIdentifier.replace(".", "/")
+        val sourcePaths = List(".swat.js", ".js").map(pathPrefix + _)
+        val classLoader = getClass.getClassLoader
+        val sourceStream = sourcePaths.flatMap(p => Option(classLoader.getResourceAsStream(p))).headOption
         sourceStream.map(s => Source.fromInputStream(s).getLines().mkString("\n")).getOrElse {
-            throw TypeLoadingException(s"Cannot find source file of type '$typeIdentifier'.")
+            throw TypeLoadingException(s"Cannot find source file of type $typeIdentifier.")
         }
     }
 }

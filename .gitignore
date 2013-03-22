@@ -19,3 +19,6 @@ swat/.idea/libraries
 
 # Eclipse files.
 .cache
+
+# Swat generated files
+*.swat.js

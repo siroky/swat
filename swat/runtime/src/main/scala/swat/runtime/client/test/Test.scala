@@ -2,17 +2,26 @@ package swat.runtime.client.test
 
 import swat.api.js._
 
-class A(val x: String)
-
-class B(val y: String, x: String) extends A(x) {
-    def foo() {
-        val printer = new Printer
-        printer.print(y + x)
-    }
+trait A {
+    def foo(x: String) = "A.foo(String)"
+    def foo(x: Int) = "A.foo(Int)"
 }
 
-class Printer {
-    def print(message: String) {
-        console.log(message)
+trait B {
+    def foo(x: String) = "B.foo(String)"
+    def foo(x: Double) = "B.foo(Double)"
+}
+
+class X extends A with B {
+    override def foo(x: String) = "X.foo(String)"
+    def test() {
+        window.alert(foo(""))
+        window.alert(super.foo(""))
+        window.alert(super[A].foo(""))
+        window.alert(super[B].foo(""))
+        window.alert(foo(123))
+        window.alert(foo(123.0))
+        window.alert(this.isInstanceOf[A])
+        window.alert(this.isInstanceOf[Int])
     }
 }

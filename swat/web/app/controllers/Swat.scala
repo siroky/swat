@@ -9,7 +9,7 @@ object Swat extends Controller {
         try {
             Ok(TypeLoader.get(List(typeIdentifier)))
         } catch {
-            case TypeLoadingException(message) => Ok(s"alert('$message');")
+            case TypeLoadingException(message) => Ok(s"alert('Swat type loading error: $message');")
         }
     }
 }

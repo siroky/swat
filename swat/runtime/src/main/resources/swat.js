@@ -51,7 +51,7 @@ swat.traverse = function(path, visitor) {
         visitor(parent, name);
         parent = parent[name];
     }
-}
+};
 
 /** Makes sure that all objects on the specified path are declared. */
 swat.declare = function(path) {
@@ -66,7 +66,8 @@ swat.declare = function(path) {
 swat.access = function(path) {
     var result = undefined;
     swat.traverse(path, function(parent, name) { result = parent[name]; });
-}
+    return result;
+};
 
 /** Extends the specified target object with all directly owned properties of the source object. */
 swat.extend = function(target, source) {
@@ -129,7 +130,19 @@ swat.typePrototype = function(hierarchy) {
         prototype = childPrototype;
     }
     return prototype;
-}
+};
+
+/** Assigns meta class to the specified type. */
+swat.assignClass = function(type, typeIdentifier, superTypes) {
+    var metaClass = new java.lang.Class(typeIdentifier, superTypes);
+    type.$class = metaClass;
+    type.prototype.$class = metaClass;
+};
+
+/** Refreshes meta class of the specified type. */
+swat.reassignClass = function(type) {
+    swat.assignClass(type, type.$class.typeIdentifier, type.$class.superTypes);
+};
 
 /** Returns type constructor for the specified type and linearized type hierarchy starting with the type. */
 swat.type = function(typeIdentifier, hierarchy) {
@@ -147,12 +160,16 @@ swat.type = function(typeIdentifier, hierarchy) {
     // copied to the type constructor.
     swat.extend(typeConstructor, hierarchy[0]);
 
-    // Set the metaclass of the type. Currently just type identifier.
-    var meta = typeIdentifier;
-    typeConstructor.$type = meta;
-    prototype.$type = meta;
+    // Set the meta class of the type.
+    swat.assignClass(typeConstructor, typeIdentifier, hierarchy.splice(1));
 
     return typeConstructor;
+};
+
+/** Returns an object accessor, which is a lazified type constructor of the object type. */
+swat.object = function(typeIdentifier, hierarchy, outer) {
+    var constructor = swat.type(typeIdentifier, hierarchy);
+    return swat.lazify(function() { return constructor(outer); });
 };
 
 /**
@@ -183,14 +200,8 @@ swat.method = function(methodIdentifier) {
         }
 
         // Otherwise call the super type version.
-        swat.invokeSuper(this, methodName, args, typeIdentifier);
+        return swat.invokeSuper(this, methodName, args, typeIdentifier);
     };
-}
-
-/** Returns an object accessor, which is a lazified type constructor of the object type. */
-swat.object = function(typeIdentifier, hierarchy, outer) {
-    var constructor = swat.type(typeIdentifier, hierarchy);
-    return swat.lazify(function() { return constructor(outer); });
 };
 
 /** Invokes super version of the specified method defined above the specified type in the inheritance hierarchy. */
@@ -207,7 +218,7 @@ swat.invokeSuper = function(obj, methodName, args, typeIdentifier, superTypeIden
             if (visitedType && p.hasOwnProperty(methodName)) {
                 method = p[methodName];
                 break;
-            } else if (p.$type == typeIdentifier) {
+            } else if (p.$class.typeIdentifier == typeIdentifier) {
                 visitedType = true;
             }
             p = p.$prototype;
@@ -220,7 +231,7 @@ swat.invokeSuper = function(obj, methodName, args, typeIdentifier, superTypeIden
     } else {
         swat.error('Cannot invoke super method ' + methodName + ' in type ' + typeIdentifier + '.')
     }
-}
+};
 
 /** Returns a parametric field of the specified object in the specified type context. */
 swat.getParameter = function(obj, parameterName, typeHint) {
@@ -233,6 +244,50 @@ swat.setParameter = function(obj, parameterName, value, typeHint) {
         obj.$params[parameterName] = {};
     }
     obj.$params[parameterName][typeHint] = value;
+};
+
+/** Returns meta class of the specified type (instance of java.lang.Class). */
+swat.classOf = function(type) {
+    return type.$class;
+};
+
+/** Native implementation of the Scala isInstanceOf method. */
+swat.isInstanceOf = function(obj, type) {
+    if (swat.isUndefined(obj) || obj == null) {
+        return false;
+    }
+
+    var typeIdentifier = type.$class.typeIdentifier;
+    var typeIs = function(i) { return typeIdentifier === i; };
+    var typeIsAny = typeIs('scala.Any');
+    var typeIsAnyOrAnyVal = typeIsAny || typeIs('scala.AnyVal');
+    var typeIsAnyOrObject = typeIsAny || typeIs('java.lang.Object');
+
+    if (swat.isJsNumber(obj)) {
+        var typeIsIntegral = ['scala.Byte', 'scala.Short', 'scala.Int', 'scala.Long'].indexOf(typeIdentifier) > 0;
+        var typeIsFloating = ['scala.Float', 'scala.Double'].indexOf(typeIdentifier) > 0;
+        if (typeIsAnyOrAnyVal || typeIsFloating || (typeIsIntegral && swat.isInteger(obj))) {
+            return true;
+        }
+    } else if (swat.isJsBoolean(obj) && (typeIsAnyOrAnyVal || typeIs('scala.Boolean'))) {
+        return true;
+    } else if (swat.isJsString(obj) && (typeIsAnyOrObject || typeIs('java.lang.String') || (typeIs('scala.Char') && swat.isChar(obj)))) {
+        return true;
+    } else if (swat.isJsObject(obj)) {
+        if (typeIsAnyOrObject) {
+            return true;
+        } else if (swat.isDefined(obj.$class)) {
+            // Check whether any of the object super types is actually the checked type.
+            var superTypes = obj.$class.superTypes;
+            for (var i = 0; i < superTypes.length; i++) {
+                if (superTypes[i].$class.typeIdentifier === typeIdentifier) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
 };
 
 // Provide the swat so this file gets involved in type loading.

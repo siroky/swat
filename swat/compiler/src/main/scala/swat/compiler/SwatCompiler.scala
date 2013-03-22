@@ -93,7 +93,7 @@ class SwatCompiler(
         javaScriptTarget.foreach { target =>
             val codeGenerator = new JsCodeGenerator
             typeOutputs.mapValues(codeGenerator.astToCode _).foreach { case (typeIdentifier, program) =>
-                val typeFile = new File(new java.io.File(target + "/" + typeIdentifier.replace(".", "/") + ".js"))
+                val typeFile = new File(new java.io.File(target + "/" + typeIdentifier.replace(".", "/") + ".swat.js"))
                 typeFile.parent.createDirectory()
                 typeFile.writeAll(program)
             }
