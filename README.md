@@ -19,7 +19,7 @@ Aim of this project is to create a set of tools that will help to create rich in
     </tr>
     <tr>
         <td>Runtime that would support execution of the compiled code.</td>
-        <td><strong>40%</strong></td>
+        <td><strong>75%</strong></td>
     </tr>
     <tr>
         <td>Port of the most important Scala Library classes to JavaScript (hopefully with big help of Swat).</td>
