@@ -34,7 +34,6 @@ trait ClassDefProcessors {
 
         val selfIdent = localJsIdentifier("$self")
         val outerIdent = localJsIdentifier("$outer")
-        val superIdent = localJsIdentifier("$super")
         val fieldsIdent = localJsIdentifier("$fields")
         val constructorIdent = localJsIdentifier("$init$")
         val selfDeclaration = js.VariableStatement(selfIdent, Some(js.ThisReference))
@@ -308,7 +307,8 @@ trait ClassDefProcessors {
         }
 
         def processSuper(s: Super): js.Expression = {
-            js.CallExpression(memberChain(processExpressionTree(s.qual), superIdent), Nil)
+            error("Unsupported super AST: " + s.toString)
+            js.UndefinedLiteral
         }
 
         def processSelect(select: Select): js.Expression = {
@@ -393,10 +393,18 @@ trait ClassDefProcessors {
                 superCall(mix, localIdentifier(methodName), arguments)
             }
 
+            // Overloaded constructor call.
+            case s @ Select(qualifier, name) if s.symbol.isConstructor => {
+                val methodName = js.StringLiteral(localIdentifier(name))
+                val arguments = js.ArrayLiteral(processMethodArgs(s.symbol, Some(qualifier), args))
+                swatMethodCall("invokeThis", List(selfIdent, methodName, arguments, thisTypeString): _*)
+            }
+
             // Method call.
             case s @ Select(qualifier, name) => {
-                val methodExpr = memberChain(processExpressionTree(qualifier), localJsIdentifier(name))
-                js.CallExpression(methodExpr, processMethodArgs(s.symbol, Some(qualifier), args))
+                val methodAccessor = memberChain(processExpressionTree(qualifier), localJsIdentifier(name))
+                val processedArgs = processMethodArgs(s.symbol, Some(qualifier), args)
+                js.CallExpression(methodAccessor, processedArgs)
             }
         }
 
@@ -409,7 +417,8 @@ trait ClassDefProcessors {
 
         def processMethodArgs(method: Symbol, qualifier: Option[Tree], args: List[Tree]): List[js.Expression] =  {
             val methodSymbol = method.asInstanceOf[MethodSymbol]
-            val methodType = qualifier.map(q => methodSymbol.typeAsMemberOf(q.symbol.tpe)).getOrElse(methodSymbol.tpe)
+            val qualifierSymbol = qualifier.flatMap(q => Option(q.symbol))
+            val methodType = qualifierSymbol.map(s => methodSymbol.typeAsMemberOf(s.tpe)).getOrElse(methodSymbol.tpe)
             val paramTypes = methodType.paramTypes
 
             val firstParam = method.paramss.flatten.headOption
@@ -718,7 +727,13 @@ trait ClassDefProcessors {
         }
 
         def processOperator(operator: String): String = {
-            Map("equals" -> "==", "eq" -> "===", "ne" -> "!==").withDefault(o => o)(operator)
+            Map(
+                "equals" -> "===",
+                "==" -> "===",
+                "!=" -> "!==",
+                "eq" -> "===",
+                "ne" -> "!=="
+            ).withDefault(o => o)(operator)
         }
 
         def lazify(expr: Tree): js.Expression = {

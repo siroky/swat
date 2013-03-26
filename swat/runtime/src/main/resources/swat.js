@@ -184,10 +184,7 @@ swat.method = function(methodIdentifier) {
 
     return function() {
         var args = swat.toArray(arguments);
-        if (args.length == 0) {
-            swat.error('Method called without a type hint (' + overloads + ')');
-        }
-        var typeHint = args[args.length - 1];
+        var typeHint = args[args.length - 1] || '';
         if (!swat.isJsString(typeHint)) {
             swat.error('Method called with an invalid type hint (' + typeHint + ')');
         }
@@ -204,33 +201,48 @@ swat.method = function(methodIdentifier) {
     };
 };
 
+/** Returns a new unique id. */
+swat.newId = function() {
+    swat.newId.counter++;
+    return swat.newId.counter;
+};
+swat.newId.counter = 0;
+
+/** Invokes the specified method. */
+swat.invoke = function(obj, method, methodName, args, typeIdentifier) {
+    if (swat.isUndefined(method)) {
+        swat.error('Cannot invoke method ' + methodName + ' in type ' + typeIdentifier + '.');
+    }
+    return method.apply(obj, args);
+};
+
+/** Invokes the specified method defined directly on the specified type. */
+swat.invokeThis = function(obj, methodName, args, typeIdentifier) {
+    return swat.invoke(obj, swat.access(typeIdentifier)[methodName], methodName, args, typeIdentifier);
+};
+
 /** Invokes super version of the specified method defined above the specified type in the inheritance hierarchy. */
 swat.invokeSuper = function(obj, methodName, args, typeIdentifier, superTypeIdentifier) {
-    var method = undefined;
     if (swat.isDefined(superTypeIdentifier)) {
         // The type where the method can be found is specified.
-        method = swat.access(superTypeIdentifier)[methodName];
-    } else {
-        // First method with the same name has to be found in the prototype hierarchy above the typeIdentifier.
-        var visitedType = false;
-        var p = obj.$prototype;
-        while (swat.isDefined(p)) {
-            if (visitedType && p.hasOwnProperty(methodName)) {
-                method = p[methodName];
-                break;
-            } else if (p.$class.typeIdentifier == typeIdentifier) {
-                visitedType = true;
-            }
-            p = p.$prototype;
-        }
+        return swat.invoke(obj, swat.access(superTypeIdentifier)[methodName], methodName, args, typeIdentifier);
     }
 
-    // Invoke the method.
-    if (swat.isDefined(method)) {
-        return method.apply(obj, args);
-    } else {
-        swat.error('Cannot invoke super method ' + methodName + ' in type ' + typeIdentifier + '.')
+    // First method with the same name has to be found in the prototype hierarchy above the typeIdentifier.
+    var method = undefined;
+    var visitedType = false;
+    var p = obj.$prototype;
+    while (swat.isDefined(p)) {
+        if (visitedType && p.hasOwnProperty(methodName)) {
+            method = p[methodName];
+            break;
+        } else if (p.$class.typeIdentifier == typeIdentifier) {
+            visitedType = true;
+        }
+        p = p.$prototype;
     }
+
+    return swat.invoke(obj, method, methodName, args, typeIdentifier);
 };
 
 /** Returns a parametric field of the specified object in the specified type context. */
@@ -249,6 +261,11 @@ swat.setParameter = function(obj, parameterName, value, typeHint) {
 /** Returns meta class of the specified type (instance of java.lang.Class). */
 swat.classOf = function(type) {
     return type.$class;
+};
+
+/** Returns whether the specified object is an instance of swat type. */
+swat.isSwatObject = function(obj) {
+    return swat.isDefined(obj) && obj !== null && swat.isDefined(obj.$class);
 };
 
 /** Native implementation of the Scala isInstanceOf method. */
@@ -273,10 +290,10 @@ swat.isInstanceOf = function(obj, type) {
         return true;
     } else if (swat.isJsString(obj) && (typeIsAnyOrObject || typeIs('java.lang.String') || (typeIs('scala.Char') && swat.isChar(obj)))) {
         return true;
-    } else if (swat.isJsObject(obj)) {
-        if (typeIsAnyOrObject) {
+    } else if (swat.isSwatObject (obj)) {
+        if (typeIsAnyOrObject || obj.$class.typeIdentifier === type.$class.typeIdentifier) {
             return true;
-        } else if (swat.isDefined(obj.$class)) {
+        } else {
             // Check whether any of the object super types is actually the checked type.
             var superTypes = obj.$class.superTypes;
             for (var i = 0; i < superTypes.length; i++) {
@@ -290,5 +307,73 @@ swat.isInstanceOf = function(obj, type) {
     return false;
 };
 
+/** Native implementation of the Scala asInstanceOf method. */
+swat.asInstanceOf = function(obj, type) {
+    if (swat.isInstanceOf(obj, type) || (obj === null && swat.isInstanceOf(obj, java.lang.Object))) {
+        return obj;
+    }
+
+    var identifier = swat.jsToString(obj);
+    if (swat.isSwatObject (obj)) {
+        identifier = obj.$class.typeIdentifier;
+    }
+    var message = 'The object of type ' + identifier + ' cannot be cast to ' + type.$class.typeIdentifier + '.'
+    throw new java.lang.ClassCastException(message, 'java.lang.String');
+};
+
+/** Throws a NullPointerException iff the specified object is null or undefined. */
+swat.throwIfNull = function(obj) {
+    if (swat.isUndefined(obj) || obj == null) {
+        throw new java.lang.NullPointerException();
+    }
+};
+
+/** Native implementation of the Scala equals method. */
+swat.equals = function(obj1, obj2) {
+    if (swat.isUndefined(obj1) || swat.isUndefined(obj1)) {
+        return false;
+    } else if (obj1 === obj2) {
+        return true;
+    } else if (swat.isSwatObject(obj1)) {
+        return obj1.equals(obj2, 'scala.Any');
+    }
+    return false;
+};
+
+/** Returns meta class of the specified type (instance of java.lang.Class). */
+swat.getClass = function(obj) {
+    swat.throwIfNull(obj);
+    return obj.$class;
+};
+
+/** Native implementation of the Scala hashCode method. */
+swat.hashCode = function(obj) {
+    var code = 0;
+    if (swat.isJsBoolean(obj)) {
+        code = obj ? 1231 : 1237;
+    } else if (swat.isJsNumber(obj)) {
+        code = obj;
+    } else if (swat.isJsString(obj)) {
+        for (var i = 0; i < obj.length; i++) {
+            code += obj.charCodeAt(i) * (31 ^ obj.length - 1 - i);
+            code %= 2147483647;
+        }
+    } else if (swat.isSwatObject(obj)) {
+        return obj.hashCode();
+    }
+    return Math.round(code) % 2147483647;
+};
+
+/** Native implementation of the Scala toString method. */
+swat.toString = function(obj) {
+    swat.throwIfNull(obj);
+    return obj.toString();
+};
+
 // Provide the swat so this file gets involved in type loading.
 swat.provide('swat');
+
+swat.require('java.lang.Object', false);
+swat.require('java.lang.Class', false);
+swat.require('java.lang.ClassCastException', false);
+swat.require('java.lang.NullPointerException', false);

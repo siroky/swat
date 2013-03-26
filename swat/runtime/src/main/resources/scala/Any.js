@@ -7,5 +7,6 @@ swat.require('java.lang.Class', true);
 scala.Any.$init$ = function() {
     this.$fields = {};
     this.$params = {};
+    this.$id = swat.newId();
 };
 scala.Any = swat.type('scala.Any', [scala.Any]);

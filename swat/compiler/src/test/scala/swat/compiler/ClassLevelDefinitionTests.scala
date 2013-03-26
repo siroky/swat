@@ -91,16 +91,16 @@ class ClassLevelDefinitionTests extends CompilerSuite
                         }),
                         '', (function() {
                             var $self = this;
-                            $self.$init$(0, 'scala.Int');
+                            swat.invokeThis($self, '$init$', [0, 'scala.Int'], 'D');
                             scala.Predef$().println('Foo', 'scala.Any');
                         }),
                         'java.lang.String', (function(foo) {
                             var $self = this;
-                            $self.$init$(java.lang.String$().length(foo), 'scala.Int');
+                            swat.invokeThis($self, '$init$', [java.lang.String$().length(foo), 'scala.Int'], 'D');
                         }),
                         'scala.Boolean', (function(foo) {
                             var $self = this;
-                            $self.$init$((function() { if (foo) { return 'true'; } else { return 'false'; } })(), 'java.lang.String');
+                            swat.invokeThis($self, '$init$', [(function() { if (foo) { return 'true'; } else { return 'false'; } })(), 'java.lang.String'], 'D');
                         }));
                     D.foo = swat.method('D.foo', '', (function() { var $self = this; return $self.$fields.foo; }));
                     D = swat.type('D', [D, java.lang.Object, scala.Any]);

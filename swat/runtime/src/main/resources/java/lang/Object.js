@@ -3,8 +3,16 @@ swat.provide('java.lang.Object');
 swat.require('scala.Any', true);
 
 java.lang.Object.$init$ = function() {
-    var $self = this;
-    swat.invokeSuper($self, '$init$', [], 'java.lang.Object');
+    swat.invokeSuper(this, '$init$', [], 'java.lang.Object');
+};
+java.lang.Object.equals = function(that) {
+    return this === that;
+};
+java.lang.Object.hashCode = function() {
+    return swat.hashCode(this.$id);
+};
+java.lang.Object.toString = function() {
+    return this.$class.typeIdentifier + '@' + $self.$id;
 };
 java.lang.Object = swat.type('java.lang.Object', [java.lang.Object, scala.Any]);
 

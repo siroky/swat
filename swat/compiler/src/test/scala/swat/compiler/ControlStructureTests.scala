@@ -183,7 +183,7 @@ class ControlStructureTests extends CompilerSuite
             var y = (function() {
                 var x1 = x;
                 function case8() {
-                    if (('foo' == x1)) {
+                    if (('foo' === x1)) {
                         var x4 = x1;
                         return matchEnd7('bar');
                     } else {
@@ -197,7 +197,7 @@ class ControlStructureTests extends CompilerSuite
                             if ((x3 !== null)) {
                                 var p2 = x3.x();
                                 return (function() {
-                                    if (('bar' == p2)) {
+                                    if (('bar' === p2)) {
                                         var x5 = p2;
                                         return matchEnd7('bar');
                                     } else {
@@ -348,7 +348,7 @@ class ControlStructureTests extends CompilerSuite
                         if (swat.isInstanceOf(x4, java.lang.Exception)) {
                             var x5 = swat.asInstanceOf(x4, java.lang.Exception);
                             return (function() {
-                                if ((x5.getMessage() == 'foo')) {
+                                if ((x5.getMessage() === 'foo')) {
                                     return matchEnd8(scala.Predef$().println('exception with foo message', 'scala.Any'));
                                 } else {
                                     return case10();
@@ -377,7 +377,7 @@ class ControlStructureTests extends CompilerSuite
                         if (swat.isInstanceOf(x6, java.lang.Exception)) {
                             var x7 = swat.asInstanceOf(x6, java.lang.Exception);
                             return (function() {
-                                if ((x7.getMessage() == 'foo')) {
+                                if ((x7.getMessage() === 'foo')) {
                                     return matchEnd11(scala.Predef$().println('exception with foo message', 'scala.Any'));
                                 } else {
                                     return case13();

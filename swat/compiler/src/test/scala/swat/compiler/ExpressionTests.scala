@@ -110,17 +110,17 @@ class ExpressionTests extends CompilerSuite
             (i > j);
             (i <= j);
             (i >= j);
-            (i == j);
-            (i != j);
-            (i == j);
+            (i === j);
+            (i !== j);
+            (i === j);
 
             var b = 1.0;
             var c = 2.0;
             -b;
             (b / c);
             (b < c);
-            (b != c);
-            (b == c);
+            (b !== c);
+            (b === c);
 
             var m = 'm';
             var n = 'n';
@@ -131,9 +131,9 @@ class ExpressionTests extends CompilerSuite
             (scala.Char$().toInt(m) << scala.Char$().toInt(n));
             (scala.Char$().toInt(m) < scala.Char$().toInt(n));
             (scala.Char$().toInt(m) >= scala.Char$().toInt(n));
-            (m == n);
-            (m != n);
-            (m == n);
+            (m === n);
+            (m !== n);
+            (m === n);
 
             var x = true;
             var y = false;
@@ -208,9 +208,9 @@ class ExpressionTests extends CompilerSuite
             var a = 'a';
             var b = 'b';
             (a + b);
-            (a == b);
-            (a != b);
-            (a == b);
+            (a === b);
+            (a !== b);
+            (a === b);
             (a === b);
             (a !== b);
         """
