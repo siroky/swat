@@ -25,4 +25,8 @@ trait TreeBuilder {
         case ReturnStatement(Some(CallExpression(FunctionExpression(None, Nil, body), Nil))) => body
         case s => List(s)
     }
+
+    def throwNew(identifier: Identifier, args: List[Expression]): Statement = {
+        ThrowStatement(NewExpression(CallExpression(identifier, args)))
+    }
 }

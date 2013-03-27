@@ -36,6 +36,8 @@ trait ClassDefProcessors {
         val outerIdent = localJsIdentifier("$outer")
         val fieldsIdent = localJsIdentifier("$fields")
         val constructorIdent = localJsIdentifier("$init$")
+        val selectorIdent = localJsIdentifier("$selector")
+        val matchErrorIdent = js.Identifier("scala.MatchError")
         val selfDeclaration = js.VariableStatement(selfIdent, Some(js.ThisReference))
 
         def addDeclarationDependency(tpe: Type) {
@@ -47,18 +49,10 @@ trait ClassDefProcessors {
         }
 
         def process(): (Dependencies, List[js.Statement]) = {
-            // Group the methods by their names and process all the methods in a group together (merge overloaded
-            // methods into a single method. In its body, it determines by parameter types which one of the overloaded
-            // methods should be invoked).
-            val defDefGroups = classDef.defDefs.groupBy(_.name.toString).toList.sortBy(_._1).map(_._2)
-            val (constructorGroups, methodGroups) = defDefGroups.partition(_.head.symbol.isConstructor)
-
-            // Process the single constructor group.
-            val constructorDeclaration = processConstructorGroup(constructorGroups.headOption).toList
-
-            // Process the method group.
-            val methodGroupsToProcess = methodGroups.filter(!_.head.symbol.isOuterAccessor)
-            val methodDeclarations = methodGroupsToProcess.map(processMethodGroup _)
+            // Process the single constructor group and method groups
+            val (constructorGroup, methodGroups) = extractDefDefGroups(classDef)
+            val constructorDeclaration = processConstructorGroup(constructorGroup).toList
+            val methodDeclarations = methodGroups.map(processMethodGroup _)
 
             // The JavaScript constructor function.
             val superClasses = classDef.symbol.baseClasses
@@ -68,6 +62,14 @@ trait ClassDefProcessors {
 
             // Return the dependencies of the class and all statements.
             (dependencies, constructorDeclaration ++ methodDeclarations :+ jsConstructorDeclaration)
+        }
+
+        def extractDefDefGroups(classDef: ClassDef): (Option[List[DefDef]], List[List[DefDef]]) = {
+            val groups = classDef.defDefs.groupBy(_.name.toString).toList.sortBy(_._1).map(_._2)
+            val filteredGroups = groups.map(_.filter(!_.hasSymbolWhich(s => s.isOuterAccessor || s.isDeferred)))
+            val nonEmptyGroups = filteredGroups.filter(_.nonEmpty)
+            val (constructorGroups, methodGroups) = nonEmptyGroups.partition(_.head.symbol.isConstructor)
+            (constructorGroups.headOption, methodGroups)
         }
 
         def processConstructorGroup(constructors: Option[List[DefDef]]): Option[js.Statement] = {
@@ -96,7 +98,7 @@ trait ClassDefProcessors {
                 List(js.StringLiteral(parameterIdents.mkString(", ")), defDefProcessor(defDef))
             }
             val methodIdentifier = js.StringLiteral(thisTypeIdentifier + "." + localIdentifier(defDefs.head.name))
-            swatMethodCall("method", (methodIdentifier :: overloads): _*)
+            swatMethodCall("method", (methodIdentifier +: overloads): _*)
         }
 
         def processConstructor(c: DefDef): js.Expression = {
@@ -147,8 +149,11 @@ trait ClassDefProcessors {
         def processDefDef(defDef: DefDef, includeSelf: Boolean = true): js.FunctionExpression = {
             val processedParameters = defDef.vparamss.flatten.map(p => localJsIdentifier(p.name))
             val self = if (includeSelf) List(selfDeclaration) else Nil
+            val nativeCode = defDef.symbol.nativeAnnotation
             val processedBody =
-                if (defDef.symbol.isGetter && defDef.symbol.isLazy) {
+                if (nativeCode.isDefined) {
+                    js.RawCodeBlock(nativeCode.get)
+                } else if (defDef.symbol.isGetter && defDef.symbol.isLazy) {
                     // Body of a lazy val (which is assigned to the corresponding field in the primary constructor)
                     // can be replaced by simple return of the field, where the lazy val is stored.
                     js.ReturnStatement(Some(fieldGet(defDef.symbol)))
@@ -185,6 +190,7 @@ trait ClassDefProcessors {
             case c: ClassDef => processLocalClassDef(c)
             case i: If => processIf(i)
             case l: LabelDef => processLabelDef(l)
+            case m: Match => processMatch(m)
             case t: Throw => processThrow(t)
             case t: Try => processTry(t)
             case _ => {
@@ -653,6 +659,15 @@ trait ClassDefProcessors {
             }
         }
 
+        def processMatch(m: Match): js.Expression = {
+            val selectorAssignment = js.AssignmentStatement(selectorIdent, processExpressionTree(m.selector))
+            val processedCases = m.cases.flatMap(c => processCaseDef(c, selectorIdent))
+            val matchErrorThrow = throwNew(matchErrorIdent, List(selectorIdent))
+            scoped {
+                selectorAssignment +: processedCases :+ matchErrorThrow
+            }
+        }
+
         def processThrow(t: Throw): js.Expression = scoped {
             js.ThrowStatement(processExpressionTree(t.expr))
         }
@@ -700,6 +715,7 @@ trait ClassDefProcessors {
 
         def processPattern(p: Tree, matchee: js.Expression, body: List[js.Statement]): List[js.Statement] = p match {
             case i: Ident => processIdentifierPattern(i, matchee, body)
+            case l: Literal => processLiteralPattern(l, matchee, body)
             case t: Typed => processTypedPattern(t, matchee, body)
             case b: Bind => processBindPattern(b, matchee, body)
             case pattern => {
@@ -713,6 +729,11 @@ trait ClassDefProcessors {
                 error(s"Unexpected type of an identifier pattern ($identifier).")
             }
             body
+        }
+
+        def processLiteralPattern(literal: Literal, matchee: js.Expression, body: List[js.Statement]) = {
+            val condition = swatMethodCall("equals", matchee, processExpressionTree(literal))
+            List(js.IfStatement(condition, body, Nil))
         }
 
         def processTypedPattern(typed: Typed, matchee: js.Expression, body: List[js.Statement]) = {

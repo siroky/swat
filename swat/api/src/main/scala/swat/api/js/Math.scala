@@ -14,7 +14,7 @@ object Math {
     def acos(x: Double): Double = ???
     def asin(x: Double): Double = ???
     def atan(x: Double): Double = ???
-    def atan2(y: Double, x: Double): Double = ???
+    def atan2(x: Double): Double = ???
     def ceil(x: Double): Double = ???
     def cos(x: Double): Double = ???
     def exp(x: Double): Double = ???

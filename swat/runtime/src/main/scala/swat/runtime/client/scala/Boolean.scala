@@ -1,5 +1,5 @@
 package swat.runtime.client.scala
 
-class Boolean
+private class Boolean
 
-object Boolean
+private object Boolean

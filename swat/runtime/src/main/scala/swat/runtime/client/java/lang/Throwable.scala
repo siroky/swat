@@ -1,6 +1,6 @@
 package swat.runtime.client.java.lang
 
-class Throwable(message: java.lang.String, cause: java.lang.Throwable) {
+class Throwable(message: java.lang.String, cause: java.lang.Throwable) extends java.io.Serializable {
     def this() = this(null, null)
     def this(message: java.lang.String) = this(message, null)
     def this(cause: java.lang.Throwable) = this(if (cause == null) null else cause.toString, cause)

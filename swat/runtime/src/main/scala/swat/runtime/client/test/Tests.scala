@@ -1,9 +1,12 @@
 package swat.runtime.client.test
 
+import swat.api.js.window
+
 class Tests {
     def run() {
         (new MethodDispatchTest).run()
         (new AnyMethodAndOperatorTest).run()
+        window.alert("Foo")
     }
 }
 
