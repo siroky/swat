@@ -1,4 +1,10 @@
-@main("Swat") {
-    <h1>Swat Hello World</h1>
+@main("Swat Runtime Tests") {
+    <h1>Swat Runtime Tests</h1>
+    <p>
+        Open the developer console in the browser to see the results of Swat runtime tests.
+    </p>
     <script src="/swat/test.Tests"></script>
+    <script>
+        (new test.Tests()).run();
+    </script>
 }

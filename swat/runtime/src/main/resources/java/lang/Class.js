@@ -12,3 +12,11 @@ java.lang.Class.$init$ = function(typeIdentifier, superTypes) {
     this.typeIdentifier = typeIdentifier;
     this.superTypes = superTypes;
 };
+java.lang.Class.getName = function() {
+    var result = this.typeIdentifier;
+    var index = result.lastIndexOf('.');
+    if (index >= 0) {
+        result = result.substring(index + 1);
+    }
+    return result;
+};
