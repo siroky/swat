@@ -28,7 +28,7 @@ swat.isJsNumber = function(obj) { return swat.jsToString(obj) == '[object Number
 swat.isJsBoolean = function(obj) { return obj === true || obj === false || swat.jsToString(obj) == '[object Boolean]'; };
 
 /** Returns whether the specified object can be perceived as an integer. */
-swat.isInteger = function(obj) { return swat.isNumber(obj) && (obj % 1 === 0); };
+swat.isInteger = function(obj) { return swat.isJsNumber(obj) && (obj % 1 === 0); };
 
 /** Returns whether the specified object can be perceived as one character. */
 swat.isChar = function(obj) { return swat.isString(obj) && obj.length === 1; };
@@ -290,6 +290,8 @@ swat.isInstanceOf = function(obj, type) {
         return true;
     } else if (swat.isJsString(obj) && (typeIsAnyOrObject || typeIs('java.lang.String') || (typeIs('scala.Char') && swat.isChar(obj)))) {
         return true;
+    } else if (swat.isJsFunction(obj) && (typeIsAnyOrObject || typeIdentifier.startsWith('scala.Function'))) {
+        return true;
     } else if (swat.isSwatObject (obj)) {
         if (typeIsAnyOrObject || obj.$class.typeIdentifier === type.$class.typeIdentifier) {
             return true;
@@ -343,6 +345,20 @@ swat.equals = function(obj1, obj2) {
 /** Returns meta class of the specified type (instance of java.lang.Class). */
 swat.getClass = function(obj) {
     swat.throwIfNull(obj);
+
+    // Doesn't work reliably for primitive types.
+    if (swat.isJsBoolean(obj)) {
+        return scala.Boolean.$class;
+    } else if (swat.isInteger(obj)) {
+        return scala.Int.$class;
+    } else if (swat.isJsNumber(obj)) {
+        return scala.Double.$class;
+    } else if (swat.isJsString(obj)) {
+        return scala.String.$class;
+    } else if (swat.isJsFunction(obj)) {
+        // TODO
+    }
+
     return obj.$class;
 };
 
@@ -358,6 +374,8 @@ swat.hashCode = function(obj) {
             code += obj.charCodeAt(i) * (31 ^ obj.length - 1 - i);
             code %= 2147483647;
         }
+    } else if (swat.isJsFunction(obj)) {
+        return swat.hashCode(obj.toString());
     } else if (swat.isSwatObject(obj)) {
         return obj.hashCode();
     }
@@ -367,13 +385,29 @@ swat.hashCode = function(obj) {
 /** Native implementation of the Scala toString method. */
 swat.toString = function(obj) {
     swat.throwIfNull(obj);
-    return obj.toString();
+
+    if (swat.isJsFunction(obj)) {
+        return '<function>'; // TODO
+    } else {
+        return obj.toString();
+    }
 };
 
 // Provide the swat so this file gets involved in type loading.
 swat.provide('swat');
 
+swat.require('scala.Any', false);
+swat.require('scala.AnyVal', false);
+swat.require('scala.Boolean', false);
+swat.require('scala.Byte', false);
+swat.require('scala.Char', false);
+swat.require('scala.Double', false);
+swat.require('scala.Float', false);
+swat.require('scala.Int', false);
+swat.require('scala.Long', false);
+swat.require('scala.Short', false);
 swat.require('java.lang.Object', false);
+swat.require('java.lang.String', false);
 swat.require('java.lang.Class', false);
 swat.require('java.lang.ClassCastException', false);
 swat.require('java.lang.NullPointerException', false);

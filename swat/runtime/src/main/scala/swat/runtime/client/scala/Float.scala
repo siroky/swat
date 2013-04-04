@@ -2,8 +2,6 @@ package swat.runtime.client.scala
 
 import swat.api.js.Number
 
-class Float
-
 object Float {
     val MinPositiveValue = Number.MIN_VALUE
     val NaN = Number.NaN

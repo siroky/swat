@@ -1,6 +1,6 @@
 package swat.runtime.client.scala
 
-class Int
+
 
 object Int {
     val MinValue = -2147483648

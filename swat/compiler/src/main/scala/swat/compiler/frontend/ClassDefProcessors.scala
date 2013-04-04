@@ -90,10 +90,9 @@ trait ClassDefProcessors {
 
         def processDefDefGroup(defDefs: List[DefDef], defDefProcessor: DefDef => js.Expression): js.Expression = {
             // Each method is processed and a type hint containing types of the method formal parameters is
-            // added. E.g. [Int], function(i) { ... },  [String, String], function(s1, s2) { ... }.
+            // added. E.g. 'Int', function(i) { ... },  'String, String', function(s1, s2) { ... }.
             val overloads = defDefs.flatMap { defDef =>
                 val parameterTypes = defDef.vparamss.flatten.map(p => p.tpt.tpe)
-                parameterTypes.foreach(addRuntimeDependency _)
                 val parameterIdents = parameterTypes.map(typeIdentifier _)
                 List(js.StringLiteral(parameterIdents.mkString(", ")), defDefProcessor(defDef))
             }
@@ -305,7 +304,11 @@ trait ClassDefProcessors {
             } else {
                 // The thisSymbol isn't a package, therefore it's the current class or an outer class.
                 def getNestingDepth(innerClass: Symbol): Int = {
-                    if (innerClass == thisSymbol) 0 else getNestingDepth(innerClass.owner) + 1
+                    if (innerClass == thisSymbol || innerClass == NoSymbol) {
+                        0
+                    } else {
+                        getNestingDepth(innerClass.owner) + 1
+                    }
                 }
                 val depth = getNestingDepth(classDef.symbol)
                 (1 to depth).foldLeft[js.Expression](selfIdent)((z, _) => js.MemberExpression(z, outerIdent))
@@ -384,10 +387,9 @@ trait ClassDefProcessors {
             // A local function call doesn't need the type hint, because it can't be overloaded.
             case f if f.symbol.isLocal => functionCall(f, args)
 
-            // Methods on types that compile to JavaScript built-in types (primitive, function, array).
+            // Methods on types that compile to JavaScript built-in types (primitive, function).
             case s @ Select(q, _) if q.tpe.isAnyValOrString => processAnyValOrStringMethodCall(s.symbol, q, args)
             case s @ Select(q, _) if q.tpe.isFunction => processFunctionMethodCall(s.symbol, q, args)
-            case s @ Select(q, _) if q.tpe.isArray => dispatchCallToCompanion(s.symbol, q, args)
 
             // Standard methods of the Any class.
             case s @ Select(q, _) if s.symbol.isAnyMethodOrOperator => processAnyMethodCall(s.symbol, q, args)
@@ -422,16 +424,10 @@ trait ClassDefProcessors {
         }
 
         def processMethodArgs(method: Symbol, qualifier: Option[Tree], args: List[Tree]): List[js.Expression] =  {
-            val methodSymbol = method.asInstanceOf[MethodSymbol]
-            val qualifierSymbol = qualifier.flatMap(q => Option(q.symbol))
-            val methodType = qualifierSymbol.map(s => methodSymbol.typeAsMemberOf(s.tpe)).getOrElse(methodSymbol.tpe)
-            val paramTypes = methodType.paramTypes
-
-            val firstParam = method.paramss.flatten.headOption
-            val firstParamIsOuter = firstParam.map(_.name.endsWith(nme.OUTER)).getOrElse(false)
-            val hintTypes = if (firstParamIsOuter) paramTypes.tail else paramTypes
-            val hintIdents = hintTypes.map(typeIdentifier _)
-            val typeHint = if (hintTypes.isEmpty) None else Some(js.StringLiteral(hintIdents.mkString(", ")))
+            val typeHint = method.info.paramTypes.map(typeIdentifier _).toList match {
+                case Nil => None
+                case identifiers => Some(js.StringLiteral(identifiers.mkString(", ")))
+            }
 
             processExpressionTrees(args) ++ typeHint.toList
         }

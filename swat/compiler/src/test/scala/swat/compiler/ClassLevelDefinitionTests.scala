@@ -76,11 +76,8 @@ class ClassLevelDefinitionTests extends CompilerSuite
                 """
                     swat.provide('D');
                     swat.require('java.lang.Object', true);
-                    swat.require('java.lang.String', false);
                     swat.require('java.lang.String$', false);
                     swat.require('scala.Any', true);
-                    swat.require('scala.Boolean', false);
-                    swat.require('scala.Int', false);
                     swat.require('scala.Predef$', false);
 
                     D.$init$ = swat.method('D.$init$', 'scala.Int',
@@ -153,7 +150,6 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     swat.require('java.lang.Object', true);
                     swat.require('java.lang.String$', false);
                     swat.require('scala.Any', true);
-                    swat.require('scala.Int', false);
 
                     T.$init$ = (function() {
                         var $self = this;
@@ -176,7 +172,6 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     swat.require('java.lang.Object', true);
                     swat.require('java.lang.String$', false);
                     swat.require('scala.Any', true);
-                    swat.require('scala.Int', false);
 
                     C.$init$ = (function() {
                         var $self = this;
@@ -200,7 +195,6 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     swat.require('java.lang.Object', true);
                     swat.require('java.lang.String$', false);
                     swat.require('scala.Any', true);
-                    swat.require('scala.Int', false);
 
                     O$.$init$ = (function() {
                         var $self = this;
@@ -275,7 +269,6 @@ class ClassLevelDefinitionTests extends CompilerSuite
                     swat.require('scala.Any', true);
                     swat.require('scala.Int', false);
                     swat.require('scala.Predef$', false);
-                    swat.require('scala.collection.Seq', false);
                     swat.require('scala.collection.immutable.List$', false);
 
                     C.$init$ = (function() {

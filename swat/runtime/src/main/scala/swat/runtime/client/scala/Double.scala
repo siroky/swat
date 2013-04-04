@@ -2,8 +2,6 @@ package swat.runtime.client.scala
 
 import swat.api.js.Number
 
-class Double
-
 object Double {
     val MinPositiveValue = Number.MIN_VALUE
     val NaN = Number.NaN

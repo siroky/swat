@@ -230,7 +230,7 @@ class LocalDefinitionTests extends CompilerSuite
             var a = (function() {
                 $anon.$init$ = (function($outer) {
                     var $self = this;
-                    swat.invokeSuper($self, '$init$', [$outer], '$anon');
+                    swat.invokeSuper($self, '$init$', [$outer, 'A'], '$anon');
                     $self.$outer = $outer;
                 });
                 $anon = swat.type('$anon', [$anon, U, C, T, java.lang.Object, scala.Any]);

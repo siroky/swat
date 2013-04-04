@@ -1,6 +1,6 @@
 package swat.api.js
 
-class Array[A <: Any] {
+class Array[A] {
     var length: Int = ???
 
     def concat(a: Array[A]) {}

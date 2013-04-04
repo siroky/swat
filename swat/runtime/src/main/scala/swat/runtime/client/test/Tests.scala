@@ -1,12 +1,15 @@
 package swat.runtime.client.test
 
-import swat.api.js.window
+import swat.api.js.console
 
 class Tests {
     def run() {
+        val a = new Array[String](10)
+        a(0) = "ahoj"
+        a(1) = "cau"
+        console.log(a(1))
         (new MethodDispatchTest).run()
         (new AnyMethodAndOperatorTest).run()
-        window.alert("Foo")
     }
 }
 
