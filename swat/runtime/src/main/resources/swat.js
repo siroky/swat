@@ -169,7 +169,7 @@ swat.type = function(typeIdentifier, hierarchy) {
 /** Returns an object accessor, which is a lazified type constructor of the object type. */
 swat.object = function(typeIdentifier, hierarchy, outer) {
     var constructor = swat.type(typeIdentifier, hierarchy);
-    return swat.lazify(function() { return constructor(outer); });
+    return swat.lazify(function() { return new constructor(outer); });
 };
 
 /**
@@ -406,6 +406,8 @@ swat.require('scala.Float', false);
 swat.require('scala.Int', false);
 swat.require('scala.Long', false);
 swat.require('scala.Short', false);
+swat.require('scala.Array', false);
+swat.require('scala.Array$', false);
 swat.require('java.lang.Object', false);
 swat.require('java.lang.String', false);
 swat.require('java.lang.Class', false);

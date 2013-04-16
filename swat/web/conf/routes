@@ -3,10 +3,12 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
+GET     /                                   controllers.Application.index
 
-# Swat type provider
-GET     /swat/:typeIdentifier       controllers.Swat.index(typeIdentifier: String)
+# Swat type loader
+GET     /swat/tpe/:typeIdentifier           controllers.Swat.tpe(typeIdentifier: String)
+GET     /swat/app/:typeIdentifier           controllers.Swat.app(typeIdentifier: String, args: String = "")
+GET     /swat/app/:typeIdentifier/:args     controllers.Swat.app(typeIdentifier: String, args: String)
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET     /assets/*file                       controllers.Assets.at(path="/public", file)

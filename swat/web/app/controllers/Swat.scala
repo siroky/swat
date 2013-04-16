@@ -5,9 +5,17 @@ import swat.runtime.server.{TypeLoader, TypeLoadingException}
 
 object Swat extends Controller {
   
-    def index(typeIdentifier: String) = Action {
+    def tpe(typeIdentifier: String) = Action {
+        safelyLoaded(TypeLoader.get(List(typeIdentifier)))
+    }
+
+    def app(appObjectTypeIdentifier: String, args: String) = Action {
+        safelyLoaded(TypeLoader.getApp(appObjectTypeIdentifier, args.split(",").toList))
+    }
+
+    private def safelyLoaded(code: => String): Result = {
         try {
-            Ok(TypeLoader.get(List(typeIdentifier)))
+            Ok(code)
         } catch {
             case TypeLoadingException(message) => Ok(s"alert('Swat type loading error: $message');")
         }

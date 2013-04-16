@@ -113,7 +113,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
         val identifier =
             if (symbol == NoSymbol) {
                 ""
-            } else if (symbol.isTypeParameter || symbol.isLocalOrAnonymous) {
+            } else if (symbol.isTypeParameterOrSkolem || symbol.isLocalOrAnonymous) {
                 localIdentifier(symbol.name)
             } else if (symbol.isAdapter) {
                 val stripPackage = symbol.adapterAnnotation.getOrElse(true)

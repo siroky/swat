@@ -1,46 +1,11 @@
 package swat.runtime.client.test
 
-import swat.api.js.console
-
-class Tests {
-    def run() {
-        val a = new Array[String](10)
-        a(0) = "ahoj"
-        a(1) = "cau"
-        console.log(a(1))
-        (new MethodDispatchTest).run()
-        (new AnyMethodAndOperatorTest).run()
-    }
-}
-
-trait A {
-    def foo(x: String) = "A.foo(String)"
-    def foo(x: Int) = "A.foo(Int)"
-}
-
-trait B {
-    def foo(x: String) = "B.foo(String)"
-    def foo(x: Double) = "B.foo(Double)"
-}
-
-class MethodDispatchTest extends A with B with Test {
-    def test() {
-        assert(foo("") == "X.foo(String)", "Dispatch of method of this type.")
-        assert(super.foo("") == "B.foo(String)", "Dispatch of method of super type.")
-        assert(super[A].foo("") == "A.foo(String)", "Dispatch of method of concrete super type.")
-        assert(super[B].foo("") == "B.foo(String)", "Dispatch of method of concrete super type.")
-        assert(foo(123) == "A.foo(Int)", "Dispatch of overloaded method.")
-        assert(foo(123.0) == "B.foo(Double)", "Dispatch of overloaded method.")
-    }
-
-    override def foo(x: String) = "X.foo(String)"
-}
-
 class C extends A {
+    // Intentionally implemented strangely, to test that new C == new A holds (i.e. that custom equals is used).
     override def equals(that: Any) = that != null && that.isInstanceOf[A]
 }
 
-class AnyMethodAndOperatorTest extends A with Test {
+class AnyMethodTests extends A with TestSuite {
     def test() {
         testEquals()
         testHashCode()
@@ -105,4 +70,3 @@ class AnyMethodAndOperatorTest extends A with Test {
         assert(hashCode == 1234, "Object custom hashCode.")
     }
 }
-

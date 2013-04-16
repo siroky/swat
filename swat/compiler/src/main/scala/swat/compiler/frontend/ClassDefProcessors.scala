@@ -345,8 +345,9 @@ trait ClassDefProcessors {
 
             // Generic method call.
             case TypeApply(f, typeArgs) => {
-                typeArgs.foreach(a => addRuntimeDependency(a.tpe))
-                processCall(f, apply.args ++ typeArgs)
+                val types = typeArgs.filterNot(_.symbol.isTypeParameterOrSkolem)
+                types.foreach(a => addRuntimeDependency(a.tpe))
+                processCall(f, apply.args ++ types)
             }
 
             // Constructor call.

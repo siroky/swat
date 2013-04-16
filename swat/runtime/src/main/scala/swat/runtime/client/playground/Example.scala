@@ -1,4 +1,4 @@
-package swat.runtime.client.test
+package swat.runtime.client.playground
 
 import swat.api.js.console
 

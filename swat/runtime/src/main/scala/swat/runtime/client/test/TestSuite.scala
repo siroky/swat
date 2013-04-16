@@ -2,7 +2,7 @@ package swat.runtime.client.test
 
 import swat.api.js.console
 
-trait Test {
+trait TestSuite {
     protected def test()
 
     def run() {
@@ -11,6 +11,6 @@ trait Test {
     }
 
     def assert(value: Boolean, description: String = "") {
-        console.log("  " + (if (value) "OK" else "ERROR") + " - " + description + ".")
+        console.log("  " + (if (value) "OK" else "ERROR") + " - " + description)
     }
 }

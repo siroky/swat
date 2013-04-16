@@ -3,11 +3,19 @@ package swat.runtime.client.scala
 import swat.api.js
 import swat.api.native
 
+object Array {
+    def apply[T](jsArray: js.Array[T]): Array[T] = {
+        val result = new Array[T](jsArray.length)
+        result.jsArray = jsArray
+        result
+    }
+}
+
 class Array[T](_length: Int) extends java.io.Serializable with java.lang.Cloneable {
 
-    private var jsArray = new js.Array[T]()
+    var jsArray = new js.Array[T]()
 
-    def length: Int = jsArray.length
+    def length: Int = _length
 
     @native("return $self.$fields.jsArray[i];")
     def apply(i: Int): T = ???

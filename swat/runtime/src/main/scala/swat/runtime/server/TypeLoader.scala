@@ -55,6 +55,26 @@ object TypeLoader {
         result.mkString("\n")
     }
 
+    /**
+     * Returns the JavaScript code of the specified object that extends the [[scala.App]] trait together with all
+     * its dependencies. The application is started with the specified startup args provided.
+     * @param appObjectTypeIdentifier Type identifier of the application object.
+     * @param args The startup arguments.
+     */
+    def getApp(appObjectTypeIdentifier: String, args: List[String] = Nil): String = {
+        val typeIdentifier = appObjectTypeIdentifier.stripSuffix("$") + "$"
+        val jsArgs = args.map("'" + _.replace("\\", "\\\\").replace("'", "\\'") + "'").mkString("[", ",", "]")
+        val code = get(List(typeIdentifier))
+
+        s"""
+           |$code
+           |
+           |// Application $appObjectTypeIdentifier start.
+           |swat.startupArgs = scala.Array$$().apply($jsArgs, 'Array');
+           |$typeIdentifier();
+        """.stripMargin
+    }
+
     /** A type source file with known dependencies. */
     case class TypeSource(identifier: String, source: String, dependencies: immutable.List[String])
 
