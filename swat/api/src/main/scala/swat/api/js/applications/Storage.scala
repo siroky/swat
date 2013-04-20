@@ -1,4 +1,4 @@
-package swat.api.js.browser
+package swat.api.js.applications
 
 trait Storage {
     val length: Long

@@ -1,6 +1,6 @@
 package swat.runtime.client.test
 
-import swat.api.js.console
+import swat.api.js.GlobalScope._
 
 trait TestSuite {
     protected def test()

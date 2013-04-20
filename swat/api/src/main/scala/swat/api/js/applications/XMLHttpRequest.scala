@@ -1,4 +1,4 @@
-package swat.api.js.browser
+package swat.api.js.applications
 
 import swat.api.js.events._
 import swat.api.js.dom.Document

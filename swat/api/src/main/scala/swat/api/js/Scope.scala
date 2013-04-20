@@ -1,6 +1,10 @@
-package swat.api
+package swat.api.js
 
-package object js {
+import swat.api.js.applications.Json
+
+trait Scope {
+    val JSON: Json = ???
+
     val Infinity: Any = ???
     val NaN: Any = ???
     val undefined: Any = ???
@@ -17,3 +21,4 @@ package object js {
     def parseInt(value: Any): Int = ???
     def unescape(s: String): String = ???
 }
+

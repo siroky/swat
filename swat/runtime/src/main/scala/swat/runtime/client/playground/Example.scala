@@ -1,6 +1,6 @@
 package swat.runtime.client.playground
 
-import swat.api.js.console
+import swat.api.js.GlobalScope._
 
 class Example {
     def run() {

@@ -1,3 +1,3 @@
-package swat.api.js.browser
+package swat.api.js.applications
 
 class ActiveXObject(name: String) extends XMLHttpRequest

@@ -1,9 +1,9 @@
-package swat.api.js.browser
+package swat.api.js.applications
 
 import swat.api.js.html._
 import swat.api.js.events._
 
-trait Window extends EventTarget {
+trait Window extends EventTarget with WindowTimers with WindowBase64 {
     val closed: Boolean = ???
     var defaultStatus: String = ???
     val document: Document = ???
@@ -35,10 +35,6 @@ trait Window extends EventTarget {
     def get(key: String) {}
     def focus() {}
     def alert(s: Any) {}
-    def setTimeout(fn: () => Unit, milliseconds: Int): Int = ???
-    def clearTimeout(timeoutId: Int) {}
-    def setInterval(fn: () => Unit, milliseconds: Int): Int = ???
-    def clearInterval(intervalId: Int) {}
     def open(url: String) {}
 }
 

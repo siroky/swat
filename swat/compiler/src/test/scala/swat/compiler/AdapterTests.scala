@@ -4,11 +4,11 @@ class AdapterTests extends CompilerSuite
 {
     test("Packages are properly stripped") {
         """
-            swat.api.js.window
+            swat.api.js.GlobalScope.window
             swat.api.js.dom.Node
 
             new swat.api.js.Array()
-            new swat.api.js.browser.XMLHttpRequest()
+            new swat.api.js.applications.XMLHttpRequest()
         """ fragmentShouldCompileTo """
             window;
             Node;
@@ -24,10 +24,10 @@ class AdapterTests extends CompilerSuite
             a.length
             a.length = 10
 
-            swat.api.js.window.status
-            swat.api.js.window.status = "ok"
-            swat.api.js.window.opener.status
-            swat.api.js.window.opener.status = "fail"
+            swat.api.js.GlobalScope.window.status
+            swat.api.js.GlobalScope.window.status = "ok"
+            swat.api.js.GlobalScope.window.opener.status
+            swat.api.js.GlobalScope.window.opener.status = "fail"
         """ fragmentShouldCompileTo """
             var a = new Array();
             a.length;
@@ -42,9 +42,9 @@ class AdapterTests extends CompilerSuite
 
     test("Globals are properly qualified") {
         """
-            swat.api.js.NaN
-            swat.api.js.eval("code")
-            swat.api.js.isNaN(123)
+            swat.api.js.GlobalScope.NaN
+            swat.api.js.GlobalScope.eval("code")
+            swat.api.js.GlobalScope.isNaN(123)
         """ fragmentShouldCompileTo """
             NaN;
             eval('code');
@@ -54,7 +54,7 @@ class AdapterTests extends CompilerSuite
 
     test("Overloaded methods aren't provided the type hint") {
         """
-            val r = new swat.api.js.browser.XMLHttpRequest()
+            val r = new swat.api.js.applications.XMLHttpRequest()
             r.open("GET", "http://api.com")
             r.open("GET", "http://api.com", true)
             r.open("GET", "http://api.com", true, "username", "password")

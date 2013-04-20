@@ -1,7 +1,6 @@
 package swat.compiler.frontend
 
 import swat.compiler.{SwatCompilerPlugin, js}
-import swat.api.js.{JSON, console, document, window}
 
 trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProcessors {
     self: SwatCompilerPlugin =>
@@ -116,8 +115,10 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
             } else if (symbol.isTypeParameterOrSkolem || symbol.isLocalOrAnonymous) {
                 localIdentifier(symbol.name)
             } else if (symbol.isAdapter) {
+                val isScope = symbol.tpe <:< typeOf[swat.api.js.Scope]
+                val isAdapterPackageObject = symbol.isPackageObjectOrClass && adapterPackages(symbol.owner.fullName)
                 val stripPackage = symbol.adapterAnnotation.getOrElse(true)
-                if (stripPackage && symbol.isPackageObjectOrClass && adapterPackages(symbol.owner.fullName)) {
+                if (isScope || (isAdapterPackageObject && stripPackage)) {
                     ""
                 } else {
                     val prefix = if (stripPackage) "" else packageIdentifier(symbol.owner)
