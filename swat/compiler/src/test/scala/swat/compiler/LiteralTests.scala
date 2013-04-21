@@ -1,7 +1,7 @@
 package swat.compiler
 
-class LiteralTests extends CompilerSuite
-{
+class LiteralTests extends CompilerSuite {
+
     test("Unit and null") {
         """
             val x = ()

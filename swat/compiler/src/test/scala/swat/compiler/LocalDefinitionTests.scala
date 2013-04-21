@@ -1,7 +1,7 @@
 package swat.compiler
 
-class LocalDefinitionTests extends CompilerSuite
-{
+class LocalDefinitionTests extends CompilerSuite {
+
     test("Vals") {
         """
             val x = "abc"

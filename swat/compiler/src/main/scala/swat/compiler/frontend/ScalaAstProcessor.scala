@@ -11,18 +11,18 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
 
     /**
      * A set of packages that are stripped from the compiled JavaScript code. For example a class
-     * swat.runtime.client.foo.bar.A is compiled to foo.bar.A. The main purpose is an easy integration of existing
-     * libraries into the client code without naming collisions. This can be seen on the swat.runtime.client.scala
+     * swat.client.foo.bar.A is compiled to foo.bar.A. The main purpose is an easy integration of existing
+     * libraries into the client code without naming collisions. This can be seen on the swat.client.scala
      * package where altered versions of Scala Library classes may be defined. Advantage is, that in the compiled
      * code, they seem like they were declared in the scala package.
      */
-    val ignoredPackages = Set("<root>", "<empty>", "swat.runtime.client")
+    val ignoredPackages = Set("<root>", "<empty>", "swat.internal", "swat.client")
 
     /**
      * A set of packages whose classes and objects are considered to be adapters even though they don't necessarily
-     * need to be annotated with the [[swat.api.adapter]] annotation.
+     * need to be annotated with the [[swat.adapter]] annotation.
      */
-    val adapterPackages = Set("swat.api.js")
+    val adapterPackages = Set("swat.js")
 
     def processUnitBody(body: Tree): Map[String, js.Program] = body match {
         case p: PackageDef => {
@@ -115,7 +115,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
             } else if (symbol.isTypeParameterOrSkolem || symbol.isLocalOrAnonymous) {
                 localIdentifier(symbol.name)
             } else if (symbol.isAdapter) {
-                val isScope = symbol.tpe <:< typeOf[swat.api.js.Scope]
+                val isScope = symbol.tpe <:< typeOf[swat.js.Scope]
                 val isAdapterPackageObject = symbol.isPackageObjectOrClass && adapterPackages(symbol.owner.fullName)
                 val stripPackage = symbol.adapterAnnotation.getOrElse(true)
                 if (isScope || (isAdapterPackageObject && stripPackage)) {

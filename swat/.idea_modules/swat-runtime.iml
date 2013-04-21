@@ -18,11 +18,11 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$/../runtime">
       <sourceFolder url="file://$MODULE_DIR$/../runtime/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../runtime/src/main/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../runtime/src/test/scala" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../runtime/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../runtime/src/test/resources" isTestSource="true" />
-      <excludeFolder url="file://$MODULE_DIR$/../runtime/src/main/java" />
       <excludeFolder url="file://$MODULE_DIR$/../runtime/target" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -31,7 +31,9 @@
     <orderEntry type="library" scope="TEST" name="SBT: org.scalatest:scalatest_2.10:1.9.1:test" level="project" />
     <orderEntry type="library" scope="TEST" name="SBT: org.scala-lang:scala-actors:2.10.0:test" level="project" />
     <orderEntry type="library" scope="TEST" name="SBT: org.scala-lang:scala-reflect:2.10.0:test" level="project" />
-    <orderEntry type="module" module-name="swat-api" exported="" />
+    <orderEntry type="module" module-name="swat-internal" exported="" />
+    <orderEntry type="module" module-name="swat-common" exported="" />
+    <orderEntry type="module" module-name="swat-client" exported="" />
   </component>
 </module>
 

@@ -1,10 +1,10 @@
 package swat.compiler
 
-class ClassDefinitionTests extends CompilerSuite
-{
+class ClassDefinitionTests extends CompilerSuite {
+
     test("Adapter classes and ignored classes aren't compiled") {
         """
-            import swat.api._
+            import swat._
 
             @ignored class A1
             @ignored trait T1
@@ -18,7 +18,7 @@ class ClassDefinitionTests extends CompilerSuite
 
     test("Native classes aren't compiled and get replaced with the native code") {
         """
-            @swat.api.native("A = function() { this.a = 'foo'; };")
+            @swat.native("A = function() { this.a = 'foo'; };")
             class A
         """ shouldCompileTo Map(
             "A" ->
@@ -31,7 +31,7 @@ class ClassDefinitionTests extends CompilerSuite
 
     test("Dependencies with native annotations are supported") {
         """
-            import swat.api._
+            import swat._
 
             @native("A = function() { };")
             @dependency(classOf[Boolean], false)
@@ -50,7 +50,7 @@ class ClassDefinitionTests extends CompilerSuite
 
     test("Definitions are properly qualified with respect to packages and outer classes") {
         """
-            import swat.api._
+            import swat._
 
             class A
 

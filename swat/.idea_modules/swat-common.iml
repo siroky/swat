@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="scala" name="Scala">
+      <configuration>
+        <option name="compilerLibraryLevel" value="Project" />
+        <option name="compilerLibraryName" value="SBT: scala:2.10.0" />
+        <option name="compilerOptions" value="-deprecation -unchecked -feature -encoding utf8 -language:implicitConversions" />
+        <option name="deprecationWarnings" value="true" />
+        <option name="fsc" value="true" />
+        <option name="uncheckedWarnings" value="true" />
+      </configuration>
+    </facet>
+  </component>
+  <component name="NewModuleRootManager" inherit-compiler-output="false">
+    <output url="file://$MODULE_DIR$/../runtime/common/target/scala-2.10/classes" />
+    <output-test url="file://$MODULE_DIR$/../runtime/common/target/scala-2.10/test-classes" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../runtime/common">
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/main/resources" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/test/scala" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/test/resources" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/../runtime/common/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="SBT: org.scala-lang:scala-library:2.10.0" level="project" />
+    <orderEntry type="library" scope="TEST" name="SBT: org.scalatest:scalatest_2.10:1.9.1:test" level="project" />
+    <orderEntry type="library" scope="TEST" name="SBT: org.scala-lang:scala-actors:2.10.0:test" level="project" />
+    <orderEntry type="library" scope="TEST" name="SBT: org.scala-lang:scala-reflect:2.10.0:test" level="project" />
+    <orderEntry type="module" module-name="swat-api" exported="" />
+  </component>
+</module>
+

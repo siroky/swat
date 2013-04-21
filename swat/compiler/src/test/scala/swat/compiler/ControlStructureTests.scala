@@ -1,7 +1,7 @@
 package swat.compiler
 
-class ControlStructureTests extends CompilerSuite
-{
+class ControlStructureTests extends CompilerSuite {
+
     test("Block scope is preserved") {
         """
             val x = 1

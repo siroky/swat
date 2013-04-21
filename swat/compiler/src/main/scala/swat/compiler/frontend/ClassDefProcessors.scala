@@ -364,6 +364,9 @@ trait ClassDefProcessors {
             // An application on an adapter.
             case s: Select if s.qualifier.tpe.typeSymbol.isAdapter => processAdapterApply(s, apply.args)
 
+            // Remote method call.
+            case s: Select if s.symbol.isRemoteMethod => processRemoteCall(s, apply.args)
+
             // Method call.
             case f => processCall(f, apply.args)
         }
@@ -384,6 +387,20 @@ trait ClassDefProcessors {
                 val methodExpr = memberChain(processExpressionTree(method.qualifier), localJsIdentifier(method.name))
                 functionCall(methodExpr, args)
             }
+        }
+
+        def processRemoteCall(method: Select, args: List[Tree]): js.Expression = {
+            val fullName = method.symbol.fullNameString
+            val resultType = method.tpe.resultType
+
+            // Verify that the method returns a Future.
+            if (resultType <:< typeOf[scala.concurrent.Future[_]]) {
+                addRuntimeDependency(resultType.typeArgs.head)
+            } else {
+                error(s"A remote method ${fullName} must return a scala.concurrent.Future.")
+            }
+
+            swatMethodCall("invokeRemote", js.StringLiteral(fullName), js.ArrayLiteral(processExpressionTrees(args)))
         }
 
         def processCall(method: Tree, args: List[Tree]): js.Expression = method match {

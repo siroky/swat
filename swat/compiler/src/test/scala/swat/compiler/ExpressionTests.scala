@@ -1,7 +1,7 @@
 package swat.compiler
 
-class ExpressionTests extends CompilerSuite
-{
+class ExpressionTests extends CompilerSuite {
+
     test("Operators on Any") {
         """
             val x: Any = "x"

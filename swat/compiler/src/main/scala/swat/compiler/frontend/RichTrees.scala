@@ -1,6 +1,5 @@
 package swat.compiler.frontend
 
-import swat.api
 import swat.compiler.{SwatCompilerPlugin, CompilationException}
 
 trait RichTrees {
@@ -10,10 +9,6 @@ trait RichTrees {
 
     implicit class RichType(t: Type) {
         import definitions._
-
-        if (t == null) {
-            val x= null
-        }
 
         val s = Option(t.underlying).getOrElse(t).typeSymbol
 
@@ -39,23 +34,25 @@ trait RichTrees {
         def isField = Set("field", "value", "lazy value")(s.accurateKindString)
         def isParametricField = isField && !s.hasGetter && !s.isLazy && !s.isStatic
 
-        def isCompiled = !(isIgnored || isAdapter)
-        def isIgnored = hasAnnotation(typeOf[api.ignored])
+        def isCompiled = !(isIgnored || isRemote || isAdapter)
+        def isIgnored = hasAnnotation(typeOf[swat.ignored])
+        def isRemote = hasAnnotation(typeOf[swat.remote])
+
         def isAdapter = {
-            hasAnnotation(typeOf[api.adapter]) || adapterPackages.exists(p => s.fullName.startsWith(p) || p.startsWith(s.fullName))
+            hasAnnotation(typeOf[swat.adapter]) || adapterPackages.exists(p => s.fullName.startsWith(p) || p.startsWith(s.fullName))
         }
 
-        def adapterAnnotation: Option[Boolean] = typedAnnotation(typeOf[api.adapter]).map { s =>
+        def adapterAnnotation: Option[Boolean] = typedAnnotation(typeOf[swat.adapter]).map { s =>
             s.constantAtIndex(0).map(_.booleanValue).getOrElse(true)
         }
 
-        def nativeAnnotation: Option[String] = typedAnnotation(typeOf[api.native]).map { i =>
+        def nativeAnnotation: Option[String] = typedAnnotation(typeOf[swat.native]).map { i =>
             i.stringArg(0).getOrElse {
                 throw new CompilationException("The jsCode argument of the @native annotation must be a constant.")
             }
         }
 
-        def dependencyAnnotations = typedAnnotations(typeOf[api.dependency]).map { i =>
+        def dependencyAnnotations = typedAnnotations(typeOf[swat.dependency]).map { i =>
             val dependencyType = i.constantAtIndex(0).map(_.typeValue).getOrElse {
                 throw new CompilationException("The cls argument of the @dependency annotation is invalid.")
             }
@@ -100,6 +97,8 @@ trait RichTrees {
         }
 
         def isStringOperator = isTypeSpecificMethod(Set("+"), _.isString)
+
+        def isRemoteMethod = s.isMethod && s.owner.isObject && (isRemote || s.owner.isRemote)
 
         private def isTypeSpecificMethod(methods: Set[String], typeFilter: Type => Boolean): Boolean = {
             s.isMethod && typeFilter(s.owner.tpe) && methods.contains(s.nameString)

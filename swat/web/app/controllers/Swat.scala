@@ -1,7 +1,7 @@
 package controllers
 
 import play.api.mvc._
-import swat.runtime.server.{TypeLoader, TypeLoadingException}
+import swat.common.{TypeLoadingException, TypeLoader}
 
 object Swat extends Controller {
   
@@ -17,7 +17,7 @@ object Swat extends Controller {
         try {
             Ok(code)
         } catch {
-            case TypeLoadingException(message) => Ok(s"alert('Swat type loading error: $message');")
+            case e: TypeLoadingException => Ok(s"alert('Swat type loading error: ${e.message}');")
         }
     }
 }

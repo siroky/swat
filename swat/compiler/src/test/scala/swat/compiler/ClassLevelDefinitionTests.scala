@@ -1,7 +1,7 @@
 package swat.compiler
 
-class ClassLevelDefinitionTests extends CompilerSuite
-{
+class ClassLevelDefinitionTests extends CompilerSuite {
+
     test("Constructors") {
         """
             class A {

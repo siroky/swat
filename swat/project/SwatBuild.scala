@@ -38,8 +38,6 @@ object SwatBuild extends Build {
     lazy val apiProject =
         Project("swat-api", file("api"), settings = defaultSettings)
 
-    val swatTask = TaskKey[Unit]("swat")
-
     lazy val compilerProject =
         Project(
             "swat-compiler", file("compiler"), settings = defaultSettings ++ Seq(
@@ -49,7 +47,9 @@ object SwatBuild extends Build {
                 swatTask <<= (fullClasspath in Compile, runner, sourceDirectory in Compile, target in Compile) map { (cp, runner, src, target) =>
                     val logger = ConsoleLogger()
                     Run.executeTrapExit({
-                        Run.run("swat.compiler.Main", cp.map(_.data), Seq("./runtime/src", "swat.runtime.client"), logger)(runner)
+                        Run.run("swat.compiler.Main", cp.map(_.data), Seq("runtime/internal/src"), logger)(runner)
+                        Run.run("swat.compiler.Main", cp.map(_.data), Seq("runtime/common/src"), logger)(runner)
+                        Run.run("swat.compiler.Main", cp.map(_.data), Seq("runtime/client/src"), logger)(runner)
                     }, logger)
                 }
             )
@@ -57,11 +57,40 @@ object SwatBuild extends Build {
             apiProject
         )
 
+    val swatTask = TaskKey[Unit]("swat")
+
+    object SwatProject {
+        def apply(id: String, path: java.io.File, settings: Seq[Setting[_]]): Project = {
+            Project(
+                id, path, settings = settings
+            ).dependsOn(apiProject)
+        }
+    }
+
     lazy val runtimeProject =
         Project(
             "swat-runtime", file("runtime"), settings = defaultSettings
+        ).aggregate(
+            internalRuntimeProject,
+            commonRuntimeProject,
+            clientRuntimeProject
         ).dependsOn(
-            apiProject
+            internalRuntimeProject,
+            commonRuntimeProject,
+            clientRuntimeProject
+        )
+
+    lazy val internalRuntimeProject =
+        SwatProject("swat-internal", file("runtime/internal"), defaultSettings)
+
+    lazy val commonRuntimeProject =
+        SwatProject("swat-common", file("runtime/common"), defaultSettings)
+
+    lazy val clientRuntimeProject =
+        SwatProject(
+            "swat-client", file("runtime/client"), defaultSettings
+        ).dependsOn(
+            commonRuntimeProject
         )
 
     lazy val webProject =
