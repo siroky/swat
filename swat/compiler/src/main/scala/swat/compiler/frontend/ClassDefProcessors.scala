@@ -321,7 +321,9 @@ trait ClassDefProcessors {
         }
 
         def processSelect(select: Select): js.Expression = {
-            val processedSelect = memberChain(processExpressionTree(select.qualifier), localJsIdentifier(select.name))
+            lazy val processedSelect =
+                memberChain(processExpressionTree(select.qualifier), localJsIdentifier(select.name))
+
             select.symbol match {
                 case s if s.isObject => {
                     addRuntimeDependency(s.tpe)
