@@ -1,4 +1,4 @@
-package swat.runtime.client.test
+package swat.client.test
 
 class C extends A {
     // Intentionally implemented strangely, to test that new C == new A holds (i.e. that custom equals is used).

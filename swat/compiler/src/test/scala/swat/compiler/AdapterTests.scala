@@ -4,7 +4,7 @@ class AdapterTests extends CompilerSuite {
 
     test("Packages are properly stripped") {
         """
-            swat.js.GlobalScope.window
+            swat.js.DefaultScope.window
             swat.js.dom.Node
 
             new swat.js.Array()
@@ -24,10 +24,10 @@ class AdapterTests extends CompilerSuite {
             a.length
             a.length = 10
 
-            swat.js.GlobalScope.window.status
-            swat.js.GlobalScope.window.status = "ok"
-            swat.js.GlobalScope.window.opener.status
-            swat.js.GlobalScope.window.opener.status = "fail"
+            swat.js.DefaultScope.window.status
+            swat.js.DefaultScope.window.status = "ok"
+            swat.js.DefaultScope.window.opener.status
+            swat.js.DefaultScope.window.opener.status = "fail"
         """ fragmentShouldCompileTo """
             var a = new Array();
             a.length;
@@ -42,9 +42,9 @@ class AdapterTests extends CompilerSuite {
 
     test("Globals are properly qualified") {
         """
-            swat.js.GlobalScope.NaN
-            swat.js.GlobalScope.eval("code")
-            swat.js.GlobalScope.isNaN(123)
+            swat.js.DefaultScope.NaN
+            swat.js.DefaultScope.eval("code")
+            swat.js.DefaultScope.isNaN(123)
         """ fragmentShouldCompileTo """
             NaN;
             eval('code');

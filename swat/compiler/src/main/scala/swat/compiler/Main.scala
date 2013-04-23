@@ -1,19 +1,11 @@
 package swat.compiler
 
-import scala.reflect.io.Directory
-
 object Main extends App {
-    val srcPath = args.head
-    val packages = args.tail.headOption
-    val scalaSrcPath = srcPath + "/main/scala"
-    val resourcesPath = srcPath + "/main/resources"
-    val packageDirs = packages.map(_.replace(".", "/").split(";").map(scalaSrcPath + "/" + _).toList)
-    val sourceDirNames = packageDirs.getOrElse(List(scalaSrcPath))
-    val sourceDirs = sourceDirNames.map(n => new Directory(new java.io.File(n)))
-    val sourceFiles = sourceDirs.flatMap(_.deepFiles.toList.map(_.jfile))
-    val compiler = new SwatCompiler(None, None, Some(resourcesPath))
+    val List(cp, sourceFilePaths, javaScriptTarget) = args.toList
+    val sourceFiles = sourceFilePaths.split(System.getProperty("path.separator")).map(new java.io.File(_)).toList
+    val compiler = new SwatCompiler(Some(cp), None, Some(javaScriptTarget))
 
-    println(s"[info] Swat compiling all sources in ${sourceDirs.mkString(", ")} ...")
+    println(s"[info] Swat compilation started ...")
     try {
         val result = compiler.compile(sourceFiles)
         result.warnings.foreach(w => println(s"[warning] $w"))

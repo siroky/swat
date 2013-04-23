@@ -66,16 +66,14 @@ class LocalDefinitionTests extends CompilerSuite {
                     if (swat.isInstanceOf(x1, scala.Tuple3)) {
                         var x2 = swat.asInstanceOf(x1, scala.Tuple3);
                         return (function() {
-                            if ((x2 !== null)) {
-                                var a = x2._1();
-                                var b = x2._2();
-                                var c = x2._3();
-                                return matchEnd4(new scala.Tuple3(a, b, c));
-                            } else {
-                                return case6();
-                            }
+                            var a = x2._1();
+                            var b = x2._2();
+                            var c = x2._3();
+                            return matchEnd4(new scala.Tuple3(a, b, c));
                         })();
-                    } else { return case6(); }
+                    } else {
+                        return case6();
+                    }
                 };
                 function case6() {
                     return matchEnd4((function() {
@@ -85,36 +83,38 @@ class LocalDefinitionTests extends CompilerSuite {
                 function matchEnd4(x) { return x; };
                 return case5();
             })();
-
             var a = x$1._1();
             var b = x$1._2();
             var c = x$1._3();
-
             var g = (function() {
                 var x1 = x;
                 function case6() {
                     if (swat.isInstanceOf(x1, scala.Some)) {
                         var x2 = swat.asInstanceOf(x1, scala.Some);
                         return (function() {
-                            if ((x2 !== null)) {
-                                var g = x2.x();
-                                return (function() {
-                                    if (swat.isInstanceOf(g, java.lang.String)) {
-                                        var x3 = swat.asInstanceOf(g, java.lang.String);
-                                        return matchEnd5(x3);
-                                    } else { return case7(); }
-                                })();
-                            } else { return case7(); }
+                            var g = x2.x();
+                            return (function() {
+                                if (swat.isInstanceOf(g, java.lang.String)) {
+                                    var x3 = swat.asInstanceOf(g, java.lang.String);
+                                    return matchEnd5(x3);
+                                } else {
+                                    return case7();
+                                }
+                            })();
                         })();
-                    } else { return case7(); }
+                    } else {
+                        return case7();
+                    }
                 };
                 function case7() {
-                    return matchEnd5((function() { throw new scala.MatchError(x1); })());
+                    return matchEnd5((function() {
+                        throw new scala.MatchError(x1);
+                    })());
                 };
                 function matchEnd5(x) { return x; };
                 return case6();
             })();
-        """
+                                    """
     }
 
     test("Defs") {

@@ -1,4 +1,4 @@
-package swat.runtime.client.test
+package swat.client.test
 
 class ArrayTests extends TestSuite {
     def test() {

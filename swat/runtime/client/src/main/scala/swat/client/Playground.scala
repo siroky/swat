@@ -1,4 +1,4 @@
-package swat.runtime.client
+package swat.client
 
 import _root_.scala.util.Try
 

@@ -1,12 +1,12 @@
 logLevel := Level.Warn
 
 resolvers ++= Seq(
-    "SBT IDEA Repository" at "http://mpeltonen.github.com/maven/",
-    "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
+    "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
+    "Sonatype snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
 )
 
-addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.2.0")
-
 addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.2")
+
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.5.0-SNAPSHOT")
 
 addSbtPlugin("play" % "sbt-plugin" % "2.1.0")

@@ -81,7 +81,7 @@ swat.extend = function(target, source) {
     }
 };
 
-// The types that are currently loaded.
+/** The types that are currently loaded. Filled by the swat.provide method. */
 swat.loadedTypes = [];
 
 /** Checks whether the required type has already been provided in case it's a hard dependency. */
@@ -248,6 +248,11 @@ swat.invokeSuper = function(obj, methodName, args, typeIdentifier, superTypeIden
     return swat.invoke(obj, method, methodName, args, typeIdentifier);
 };
 
+/** Invokes the specified method via RPC using the client proxy. */
+swat.invokeRemote = function(methodName, args) {
+    return rpc.Proxy$().invoke(methodName, swat.jsArrayToScalaArray(args));
+};
+
 /** Returns a parametric field of the specified object in the specified type context. */
 swat.getParameter = function(obj, parameterName, typeHint) {
     return obj.$params[parameterName][typeHint];
@@ -396,9 +401,13 @@ swat.toString = function(obj) {
     }
 };
 
+/** Turns a JavaScript array into a scala.Array. */
+swat.jsArrayToScalaArray = function(array) { return scala.Array$().apply(array, 'Array'); };
+
 // Provide the swat so this file gets involved in type loading.
 swat.provide('swat');
 
+// The internal classes that are always required by the swat runtime.
 swat.require('scala.Any', false);
 swat.require('scala.AnyVal', false);
 swat.require('scala.Boolean', false);
@@ -416,3 +425,6 @@ swat.require('java.lang.String', false);
 swat.require('java.lang.Class', false);
 swat.require('java.lang.ClassCastException', false);
 swat.require('java.lang.NullPointerException', false);
+
+// The RPC related classes.
+// swat.require('rpc.Proxy$', false);

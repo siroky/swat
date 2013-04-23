@@ -2,12 +2,11 @@ package swat.common
 
 import scala.collection.{immutable, mutable}
 import scala.io.Source
-import swat.ignored
 
 /**
  * A loader of JavaScript files that depend on each other.
  */
-@ignored object TypeLoader {
+@swat.ignored object TypeLoader {
 
     /** Regex of a require statement in the source. */
     val Require = """swat\.require\('([^']+)', (true|false)\);""".r
@@ -21,39 +20,12 @@ import swat.ignored
      * @param excludedTypes Identifiers of types that shouldn't be included in the result.
      */
     def get(typeIdentifiers: List[String], excludedTypes: Set[String] = Set.empty): String = {
-        val neededSources = getNeededSources(typeIdentifiers, excludedTypes)
-        val sourceGraph = neededSources.map(s => (s.identifier, s)).toMap
-        val result = mutable.ListBuffer.empty[String]
-        val toProcess = mutable.Set[String](sourceGraph.keys.toSeq: _*)
-        val processing = mutable.ListBuffer.empty[String]
-        val processed = mutable.Set.empty[String]
-
-        def process(identifier: String) {
-            if (processing.contains(identifier)) {
-                val cycle = (processing :+ identifier).mkString(" -> ")
-                throw new TypeLoadingException(s"Hard dependency cycle has been encountered ($cycle).")
-            }
-            if (!processed(identifier)) {
-                // Move the type from toProcess to processing set.
-                toProcess -= identifier
-                processing += identifier
-
-                // Process all dependencies of the type first and then add the type source to the result.
-                val typeSource = sourceGraph(identifier)
-                typeSource.dependencies.foreach(process _)
-                result ++= typeSource.source.lines
-
-                // Move the type from processing to processed set.
-                processing -= identifier
-                processed += identifier
-            }
+        try {
+            val sources = getNeededSources(typeIdentifiers, excludedTypes)
+            mergeSources(sources)
+        } catch {
+            case e: TypeLoadingException => s"alert('Swat type loading error: ${e.message}');"
         }
-
-        // While there is anything to process, process it.
-        while (toProcess.nonEmpty) {
-            process(toProcess.head)
-        }
-        result.mkString("\n")
     }
 
     /**
@@ -71,7 +43,7 @@ import swat.ignored
            |$code
            |
            |// Application $appObjectTypeIdentifier start.
-           |swat.startupArgs = scala.Array$$().apply($jsArgs, 'Array');
+           |swat.startupArgs = swat.jsArrayToScalaArray($jsArgs);
            |$typeIdentifier();
         """.stripMargin
     }
@@ -123,6 +95,44 @@ import swat.ignored
         sourceStream.map(s => Source.fromInputStream(s).getLines().mkString("\n")).getOrElse {
             throw new TypeLoadingException(s"Cannot find source file of type $typeIdentifier.")
         }
+    }
+
+    /**
+     * Merges the specified sources into one source by traversing the dependency graph in the hard dependency order.
+     */
+    private def mergeSources(sources: List[TypeSource]): String = {
+        val sourceGraph = sources.map(s => (s.identifier, s)).toMap
+        val result = mutable.ListBuffer.empty[String]
+        val toProcess = mutable.Set[String](sourceGraph.keys.toSeq: _*)
+        val processing = mutable.ListBuffer.empty[String]
+        val processed = mutable.Set.empty[String]
+
+        def process(identifier: String) {
+            if (processing.contains(identifier)) {
+                val cycle = (processing :+ identifier).mkString(" -> ")
+                throw new TypeLoadingException(s"Hard dependency cycle has been encountered ($cycle).")
+            }
+            if (!processed(identifier)) {
+                // Move the type from toProcess to processing set.
+                toProcess -= identifier
+                processing += identifier
+
+                // Process all dependencies of the type first and then add the type source to the result.
+                val typeSource = sourceGraph(identifier)
+                typeSource.dependencies.foreach(process _)
+                result ++= typeSource.source.lines
+
+                // Move the type from processing to processed set.
+                processing -= identifier
+                processed += identifier
+            }
+        }
+
+        // While there is anything to process, process it.
+        while (toProcess.nonEmpty) {
+            process(toProcess.head)
+        }
+        result.mkString("\n")
     }
 }
 
