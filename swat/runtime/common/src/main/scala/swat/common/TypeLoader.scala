@@ -2,11 +2,14 @@ package swat.common
 
 import scala.collection.{immutable, mutable}
 import scala.io.Source
+import scala.concurrent._
+import ExecutionContext.Implicits.global
 
 /**
  * A loader of JavaScript files that depend on each other.
  */
-@swat.ignored object TypeLoader {
+@swat.ignored
+object TypeLoader {
 
     /** Regex of a require statement in the source. */
     val Require = """swat\.require\('([^']+)', (true|false)\);""".r
@@ -19,7 +22,8 @@ import scala.io.Source
      * @param typeIdentifiers Identifiers of the types that should be included in the result.
      * @param excludedTypes Identifiers of types that shouldn't be included in the result.
      */
-    def get(typeIdentifiers: List[String], excludedTypes: Set[String] = Set.empty): String = {
+    @swat.remote
+    def get(typeIdentifiers: List[String], excludedTypes: Set[String] = Set.empty): Future[String] = future {
         try {
             val sources = getNeededSources(typeIdentifiers, excludedTypes)
             mergeSources(sources)
@@ -34,18 +38,20 @@ import scala.io.Source
      * @param appObjectTypeIdentifier Type identifier of the application object.
      * @param args The startup arguments.
      */
-    def getApp(appObjectTypeIdentifier: String, args: List[String] = Nil): String = {
+    @swat.remote
+    def getApp(appObjectTypeIdentifier: String, args: List[String] = Nil): Future[String] = {
         val typeIdentifier = appObjectTypeIdentifier.stripSuffix("$") + "$"
         val jsArgs = args.map("'" + _.replace("\\", "\\\\").replace("'", "\\'") + "'").mkString("[", ",", "]")
-        val code = get(List(typeIdentifier))
 
-        s"""
-           |$code
-           |
-           |// Application $appObjectTypeIdentifier start.
-           |swat.startupArgs = swat.jsArrayToScalaArray($jsArgs);
-           |$typeIdentifier();
-        """.stripMargin
+        get(List(typeIdentifier)).map { code =>
+            s"""
+               |$code
+               |
+               |// Application $appObjectTypeIdentifier start.
+               |swat.startupArgs = swat.jsArrayToScalaArray($jsArgs);
+               |$typeIdentifier();
+            """.stripMargin
+        }
     }
 
     /** A type source file with known dependencies. */

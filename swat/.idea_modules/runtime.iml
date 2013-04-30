@@ -13,20 +13,21 @@
     </facet>
   </component>
   <component name="NewModuleRootManager" inherit-compiler-output="false">
-    <output url="file://$MODULE_DIR$/../target/scala-2.10/classes" />
-    <output-test url="file://$MODULE_DIR$/../target/scala-2.10/test-classes" />
+    <output url="file://$MODULE_DIR$/../runtime/target/scala-2.10/classes" />
+    <output-test url="file://$MODULE_DIR$/../runtime/target/scala-2.10/test-classes" />
     <exclude-output />
-    <content url="file://$MODULE_DIR$/..">
-      <excludeFolder url="file://$MODULE_DIR$/../.idea" />
-      <excludeFolder url="file://$MODULE_DIR$" />
-      <excludeFolder url="file://$MODULE_DIR$/../target" />
+    <content url="file://$MODULE_DIR$/../runtime">
+      <excludeFolder url="file://$MODULE_DIR$/../runtime/src" />
+      <excludeFolder url="file://$MODULE_DIR$/../runtime/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-library:2.10.1" level="project" />
-    <orderEntry type="module" module-name="api" exported="" />
-    <orderEntry type="module" module-name="compiler" exported="" />
-    <orderEntry type="module" module-name="runtime" exported="" />
+    <orderEntry type="library" name="SBT: org.scala-lang:scala-compiler:2.10.1" level="project" />
+    <orderEntry type="library" name="SBT: org.scala-lang:scala-reflect:2.10.1" level="project" />
+    <orderEntry type="module" module-name="internal" exported="" />
+    <orderEntry type="module" module-name="common" exported="" />
+    <orderEntry type="module" module-name="client" exported="" />
   </component>
 </module>
 

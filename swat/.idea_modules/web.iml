@@ -5,7 +5,7 @@
       <configuration>
         <option name="compilerLibraryLevel" value="Project" />
         <option name="compilerLibraryName" value="SBT: scala:2.10.0" />
-        <option name="compilerOptions" value="-deprecation -unchecked -encoding utf8" />
+        <option name="compilerOptions" value="-deprecation -unchecked" />
         <option name="deprecationWarnings" value="true" />
         <option name="fsc" value="true" />
         <option name="uncheckedWarnings" value="true" />
@@ -18,7 +18,8 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$/../web">
       <sourceFolder url="file://$MODULE_DIR$/../web/app" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../web/target/scala-2.10/src_managed/main" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../web/target/scala-2.10/src_managed/main/controllers" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../web/target/scala-2.10/src_managed/main/views" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../web/conf" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../web/test" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../web/test/resources" isTestSource="true" />
@@ -33,6 +34,8 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-library:2.10.0" level="project" />
+    <orderEntry type="library" name="SBT: org.scala-lang:scala-compiler:2.10.0" level="project" />
+    <orderEntry type="library" name="SBT: org.scala-lang:scala-reflect:2.10.0" level="project" />
     <orderEntry type="library" name="SBT: play:play_2.10:2.1.0" level="project" />
     <orderEntry type="library" name="SBT: play:sbt-link:2.1.0" level="project" />
     <orderEntry type="library" name="SBT: org.javassist:javassist:3.16.1-GA" level="project" />
@@ -69,7 +72,6 @@
     <orderEntry type="library" name="SBT: org.codehaus.jackson:jackson-mapper-asl:1.9.10" level="project" />
     <orderEntry type="library" name="SBT: net.sf.ehcache:ehcache-core:2.6.0" level="project" />
     <orderEntry type="library" name="SBT: javax.transaction:jta:1.1" level="project" />
-    <orderEntry type="library" name="SBT: org.scala-lang:scala-reflect:2.10.0" level="project" />
     <orderEntry type="library" scope="TEST" name="SBT: play:play-test_2.10:2.1.0:test" level="project" />
     <orderEntry type="library" scope="TEST" name="SBT: junit:junit-dep:4.10:test" level="project" />
     <orderEntry type="library" scope="TEST" name="SBT: org.hamcrest:hamcrest-core:1.1:test" level="project" />
@@ -115,7 +117,7 @@
     <orderEntry type="library" scope="TEST" name="SBT: org.seleniumhq.selenium:selenium-support:2.25.0:test" level="project" />
     <orderEntry type="library" scope="TEST" name="SBT: org.easytesting:fest-assert:1.4:test" level="project" />
     <orderEntry type="library" scope="TEST" name="SBT: org.easytesting:fest-util:1.1.6:test" level="project" />
-    <orderEntry type="module" module-name="swat-runtime" exported="" />
+    <orderEntry type="module" module-name="runtime" exported="" />
   </component>
 </module>
 

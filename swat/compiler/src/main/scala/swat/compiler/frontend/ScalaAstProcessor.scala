@@ -4,10 +4,9 @@ import swat.compiler.{SwatCompilerPlugin, js}
 
 trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProcessors {
     self: SwatCompilerPlugin =>
-
     import global._
 
-    type Dependencies = Seq[(Type, Boolean)]
+    case class Dependency(tpe: Either[String, Type], isHard: Boolean)
 
     /**
      * A set of packages that are stripped from the compiled JavaScript code. For example a class
@@ -16,7 +15,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
      * package where altered versions of Scala Library classes may be defined. Advantage is, that in the compiled
      * code, they seem like they were declared in the scala package.
      */
-    val ignoredPackages = Set("<root>", "<empty>", "swat.internal", "swat.client")
+    val ignoredPackages = Set("<root>", "<empty>", "swat.internal", "swat.common", "swat.client", "swat.tests")
 
     /**
      * A set of packages whose classes and objects are considered to be adapters even though they don't necessarily
@@ -46,7 +45,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
         case _ => Nil
     }
 
-    def processClassDef(classDef: ClassDef): (Dependencies, List[js.Statement]) = {
+    def processClassDef(classDef: ClassDef): (Seq[Dependency], List[js.Statement]) = {
         val classSymbol = classDef.symbol
         classSymbol.nativeAnnotation.map { code =>
             (classSymbol.dependencyAnnotations, List(js.RawCodeBlock(code)))
@@ -59,12 +58,22 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
         js.ExpressionStatement(swatMethodCall("provide", js.StringLiteral(typeIdentifier(dependencyType))))
     }
 
-    def processDependencies(dependencies: Dependencies, excludedTypeIdent: String): List[js.Statement] = {
-        // Group the dependencies by their type identifiers.
-        val filtered = dependencies.filter(d => !d._1.typeSymbol.isAdapter)
-        val grouped = filtered.map(d => (typeIdentifier(d._1), d._2)).groupBy(_._1) - excludedTypeIdent
+    def processDependencies(dependencies: Seq[Dependency], excludedTypeIdent: String): List[js.Statement] = {
+        // Filter the dependencies so only relevant are included and map the first components to type identifiers.
+        val filtered = dependencies.flatMap {
+            case Dependency(Left(identifier), isHard) => Some(identifier, isHard)
+            case Dependency(Right(tpe), isHard) => {
+                if (!tpe.typeSymbol.isAdapter && !tpe.typeSymbol.isAnonymousClass) {
+                    Some(typeIdentifier(tpe), isHard)
+                } else {
+                    None
+                }
+            }
+        }
 
-        // For each dependent type, use the strongest dependency (i.e. declaration dependency).
+        // Group them by type identifiers and for each dependent type, use the strongest dependency
+        // (i.e. declaration dependency).
+        val grouped = filtered.groupBy(_._1) - excludedTypeIdent
         val strongest = grouped.mapValues(_.map(_._2).reduce(_ || _)).toList.sortBy(_._1)
 
         // Produce the swat.require statements.

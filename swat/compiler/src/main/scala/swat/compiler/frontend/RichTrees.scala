@@ -59,7 +59,7 @@ trait RichTrees {
             val isHard = i.constantAtIndex(1).map(_.booleanValue).getOrElse {
                 throw new CompilationException("The isHard argument of the @dependency annotation must be a constant.")
             }
-            dependencyType -> isHard
+            Dependency(Right(dependencyType), isHard)
         }
 
         def hasAnnotation(tpe: Type) = typedAnnotation(tpe).nonEmpty
@@ -97,6 +97,8 @@ trait RichTrees {
         }
 
         def isStringOperator = isTypeSpecificMethod(Set("+"), _.isString)
+
+        def isAnonymousTotalFunction = s.isAnonymousFunction && !(s.tpe <:< typeOf[PartialFunction[_, _]])
 
         def isRemoteMethod = s.isMethod && s.owner.isObject && (isRemote || s.owner.isRemote)
 

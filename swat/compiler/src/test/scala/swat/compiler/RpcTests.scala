@@ -20,6 +20,7 @@ class RpcTests extends CompilerSuite {
                 """
                     swat.provide('A');
                     swat.require('java.lang.Object', true);
+                    swat.require('rpc.Proxy$', false);
                     swat.require('scala.Any', true);
                     swat.require('scala.Int', false);
 

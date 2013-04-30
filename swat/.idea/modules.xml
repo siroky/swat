@@ -2,15 +2,16 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/api.iml" filepath="$PROJECT_DIR$/.idea_modules/api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/client.iml" filepath="$PROJECT_DIR$/.idea_modules/client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/common.iml" filepath="$PROJECT_DIR$/.idea_modules/common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/compiler.iml" filepath="$PROJECT_DIR$/.idea_modules/compiler.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/internal.iml" filepath="$PROJECT_DIR$/.idea_modules/internal.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/project.iml" filepath="$PROJECT_DIR$/.idea_modules/project.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/runtime.iml" filepath="$PROJECT_DIR$/.idea_modules/runtime.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat.iml" filepath="$PROJECT_DIR$/.idea_modules/swat.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-api.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-api.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-build.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-build.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-client.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-client.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-common.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-common.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-compiler.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-compiler.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-internal.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-internal.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-runtime.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-runtime.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-web.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-web.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/tests.iml" filepath="$PROJECT_DIR$/.idea_modules/tests.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/web.iml" filepath="$PROJECT_DIR$/.idea_modules/web.iml" />
     </modules>
   </component>
 </project>

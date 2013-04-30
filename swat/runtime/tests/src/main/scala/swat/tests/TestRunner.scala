@@ -1,4 +1,4 @@
-package swat.client.test
+package swat.tests
 
 object TestRunner extends App {
     (new MethodDispatchTests).run()

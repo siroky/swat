@@ -26,7 +26,7 @@ trait ClassDefProcessors {
 
     class ClassDefProcessor(protected val classDef: ClassDef) {
 
-        val dependencies = mutable.ListBuffer.empty[(Type, Boolean)]
+        val dependencies = mutable.ListBuffer[Dependency]()
 
         val thisTypeIdentifier = typeIdentifier(classDef.symbol.tpe)
         val thisTypeJsIdentifier = js.Identifier(thisTypeIdentifier)
@@ -40,15 +40,19 @@ trait ClassDefProcessors {
         val matchErrorIdent = js.Identifier("scala.MatchError")
         val selfDeclaration = js.VariableStatement(selfIdent, Some(js.ThisReference))
 
+        def addDependency(tpe: Either[String, Type], isHard: Boolean) {
+            dependencies += Dependency(tpe, isHard)
+        }
+
         def addDeclarationDependency(tpe: Type) {
-            dependencies += tpe -> true
+            addDependency(Right(tpe), true)
         }
 
         def addRuntimeDependency(tpe: Type) {
-            dependencies += tpe -> false
+            addDependency(Right(tpe), false)
         }
 
-        def process(): (Dependencies, List[js.Statement]) = {
+        def process(): (Seq[Dependency], List[js.Statement]) = {
             // Process the single constructor group and method groups
             val (constructorGroup, methodGroups) = extractDefDefGroups(classDef)
             val constructorDeclaration = processConstructorGroup(constructorGroup).toList
@@ -237,7 +241,7 @@ trait ClassDefProcessors {
         def processExpressionTrees(trees: List[Tree]): List[js.Expression] = trees.map(processExpressionTree _)
 
         def processBlock(block: Block): js.Expression = block match {
-            case Block(List(c: ClassDef), _) if c.symbol.isAnonymousFunction => processAnonymousFunction(c)
+            case Block(List(c: ClassDef), _) if c.symbol.isAnonymousTotalFunction => processAnonymousFunction(c)
             case b => b.toMatchBlock match {
                 case Some(m: MatchBlock) => processMatchBlock(m)
                 case _ => scoped {
@@ -396,6 +400,7 @@ trait ClassDefProcessors {
             // Verify that the method returns a Future.
             if (resultType <:< typeOf[scala.concurrent.Future[_]]) {
                 addRuntimeDependency(resultType.typeArgs.head)
+                addDependency(Left("rpc.Proxy$"), false)
             } else {
                 error(s"A remote method ${fullName} must return a scala.concurrent.Future.")
             }
@@ -611,8 +616,10 @@ trait ClassDefProcessors {
 
         def processLocalClassDef(classDef: ClassDef): js.Statement = {
             val (classDependencies, statements) = processClassDef(classDef)
+            val declaration = js.VariableStatement(typeJsIdentifier(classDef.symbol), Some(js.ObjectLiteral()))
+
             dependencies ++= classDependencies
-            js.Block(statements)
+            js.Block(declaration +: statements)
         }
 
         def processNew(apply: Apply, n: New): js.Expression = {

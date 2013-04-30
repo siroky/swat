@@ -207,9 +207,13 @@ class LocalDefinitionTests extends CompilerSuite {
                 val y = 20
             }
         """ fragmentShouldCompileTo """
+            var T = {};
             T = swat.type('T', [T, java.lang.Object, scala.Any]);
+
+            var U = {};
             U = swat.type('U', [U, java.lang.Object, scala.Any]);
 
+            var C = {};
             C.$init$ = (function($outer) {
                 var $self = this;
                 swat.invokeSuper($self, '$init$', [], 'C');
@@ -217,6 +221,7 @@ class LocalDefinitionTests extends CompilerSuite {
             });
             C = swat.type('C', [C, T, java.lang.Object, scala.Any]);
 
+            var O$ = {};
             O$.$init$ = (function($outer) {
                 var $self = this;
                 swat.invokeSuper($self, '$init$', [], 'O$');
@@ -228,6 +233,7 @@ class LocalDefinitionTests extends CompilerSuite {
             var o = O$();
 
             var a = (function() {
+                var $anon = {};
                 $anon.$init$ = (function($outer) {
                     var $self = this;
                     swat.invokeSuper($self, '$init$', [$outer, 'A'], '$anon');
@@ -238,6 +244,7 @@ class LocalDefinitionTests extends CompilerSuite {
             })();
 
             var b = (function() {
+                var $anon = {};
                 $anon.$init$ = (function($outer) {
                     var $self = this;
                     swat.invokeSuper($self, '$init$', [], '$anon');
@@ -250,6 +257,6 @@ class LocalDefinitionTests extends CompilerSuite {
                 $anon = swat.type('$anon', [$anon, java.lang.Object, scala.Any]);
                 return new $anon($self);
             })();
-        """
+                                    """
     }
 }

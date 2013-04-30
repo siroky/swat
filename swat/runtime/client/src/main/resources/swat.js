@@ -425,6 +425,3 @@ swat.require('java.lang.String', false);
 swat.require('java.lang.Class', false);
 swat.require('java.lang.ClassCastException', false);
 swat.require('java.lang.NullPointerException', false);
-
-// The RPC related classes.
-// swat.require('rpc.Proxy$', false);

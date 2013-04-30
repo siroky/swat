@@ -1,4 +1,4 @@
-package swat.client.test
+package swat.tests
 
 import swat.js.DefaultScope._
 
