@@ -1,4 +1,4 @@
-package swat.library.java.lang
+package swat.java.lang
 
 class RuntimeException(message: java.lang.String, cause: java.lang.Throwable) extends Exception(message, cause) {
      def this() = this(null, null)

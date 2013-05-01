@@ -1,4 +1,4 @@
-package swat.library.java.lang
+package swat.java.lang
 
 class Exception(message: java.lang.String, cause: java.lang.Throwable) extends Throwable(message, cause) {
      def this() = this(null, null)

@@ -1,4 +1,4 @@
-package swat.library.java.lang
+package swat.java.lang
 
 import swat.js.Number
 

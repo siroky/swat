@@ -1,3 +1,0 @@
-[submodule "swat/runtime/scala"]
-	path = swat/runtime/scala
-	url = https://github.com/scala/scala.git

@@ -1,3 +1,3 @@
-package swat.library.java.io
+package swat.java.io
 
 trait Serializable

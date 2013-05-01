@@ -96,7 +96,7 @@ object SwatBuild extends Build {
     lazy val runtimeScalaProject =
         SwatProject(
             "scala", file("runtime/scala"), defaultSettings ++ Seq(
-                (sourceDirectory in Compile) := file("runtime/scala/src/library")
+                scalaSource in Compile := file("runtime/scala/src/library")
             )
         )
 

@@ -1,4 +1,4 @@
-package swat.library.java.lang
+package swat.java.lang
 
 class Throwable(message: java.lang.String, cause: java.lang.Throwable) extends java.io.Serializable {
     def this() = this(null, null)

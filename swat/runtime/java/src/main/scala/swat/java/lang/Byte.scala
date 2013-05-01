@@ -1,4 +1,4 @@
-package swat.library.java.lang
+package swat.java.lang
 
 class Byte(val x: scala.Byte) {
     def byteValue = x

@@ -1,4 +1,4 @@
-package swat.library.java.lang
+package swat.java.lang
 
 class Character(val x: scala.Char) {
     def charValue = x

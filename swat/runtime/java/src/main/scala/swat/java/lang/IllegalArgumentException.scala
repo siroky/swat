@@ -1,4 +1,4 @@
-package swat.library.java.lang
+package swat.java.lang
 
 class IllegalArgumentException(message: java.lang.String, cause: java.lang.Throwable) extends Exception(message, cause) {
      def this() = this(null, null)

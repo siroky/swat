@@ -1,4 +1,4 @@
-package swat.library.java.lang
+package swat.java.lang
 
 class Boolean(val x: scala.Boolean) {
     def booleanValue = x

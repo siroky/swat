@@ -1,4 +1,4 @@
-package swat.library.java.lang
+package swat.java.lang
 
 class Integer(val x: scala.Int) {
     def intValue = x
