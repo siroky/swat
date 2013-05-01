@@ -7,6 +7,6 @@ resolvers ++= Seq(
 
 addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.2")
 
-addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.5.0-SNAPSHOT")
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.4.0")
 
 addSbtPlugin("play" % "sbt-plugin" % "2.1.0")

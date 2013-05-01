@@ -18,11 +18,11 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$/../runtime/common">
       <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/main/scala" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/main/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/test/scala" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../runtime/common/src/test/resources" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/../runtime/common/src/main/java" />
       <excludeFolder url="file://$MODULE_DIR$/../runtime/common/target" />
     </content>
     <orderEntry type="inheritedJdk" />

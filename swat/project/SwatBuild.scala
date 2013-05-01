@@ -77,20 +77,31 @@ object SwatBuild extends Build {
         Project(
             "runtime", file("runtime"), settings = defaultSettings
         ).aggregate(
-            runtimeLibraryProject, runtimeCommonProject, runtimeClientProject, runtimeTestsProject
+            runtimeJavaProject,
+            runtimeScalaProject,
+            runtimeCommonProject,
+            runtimeClientProject,
+            runtimeTestsProject
         ).dependsOn(
-            runtimeLibraryProject, runtimeCommonProject, runtimeClientProject, runtimeTestsProject
+            runtimeJavaProject,
+            runtimeScalaProject,
+            runtimeCommonProject,
+            runtimeClientProject,
+            runtimeTestsProject
         )
 
-    lazy val runtimeLibraryProject =
-        SwatProject("library", file("runtime/library"), defaultSettings)
+    lazy val runtimeJavaProject =
+        SwatProject("java", file("runtime/java"), defaultSettings)
 
-    lazy val runtimeCommonProject =
+    lazy val runtimeScalaProject =
         SwatProject(
-            "common", file("runtime/common"), defaultSettings ++ Seq(
-                autoScalaLibrary := false
+            "scala", file("runtime/scala"), defaultSettings ++ Seq(
+                (sourceDirectory in Compile) := file("runtime/scala/src/library")
             )
         )
+
+    lazy val runtimeCommonProject =
+        SwatProject("common", file("runtime/common"), defaultSettings)
 
     lazy val runtimeClientProject =
         SwatProject(
