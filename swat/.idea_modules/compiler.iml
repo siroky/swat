@@ -18,8 +18,10 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$/../compiler">
       <sourceFolder url="file://$MODULE_DIR$/../compiler/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../compiler/src/main/java" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../compiler/src/main/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/../compiler/src/test/scala" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../compiler/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/../compiler/src/test/resources" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/../compiler/target" />
     </content>

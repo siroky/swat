@@ -95,7 +95,7 @@ object TypeLoader {
      */
     private def getSource(typeIdentifier: String): String = {
         val pathPrefix = typeIdentifier.replace(".", "/")
-        val sourcePaths = List(".swat.js", ".js").map(pathPrefix + _)
+        val sourcePaths = List(".swat.native", ".native").map(pathPrefix + _)
         val classLoader = getClass.getClassLoader
         val sourceStream = sourcePaths.flatMap(p => Option(classLoader.getResourceAsStream(p))).headOption
         sourceStream.map(s => Source.fromInputStream(s).getLines().mkString("\n")).getOrElse {

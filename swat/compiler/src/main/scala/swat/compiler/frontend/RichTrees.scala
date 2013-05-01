@@ -46,7 +46,7 @@ trait RichTrees {
             s.constantAtIndex(0).map(_.booleanValue).getOrElse(true)
         }
 
-        def nativeAnnotation: Option[String] = typedAnnotation(typeOf[swat.native]).map { i =>
+        def jsAnnotation: Option[String] = typedAnnotation(typeOf[swat.native]).map { i =>
             i.stringArg(0).getOrElse {
                 throw new CompilationException("The jsCode argument of the @native annotation must be a constant.")
             }

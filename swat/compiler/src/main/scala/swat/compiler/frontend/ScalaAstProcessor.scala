@@ -15,7 +15,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
      * package where altered versions of Scala Library classes may be defined. Advantage is, that in the compiled
      * code, they seem like they were declared in the scala package.
      */
-    val ignoredPackages = Set("<root>", "<empty>", "swat.internal", "swat.common", "swat.client", "swat.tests")
+    val ignoredPackages = Set("<root>", "<empty>", "swat.library", "swat.common", "swat.client", "swat.tests")
 
     /**
      * A set of packages whose classes and objects are considered to be adapters even though they don't necessarily
@@ -47,7 +47,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
 
     def processClassDef(classDef: ClassDef): (Seq[Dependency], List[js.Statement]) = {
         val classSymbol = classDef.symbol
-        classSymbol.nativeAnnotation.map { code =>
+        classSymbol.jsAnnotation.map { code =>
             (classSymbol.dependencyAnnotations, List(js.RawCodeBlock(code)))
         }.getOrElse {
             ClassDefProcessor(classDef).process()

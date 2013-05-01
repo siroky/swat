@@ -6,10 +6,10 @@
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/client.iml" filepath="$PROJECT_DIR$/.idea_modules/client.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/common.iml" filepath="$PROJECT_DIR$/.idea_modules/common.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/compiler.iml" filepath="$PROJECT_DIR$/.idea_modules/compiler.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/internal.iml" filepath="$PROJECT_DIR$/.idea_modules/internal.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea_modules/project.iml" filepath="$PROJECT_DIR$/.idea_modules/project.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/library.iml" filepath="$PROJECT_DIR$/.idea_modules/library.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/runtime.iml" filepath="$PROJECT_DIR$/.idea_modules/runtime.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat.iml" filepath="$PROJECT_DIR$/.idea_modules/swat.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat-build.iml" filepath="$PROJECT_DIR$/.idea_modules/swat-build.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/tests.iml" filepath="$PROJECT_DIR$/.idea_modules/tests.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/web.iml" filepath="$PROJECT_DIR$/.idea_modules/web.iml" />
     </modules>

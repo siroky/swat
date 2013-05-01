@@ -242,7 +242,7 @@ class ClassLevelDefinitionTests extends CompilerSuite {
 
                 def a() { }
                 def b(i: Int, j: Int) { }
-                def c(i: Int, js: Int*) { }
+                def c(i: Int, j: Int*) { }
                 def d(i: Int = x, j: Int = x + x) { }
 
                 def test() {
@@ -282,7 +282,7 @@ class ClassLevelDefinitionTests extends CompilerSuite {
                     C.b = swat.method('C.b', 'scala.Int, scala.Int', (function(i, j) {
                         var $self = this;
                     }));
-                    C.c = swat.method('C.c', 'scala.Int, scala.collection.Seq', (function(i, js) {
+                    C.c = swat.method('C.c', 'scala.Int, scala.collection.Seq', (function(i, j) {
                         var $self = this;
                     }));
                     C.d = swat.method('C.d', 'scala.Int, scala.Int', (function(i, j) {

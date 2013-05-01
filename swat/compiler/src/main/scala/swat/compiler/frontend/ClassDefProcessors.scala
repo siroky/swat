@@ -152,10 +152,10 @@ trait ClassDefProcessors {
         def processDefDef(defDef: DefDef, includeSelf: Boolean = true): js.FunctionExpression = {
             val processedParameters = defDef.vparamss.flatten.map(p => localJsIdentifier(p.name))
             val self = if (includeSelf) List(selfDeclaration) else Nil
-            val nativeCode = defDef.symbol.nativeAnnotation
+            val jsCode = defDef.symbol.jsAnnotation
             val processedBody =
-                if (nativeCode.isDefined) {
-                    js.RawCodeBlock(nativeCode.get)
+                if (jsCode.isDefined) {
+                    js.RawCodeBlock(jsCode.get)
                 } else if (defDef.symbol.isGetter && defDef.symbol.isLazy) {
                     // Body of a lazy val (which is assigned to the corresponding field in the primary constructor)
                     // can be replaced by simple return of the field, where the lazy val is stored.

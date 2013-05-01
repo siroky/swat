@@ -17,6 +17,12 @@
     <output-test url="file://$MODULE_DIR$/../runtime/target/scala-2.10/test-classes" />
     <exclude-output />
     <content url="file://$MODULE_DIR$/../runtime">
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/src/main/resources" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/src/test/scala" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../runtime/src/test/resources" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/../runtime/src" />
       <excludeFolder url="file://$MODULE_DIR$/../runtime/target" />
     </content>
@@ -25,9 +31,10 @@
     <orderEntry type="library" name="SBT: org.scala-lang:scala-library:2.10.1" level="project" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-compiler:2.10.1" level="project" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-reflect:2.10.1" level="project" />
-    <orderEntry type="module" module-name="internal" exported="" />
+    <orderEntry type="module" module-name="library" exported="" />
     <orderEntry type="module" module-name="common" exported="" />
     <orderEntry type="module" module-name="client" exported="" />
+    <orderEntry type="module" module-name="tests" exported="" />
   </component>
 </module>
 
