@@ -68,19 +68,18 @@ trait CompilerSuite extends FunSuite {
         private val scalaCode = new ScalaCode(s"class A { def f() { $code } }") {
             override def compile(): CompilationOutput = {
                 val output = super.compile()
-                val functionBody = output.typeOutputs.get(ident).flatMap {
-                    _.elements.flatMap {
-                        case AssignmentStatement(MemberExpression(_, Identifier("f")), rhs) => rhs match {
-                            case CallExpression(_, List(_, _, f: FunctionExpression)) => {
-                                Some(f.body.tail)
-                            }
-                            case _ => None
-                        }
-                        case _ => None
-                    }.headOption
+                val elements = output.typeOutputs.get(ident).toList.flatMap(_.elements)
+                val body = elements.collect { case Block(l) => l }.flatten
+                val functions = body.flatMap {
+                    case
+                        AssignmentStatement(
+                            MemberExpression(_, Identifier("f")),
+                            CallExpression(_, List(_, _, f: FunctionExpression))) => Some(f.body.tail)
+                    case _ => None
                 }
+                val functionBody = functions.headOption.toList.flatten
 
-                CompilationOutput(Map(ident -> Program(functionBody.toList.flatten)), output.warnings, output.infos)
+                CompilationOutput(Map(ident -> Program(functionBody)), output.warnings, output.infos)
             }
         }
 

@@ -2,20 +2,29 @@ package swat.compiler.frontend
 
 import swat.compiler.{SwatCompilerPlugin, js}
 
+/**
+ * Swat compiler component responsible for compilation of top level Scala ASTs (compilation units, packages, classes).
+ */
 trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProcessors {
     self: SwatCompilerPlugin =>
     import global._
 
-    case class Dependency(tpe: Either[String, Type], isHard: Boolean)
-
     /**
-     * A set of packages that are stripped from the compiled JavaScript code. For example a class
-     * swat.client.foo.bar.A is compiled to foo.bar.A. The main purpose is an easy integration of existing
-     * libraries into the client code without naming collisions. This can be seen on the swat.client.scala
-     * package where altered versions of Scala Library classes may be defined. Advantage is, that in the compiled
-     * code, they seem like they were declared in the scala package.
+     * A set of packags that are either stripped from the compiled JavaScript code or renamed. For example a class
+     * swat.client.foo.bar.A is compiled to foo.bar.A. The main purpose is an easy integration of existing libraries
+     * into the client code without naming collisions. This can be seen on the swat.scala package where altered
+     * versions of Scala Library classes may be defined. Advantage is, that in the compiled code, they seem like they
+     * were declared in the scala package.
      */
-    val ignoredPackages = Set("<root>", "<empty>", "swat.library", "swat.common", "swat.client", "swat.tests")
+    val packageAliases = Map(
+        "<root>" -> "",
+        "<empty>" -> "",
+        "swat.java" -> "java",
+        "swat.scala" -> "scala",
+        "swat.common" -> "",
+        "swat.client" -> "",
+        "swat.tests" -> ""
+    )
 
     /**
      * A set of packages whose classes and objects are considered to be adapters even though they don't necessarily
@@ -29,11 +38,11 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
                 val classSymbol = classDef.symbol
                 val classType = classSymbol.tpe.underlying
                 val classIdent = typeIdentifier(classSymbol)
-                val (dependencies, statements) = processClassDef(classDef)
+                val processedClassDef = processClassDef(classDef)
                 val processedProvide = processProvide(classType)
-                val processedDependencies = processDependencies(dependencies, classIdent)
-                val program = js.Program(processedProvide :: processedDependencies ++ statements)
-                (classIdent, program)
+                val processedDependencies = processDependencies(processedClassDef.dependencies, classIdent)
+                val processedAst = astToStatement(processedClassDef.ast)
+                classIdent -> js.Program(processedProvide +: processedDependencies :+ processedAst)
             }.toMap
         }
         case _ => Map.empty
@@ -45,12 +54,12 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
         case _ => Nil
     }
 
-    def processClassDef(classDef: ClassDef): (Seq[Dependency], List[js.Statement]) = {
+    def processClassDef(classDef: ClassDef): ProcessedClassDef = {
         val classSymbol = classDef.symbol
         classSymbol.jsAnnotation.map { code =>
-            (classSymbol.dependencyAnnotations, List(js.RawCodeBlock(code)))
+            ProcessedClassDef(classSymbol.dependencyAnnotations, js.RawCodeBlock(code))
         }.getOrElse {
-            ClassDefProcessor(classDef).process()
+            ClassDefProcessor(classDef).process
         }
     }
 
@@ -63,7 +72,8 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
         val filtered = dependencies.flatMap {
             case Dependency(Left(identifier), isHard) => Some(identifier, isHard)
             case Dependency(Right(tpe), isHard) => {
-                if (!tpe.typeSymbol.isAdapter && !tpe.typeSymbol.isAnonymousClass) {
+                val symbol = tpe.typeSymbol
+                if (!symbol.isAdapter && !symbol.isAnonymousClass && !symbol.isRefinementClass) {
                     Some(typeIdentifier(tpe), isHard)
                 } else {
                     None
@@ -109,8 +119,11 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
     }
 
     def packageIdentifier(packageSymbol: Symbol): String = {
-        if (ignoredPackages(packageSymbol.fullName) || adapterPackages(packageSymbol.fullName)) {
+        val name = packageSymbol.fullName
+        if (adapterPackages(name)) {
             ""
+        } else if (packageAliases.contains(name)) {
+            packageAliases(name)
         } else {
             separateNonEmptyPrefix(packageIdentifier(packageSymbol.owner), localIdentifier(packageSymbol.name))
         }

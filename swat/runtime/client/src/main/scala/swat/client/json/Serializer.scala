@@ -4,9 +4,10 @@ import swat.js.CommonScope._
 
 object Serializer {
 
-    def serialize(obj: Any): String = {
+    def serialize(obj: Any): String = obj match {
+        case a: Array[_] => JSON.stringify(a(0))
+        case _ => JSON.stringify(obj)
         // TODO
-        JSON.stringify(obj)
     }
 
     def deserialize(json: String): Any = {

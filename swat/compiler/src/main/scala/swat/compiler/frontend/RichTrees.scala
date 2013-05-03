@@ -3,7 +3,7 @@ package swat.compiler.frontend
 import swat.compiler.{SwatCompilerPlugin, CompilationException}
 
 trait RichTrees {
-    self: SwatCompilerPlugin with ScalaAstProcessor =>
+    self: SwatCompilerPlugin with ScalaAstProcessor with ClassDefProcessors =>
 
     import global._
 
@@ -14,8 +14,8 @@ trait RichTrees {
 
         def isUnit = t.underlying =:= typeOf[Unit]
         def isAny = t.underlying =:= typeOf[Any]
-        def isAnyValOrString = isAnyVal || isString
-        def isAnyVal = t.underlying <:< typeOf[AnyVal]
+        def isPrimitiveOrString = isPrimitive || isString
+        def isPrimitive = isNumericVal || isBoolean || isChar
         def isString = t.underlying =:= typeOf[String]
         def isNumericVal = s.isNumericValueClass
         def isIntegralVal = ScalaNumericValueClasses.filterNot(Set(FloatClass, DoubleClass)).contains(s)
@@ -23,13 +23,13 @@ trait RichTrees {
         def isBoolean = t.underlying =:= typeOf[Boolean]
         def isFunction = isFunctionType(t.underlying)
         def isArray = t.underlying <:< typeOf[Array[_]]
-
         def companionSymbol = s.companionSymbol
     }
 
     implicit class RichSymbol(s: Symbol) {
         def isObject = s.isPackageObjectOrClass || s.isModuleOrModuleClass
-        def isLocalOrAnonymous = s.owner.isMethod || s.owner.isLocal || s.owner.isAnonymousClass
+        def isLocalOrAnonymous = s.owner.isMethod || s.owner.isLocal || s.isAnonymous
+        def isAnonymous: Boolean = s.isAnonymousClass || s.isAnonymousFunction || s.owner.isAnonymousClass
 
         def isField = Set("field", "value", "lazy value")(s.accurateKindString)
         def isParametricField = isField && !s.hasGetter && !s.isLazy && !s.isStatic
@@ -75,9 +75,9 @@ trait RichTrees {
             isEqualityOperator || isTypeSpecificMethod(methods, _ => true)
         }
 
-        def isAnyValOrStringOperator = isAnyValOperator || isStringOperator
+        def isPrimitiveOrStringOperator = isPrimitivelOperator || isStringOperator
 
-        def isAnyValOperator = isNumericValOperator || isBooleanValOperator
+        def isPrimitivelOperator = isNumericValOperator || isBooleanValOperator
 
         def isNumericValOperator = {
             val unaryArithmetic = Set("unary_+", "unary_-")

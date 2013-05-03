@@ -35,7 +35,7 @@ class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcess
                 // Global.error function. If an exception is thrown out of the plugin, the compiler pollutes the output
                 // with long dump of the compilation unit AST, even though the exception may have been caused by a bug
                 // in the compiler plugin. To avoid that, all exceptions are consumed here and reported as an internal
-                // error of the SWAT compiler.
+                // error of the Swat compiler.
                 try {
                     output ++= processUnitBody(unit.body)
                 } catch {

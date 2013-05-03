@@ -4,6 +4,7 @@ import scala.concurrent._
 import ExecutionContext.Implicits.global
 import play.api.mvc._
 import swat.common.TypeLoader
+import swat.common.rpc.RpcDispatcher
 
 object Swat extends Controller {
   
@@ -15,5 +16,9 @@ object Swat extends Controller {
     def app(appObjectTypeIdentifier: String, args: String) = Action {
         val code = TypeLoader.getApp(appObjectTypeIdentifier, args.split(",").toList)
         Async(code.map(Ok(_)))
+    }
+
+    def rpc(methodFullName: String) = Action { request =>
+        Ok(RpcDispatcher.invoke(methodFullName, request.body.toString))
     }
 }

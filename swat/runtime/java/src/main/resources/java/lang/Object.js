@@ -12,7 +12,7 @@ java.lang.Object.hashCode = function() {
     return swat.hashCode(this.$id);
 };
 java.lang.Object.toString = function() {
-    return this.$class.typeIdentifier + '@' + $self.$id;
+    return this.$class.typeIdentifier + '@' + this.$id;
 };
 java.lang.Object = swat.type('java.lang.Object', [java.lang.Object, scala.Any]);
 

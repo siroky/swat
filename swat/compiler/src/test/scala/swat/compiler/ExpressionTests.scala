@@ -189,8 +189,8 @@ class ExpressionTests extends CompilerSuite {
         """ fragmentShouldCompileTo """
             var x = null;
             swat.hashCode(x);
-            swat.isInstanceOf(x, java.lang.String);
-            swat.asInstanceOf(x, java.lang.String);
+            swat.isInstanceOf(x, java.lang.String, '');
+            swat.asInstanceOf(x, java.lang.String, '');
         """
     }
 

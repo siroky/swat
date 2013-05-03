@@ -2,6 +2,11 @@ package swat.compiler.js
 
 trait TreeBuilder {
 
+    def astToStatement(ast: Ast): Statement = ast match {
+        case s: Statement => s
+        case e: Expression => ExpressionStatement(e)
+    }
+
     def memberChain(expr: Expression, identifiers: Identifier*): Expression = {
         require(identifiers.length > 0)
         identifiers.foldLeft[Expression](expr)(MemberExpression(_, _))

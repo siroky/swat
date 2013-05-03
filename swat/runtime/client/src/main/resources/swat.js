@@ -113,6 +113,13 @@ swat.lazify = function(f) {
     return l;
 };
 
+/** Converts the specified function literal f to a FunctionN-like object. */
+swat.func = function(arity, f) {
+    f.$arity = arity;
+    // TODO assign $class.
+    return f;
+};
+
 /**
  * Creates a prototype object for the specified type hierarchy while chaining the prototypes in a way that
  * Sub <: Super => SubPrototype.prototype == SuperPrototype. Initializes both the internal prototype links that are
@@ -250,7 +257,7 @@ swat.invokeSuper = function(obj, methodName, args, typeIdentifier, superTypeIden
 
 /** Invokes the specified method via RPC using the client proxy. */
 swat.invokeRemote = function(methodName, args) {
-    return rpc.Proxy$().invoke(methodName, swat.jsArrayToScalaArray(args));
+    return rpc.Proxy$().invoke(methodName, swat.jsArrayToScalaArray(args), 'java.lang.String, scala.Array');
 };
 
 /** Returns a parametric field of the specified object in the specified type context. */
@@ -298,19 +305,11 @@ swat.isInstanceOf = function(obj, type) {
         return true;
     } else if (swat.isJsString(obj) && (typeIsAnyOrObject || typeIs('java.lang.String') || (typeIs('scala.Char') && swat.isChar(obj)))) {
         return true;
-    } else if (swat.isJsFunction(obj) && (typeIsAnyOrObject || typeIdentifier.startsWith('scala.Function'))) {
-        return true;
-    } else if (swat.isSwatObject (obj)) {
+    } else if (swat.isSwatObject(obj)) {
         if (typeIsAnyOrObject || obj.$class.typeIdentifier === type.$class.typeIdentifier) {
             return true;
-        } else {
-            // Check whether any of the object super types is actually the checked type.
-            var superTypes = obj.$class.superTypes;
-            for (var i = 0; i < superTypes.length; i++) {
-                if (superTypes[i].$class.typeIdentifier === typeIdentifier) {
-                    return true;
-                }
-            }
+        } else if (swat.isSubTypeOf(obj.$class, type.$class)) {
+            return true;
         }
     }
 
@@ -319,16 +318,26 @@ swat.isInstanceOf = function(obj, type) {
 
 /** Native implementation of the Scala asInstanceOf method. */
 swat.asInstanceOf = function(obj, type) {
-    if (swat.isInstanceOf(obj, type) || (obj === null && swat.isInstanceOf(obj, java.lang.Object))) {
+    if (swat.isInstanceOf(obj, type) || (obj === null && swat.isSubtypeOf(type.$class, java.lang.Object.$class))) {
         return obj;
     }
 
     var identifier = swat.jsToString(obj);
-    if (swat.isSwatObject (obj)) {
+    if (swat.isSwatObject(obj)) {
         identifier = obj.$class.typeIdentifier;
     }
     var message = 'The object of type ' + identifier + ' cannot be cast to ' + type.$class.typeIdentifier + '.'
     throw new java.lang.ClassCastException(message, 'java.lang.String');
+};
+
+/** Returns whether the specified type is subtype of the specified super type. */
+swat.isSubtypeOf = function(typeClass, superTypeClass) {
+    var superTypes = typeClass.superTypes;
+    for (var i = 0; i < superTypes.length; i++) {
+        if (superTypes[i].$class.typeIdentifier === superTypeClass.typeIdentifier) {
+            return true;
+        }
+    }
 };
 
 /** Throws a NullPointerException iff the specified object is null or undefined. */
@@ -344,6 +353,8 @@ swat.equals = function(obj1, obj2) {
         return false;
     } else if (obj1 === obj2) {
         return true;
+    } else if (swat.isJsFunction(obj1)) {
+        return obj1 === obj2;
     } else if (swat.isSwatObject(obj1)) {
         return obj1.equals(obj2, 'scala.Any');
     }
@@ -363,8 +374,6 @@ swat.getClass = function(obj) {
         return scala.Double.$class;
     } else if (swat.isJsString(obj)) {
         return scala.String.$class;
-    } else if (swat.isJsFunction(obj)) {
-        // TODO
     }
 
     return obj.$class;
@@ -395,7 +404,7 @@ swat.toString = function(obj) {
     swat.throwIfNull(obj);
 
     if (swat.isJsFunction(obj)) {
-        return '<function>'; // TODO
+        return '<function' + obj.$arity + '>';
     } else {
         return obj.toString();
     }

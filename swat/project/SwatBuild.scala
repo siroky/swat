@@ -94,11 +94,7 @@ object SwatBuild extends Build {
         SwatProject("java", file("runtime/java"), defaultSettings)
 
     lazy val runtimeScalaProject =
-        SwatProject(
-            "scala", file("runtime/scala"), defaultSettings ++ Seq(
-                scalaSource in Compile := file("runtime/scala/src/library")
-            )
-        )
+        SwatProject("scala", file("runtime/scala"), defaultSettings ++ Seq(autoScalaLibrary := false))
 
     lazy val runtimeCommonProject =
         SwatProject("common", file("runtime/common"), defaultSettings)

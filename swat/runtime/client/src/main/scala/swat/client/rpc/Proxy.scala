@@ -23,7 +23,7 @@ object Proxy {
         request.onreadystatechange = { _ =>
             if (request.readyState == 4 && request.status != 0) {
                 // The request is done and the status isn't invalid.
-                promise.complete(processResponse(request.response, request.status))
+                promise.complete(processResponse(request.responseText, request.status))
             }
         }
         request.open("POST", controllerUrl + "/rpc/" + methodFullName, async = true)
@@ -33,16 +33,15 @@ object Proxy {
         result
     }
 
-    private def processResponse(response: Any, status: Int): Try[Any] = {
+    private def processResponse(response: String, status: Int): Try[Any] = {
         if (status != 200 && status != 500) {
             Failure(new RpcException(s"The RPC exited with status code $status."))
         } else {
             try {
                 // Deserialize the response and if it's a throwable, return Failure. Otherwise return Success.
-                Option(response).map(r => Serializer.deserialize(r.toString)) match {
-                    case Some(t: Throwable) => Failure(t)
-                    case Some(value) => Success(value)
-                    case None => Success(null)
+                Serializer.deserialize(response) match {
+                    case t: Throwable => Failure(t)
+                    case x => Success(x)
                 }
             } catch {
                 case e: Throwable => Failure(new RpcException(s"RPC result deserialization error (${e.getMessage}})."))

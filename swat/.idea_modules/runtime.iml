@@ -31,7 +31,8 @@
     <orderEntry type="library" name="SBT: org.scala-lang:scala-library:2.10.1" level="project" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-compiler:2.10.1" level="project" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-reflect:2.10.1" level="project" />
-    <orderEntry type="module" module-name="library" exported="" />
+    <orderEntry type="module" module-name="java" exported="" />
+    <orderEntry type="module" module-name="scala" exported="" />
     <orderEntry type="module" module-name="common" exported="" />
     <orderEntry type="module" module-name="client" exported="" />
     <orderEntry type="module" module-name="tests" exported="" />

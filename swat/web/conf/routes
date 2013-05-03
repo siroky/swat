@@ -10,6 +10,7 @@ GET     /playground                         controllers.Application.playground
 GET     /swat/tpe/:typeIdentifier           controllers.Swat.tpe(typeIdentifier: String)
 GET     /swat/app/:typeIdentifier           controllers.Swat.app(typeIdentifier: String, args: String = "")
 GET     /swat/app/:typeIdentifier/:args     controllers.Swat.app(typeIdentifier: String, args: String)
+POST    /swat/rpc/:methodFullName           controllers.Swat.rpc(methodFullName: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file                       controllers.Assets.at(path="/public", file)
