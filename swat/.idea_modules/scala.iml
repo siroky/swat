@@ -30,6 +30,8 @@
     <orderEntry type="library" name="SBT: org.scala-lang:scala-library:2.10.1" level="project" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-compiler:2.10.1" level="project" />
     <orderEntry type="library" name="SBT: org.scala-lang:scala-reflect:2.10.1" level="project" />
+    <orderEntry type="library" scope="TEST" name="SBT: org.scalatest:scalatest_2.10:1.9.1:test" level="project" />
+    <orderEntry type="library" scope="TEST" name="SBT: org.scala-lang:scala-actors:2.10.0:test" level="project" />
     <orderEntry type="module" module-name="compiler" exported="" />
     <orderEntry type="module" module-name="api" exported="" />
   </component>

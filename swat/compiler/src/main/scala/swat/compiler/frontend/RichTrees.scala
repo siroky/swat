@@ -75,9 +75,9 @@ trait RichTrees {
             isEqualityOperator || isTypeSpecificMethod(methods, _ => true)
         }
 
-        def isPrimitiveOrStringOperator = isPrimitivelOperator || isStringOperator
+        def isPrimitiveOrStringOperator = isPrimitiveOperator || isStringOperator
 
-        def isPrimitivelOperator = isNumericValOperator || isBooleanValOperator
+        def isPrimitiveOperator = isNumericValOperator || isBooleanValOperator
 
         def isNumericValOperator = {
             val unaryArithmetic = Set("unary_+", "unary_-")

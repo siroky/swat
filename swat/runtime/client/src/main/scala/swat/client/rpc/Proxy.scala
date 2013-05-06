@@ -9,7 +9,7 @@ import swat.common.rpc.RpcException
 
 object Proxy {
 
-    def invoke(methodFullName: String, args: Array[Any]): Future[Any] = {
+    def invoke(methodIdentifier: String, args: Array[Any]): Future[Any] = {
         val promise = Promise[Any]()
         val result = promise.future
 
@@ -26,7 +26,7 @@ object Proxy {
                 promise.complete(processResponse(request.responseText, request.status))
             }
         }
-        request.open("POST", controllerUrl + "/rpc/" + methodFullName, async = true)
+        request.open("POST", controllerUrl + "/rpc/" + methodIdentifier, async = true)
         request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
         request.send(Serializer.serialize(args))
 

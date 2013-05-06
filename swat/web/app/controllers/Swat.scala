@@ -18,7 +18,7 @@ object Swat extends Controller {
         Async(code.map(Ok(_)))
     }
 
-    def rpc(methodFullName: String) = Action { request =>
-        Ok(RpcDispatcher.invoke(methodFullName, request.body.toString))
+    def rpc(methodIdentifier: String) = Action { request =>
+        Ok(RpcDispatcher.invoke(methodIdentifier, request.body.toString))
     }
 }

@@ -17,7 +17,14 @@ object SwatBuild extends Build {
             "-language:implicitConversions"
         ),
         organization := "swat",
-        version := swatVersion
+        version := swatVersion,
+        resolvers ++= Seq(
+            "Mandubian repository snapshots" at "https://github.com/mandubian/mandubian-mvn/raw/master/snapshots/",
+            "Mandubian repository releases" at "https://github.com/mandubian/mandubian-mvn/raw/master/releases/"
+        ),
+        libraryDependencies ++= Seq(
+            "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test"
+        )
     )
 
     lazy val swatProject =
@@ -34,8 +41,7 @@ object SwatBuild extends Build {
         Project(
             "compiler", file("compiler"), settings = defaultSettings ++ Seq(
                 libraryDependencies ++= Seq(
-                    "org.scala-lang" % "scala-compiler" % swatScalaVersion,
-                    "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test"
+                    "org.scala-lang" % "scala-compiler" % swatScalaVersion
                 )
             )
         ).dependsOn(
@@ -97,7 +103,11 @@ object SwatBuild extends Build {
         SwatProject("scala", file("runtime/scala"), defaultSettings ++ Seq(autoScalaLibrary := false))
 
     lazy val runtimeCommonProject =
-        SwatProject("common", file("runtime/common"), defaultSettings)
+        SwatProject(
+            "common", file("runtime/common"), defaultSettings ++ Seq(
+                libraryDependencies += "play" % "play-json_2.10" % "2.2-SNAPSHOT"
+            )
+        )
 
     lazy val runtimeClientProject =
         SwatProject(
