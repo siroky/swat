@@ -16,6 +16,10 @@ trait TreeBuilder {
         CallExpression(memberChain(target, methodName), args.toList)
     }
 
+    def newObject(tpe: Expression, args: List[Expression]): NewExpression = {
+        NewExpression(CallExpression(tpe, args))
+    }
+
     def scoped(body: Statement): Expression = scoped(List(body))
 
     def scoped(body: List[Statement]): Expression = CallExpression(FunctionExpression(None, Nil, body), Nil)

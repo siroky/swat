@@ -257,7 +257,7 @@ swat.invokeSuper = function(obj, methodName, args, typeIdentifier, superTypeIden
 
 /** Invokes the specified method via RPC using the client proxy. */
 swat.invokeRemote = function(methodName, args) {
-    return rpc.Proxy$().invoke(methodName, swat.jsArrayToScalaArray(args), 'java.lang.String, scala.Array');
+    return rpc.Proxy$().invoke(methodName, args, 'java.lang.String, scala.Product');
 };
 
 /** Returns a parametric field of the specified object in the specified type context. */

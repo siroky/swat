@@ -22,3 +22,11 @@ swat/.idea/libraries
 
 # Swat generated files
 *.swat.js
+
+# Thesis
+thesis/*.pdf
+thesis/img/*.pdf
+thesis/*.aux
+thesis/*.bbl
+thesis/*.blg
+thesis/*.toc

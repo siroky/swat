@@ -4,12 +4,12 @@ import scala.concurrent.{Promise, Future}
 import scala.util.{Success, Failure, Try}
 import swat.js.applications.{ActiveXObject, XMLHttpRequest}
 import swat.client.swat._
-import swat.client.json.Serializer
+import swat.client.json.JsonSerializer
 import swat.common.rpc.RpcException
 
-object Proxy {
+object RpcProxy {
 
-    def invoke(methodIdentifier: String, args: Array[Any]): Future[Any] = {
+    def invoke(methodIdentifier: String, args: Product): Future[Any] = {
         val promise = Promise[Any]()
         val result = promise.future
 
@@ -28,7 +28,7 @@ object Proxy {
         }
         request.open("POST", controllerUrl + "/rpc/" + methodIdentifier, async = true)
         request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
-        request.send(Serializer.serialize(args))
+        request.send(JsonSerializer.serialize(args))
 
         result
     }
@@ -39,7 +39,7 @@ object Proxy {
         } else {
             try {
                 // Deserialize the response and if it's a throwable, return Failure. Otherwise return Success.
-                Serializer.deserialize(response) match {
+                JsonSerializer.deserialize(response) match {
                     case t: Throwable => Failure(t)
                     case x => Success(x)
                 }

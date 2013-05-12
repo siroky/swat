@@ -66,14 +66,9 @@ trait ClassDefProcessors {
         def addDependency(tpe: Either[String, Type], isHard: Boolean) {
             dependencies += Dependency(tpe, isHard)
         }
-
-        def addDeclarationDependency(tpe: Type) {
-            addDependency(Right(tpe), true)
-        }
-
-        def addRuntimeDependency(tpe: Type) {
-            addDependency(Right(tpe), false)
-        }
+        def addDeclarationDependency(tpe: Type) { addDependency(Right(tpe), true) }
+        def addRuntimeDependency(tpe: Type) { addDependency(Right(tpe), false) }
+        def addRuntimeDependency(tpe: String) { addDependency(Left(tpe), false) }
 
         def process: ProcessedClassDef = {
             // Process the single constructor group and method groups
@@ -424,12 +419,22 @@ trait ClassDefProcessors {
             // Verify that the method returns a Future.
             if (resultType <:< typeOf[scala.concurrent.Future[_]]) {
                 addRuntimeDependency(resultType.typeArgs.head)
-                addDependency(Left("rpc.Proxy$"), false)
-            } else {
-                error(s"A remote method ${fullName} must return a scala.concurrent.Future.")
-            }
+                addRuntimeDependency("rpc.RpcProxy$")
 
-            swatMethodCall("invokeRemote", js.StringLiteral(fullName), js.ArrayLiteral(processExpressionTrees(args)))
+                val processedArgs =
+                    if (args.nonEmpty) {
+                        val tupleTypeName = s"scala.Tuple${args.length}"
+                        addRuntimeDependency(tupleTypeName)
+                        newObject(js.RawCodeExpression(tupleTypeName), processExpressionTrees(args))
+                    } else {
+                        js.NullLiteral
+                    }
+
+                swatMethodCall("invokeRemote", js.StringLiteral(fullName), processedArgs)
+            } else {
+                error(s"A remote method $fullName must return a scala.concurrent.Future.")
+                js.UndefinedLiteral
+            }
         }
 
         def processCall(method: Tree, args: List[Tree]): js.Expression = method match {
@@ -668,7 +673,7 @@ trait ClassDefProcessors {
                 } else {
                     processExpressionTrees(apply.args)
                 }
-            js.NewExpression(js.CallExpression(typeJsIdentifier(n.tpe.underlying), args))
+            newObject(typeJsIdentifier(n.tpe.underlying), args)
         }
 
         def processIf(condition: If): js.Expression = scoped {

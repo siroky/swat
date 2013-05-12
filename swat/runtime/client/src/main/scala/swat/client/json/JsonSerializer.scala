@@ -2,7 +2,7 @@ package swat.client.json
 
 import swat.js.CommonScope._
 
-object Serializer {
+object JsonSerializer {
 
     def serialize(obj: Any): String = obj match {
         case a: Array[_] => JSON.stringify(a(0))

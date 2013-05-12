@@ -7,17 +7,16 @@
 \setlength\headsep{0mm}
 \setlength\headheight{0mm}
 
-\let\openright=\clearpage
-
-\usepackage[utf8]{inputenc}
-
+\usepackage[cp1250]{inputenc}
 \usepackage{graphicx}
+\usepackage{epstopdf}
 \usepackage{amsthm}
 
-\usepackage[ps2pdf,unicode]{hyperref}
-\hypersetup{pdftitle=Scala Web Application Toolkit}
-\hypersetup{pdfauthor=Jan �irok�}
 
+
+%%% Style adjustment macros.
+
+% Less indented chapter titles.
 \makeatletter
 \def\@makechapterhead#1{
   {\parindent \z@ \raggedright \normalfont
@@ -33,25 +32,26 @@
 }}
 \makeatother
 
+% Chapter without a number but still in the table of contents.
 \def\chapwithtoc#1{
 \chapter*{#1}
 \addcontentsline{toc}{chapter}{#1}
 }
 
-\begin{document}
 
+
+%%% Document
+\begin{document}
 \lefthyphenmin=2
 \righthyphenmin=2
 
-%%% Front Page
 
+
+%%% Title page
 \pagestyle{empty}
+
 \begin{center}
-
-\large
-
-Charles University in Prague
-
+\large Charles University in Prague
 \medskip
 
 Faculty of Mathematics and Physics
@@ -62,9 +62,10 @@ Faculty of Mathematics and Physics
 
 \vfill
 
-\centerline{\mbox{\includegraphics[width=60mm]{logo.eps}}}
+\centerline{\mbox{\includegraphics[width=60mm]{img/logo.eps}}}
 
 \vfill
+
 \vspace{5mm}
 
 {\LARGE Jan �irok�}
@@ -76,10 +77,10 @@ Faculty of Mathematics and Physics
 \vfill
 
 Department of Distributed and Dependable Systems
+
 \vfill
 
 \begin{tabular}{rl}
-
 Supervisor of the master thesis: & Pavel Je�ek \\
 \noalign{\vspace{2mm}}
 Study programme: & Computer Science \\
@@ -90,137 +91,188 @@ Specialization: & Software Systems \\
 \vfill
 
 Prague 2013
-
 \end{center}
 
+
+
+%%% Dedication.
 \newpage
-
-%%% Následuje vevázaný list -- kopie podepsaného "Zadání diplomové práce".
-%%% Toto zadání NENÍ součástí elektronické verze práce, nescanovat.
-
-%%% Na tomto místě mohou být napsána případná poděkování (vedoucímu práce,
-%%% konzultantovi, tomu, kdo zapůjčil software, literaturu apod.)
-\openright
-
-\noindent
+\noindent 
 Dedication.
 
+
+
+%%% Declaration.
 \newpage
 
-%%% Strana s čestným prohlášením k diplomové práci
-
 \vglue 0pt plus 1fill
-
 \noindent
-I declare that I carried out this master thesis independently, and only with the cited
-sources, literature and other professional sources.
+I declare that I carried out this master thesis independently, and only with the cited sources, literature and other professional sources.
 
 \medskip\noindent
-I understand that my work relates to the rights and obligations under the Act No.
-121/2000 Coll., the Copyright Act, as amended, in particular the fact that the Charles
-University in Prague has the right to conclude a license agreement on the use of this
-work as a school work pursuant to Section 60 paragraph 1 of the Copyright Act.
+I understand that my work relates to the rights and obligations under the Act No. 121/2000 Coll., the Copyright Act, as amended, in particular the fact that the Charles University in Prague has the right to conclude a license agreement on the use of this work as a school work pursuant to Section 60 paragraph 1 of the Copyright Act.
 
 \vspace{10mm}
-
 \hbox{\hbox to 0.5\hsize{%
 In ........ date ............
 \hss}\hbox to 0.5\hsize{%
 signature of the author
 \hss}}
-
 \vspace{20mm}
-\newpage
 
-%%% Povinná informační strana diplomové práce
+
+
+%%% Information page.
+\newpage
 
 \vbox to 0.5\vsize{
 \setlength\parindent{0mm}
 \setlength\parskip{5mm}
 
-Název práce:
-Název práce
-% přesně dle zadání
+N�zev pr�ce: 
+Scala Web Application Toolkit
 
-Autor:
-Jméno a příjmení autora
+Autor: 
+Jan �irok�
 
-Katedra:  % Případně Ústav:
-Název katedry či ústavu, kde byla práce oficiálně zadána
-% dle Organizační struktury MFF UK
+Katedra: 
+Katedra distribuovan�ch a spolehliv�ch syst�m�
 
-Vedoucí diplomové práce:
-Jméno a příjmení s tituly, pracoviště
-% dle Organizační struktury MFF UK, případně plný název pracoviště mimo MFF UK
+Vedouc� diplomov� pr�ce: 
+Mgr. Pavel Je�ek Ph.D, Katedra distribuovan�ch a spolehliv�ch syst�m�
 
 Abstrakt:
-% abstrakt v rozsahu 80-200 slov; nejedná se však o opis zadání diplomové práce
+TODO
 
-Klíčová slova:
-% 3 až 5 klíčových slov
+Kl��ov� slova:
+Scala, JavaScript, RIA, JSON, RPC
 
 \vss}\nobreak\vbox to 0.49\vsize{
 \setlength\parindent{0mm}
 \setlength\parskip{5mm}
 
 Title:
-% přesný překlad názvu práce v angličtině
+Scala Web Application Toolkit
 
 Author:
-Jméno a příjmení autora
+Jan �irok�
 
 Department:
-Název katedry či ústavu, kde byla práce oficiálně zadána
-% dle Organizační struktury MFF UK v angličtině
+Department of Distributed and Dependable Systems
 
 Supervisor:
-Jméno a příjmení s tituly, pracoviště
-% dle Organizační struktury MFF UK, případně plný název pracoviště
-% mimo MFF UK v angličtině
+Mgr. Pavel Je�ek Ph.D, Department of Distributed and Dependable Systems
 
 Abstract:
-% abstrakt v rozsahu 80-200 slov v angličtině; nejedná se však o překlad
-% zadání diplomové práce
+TODO
 
 Keywords:
-% 3 až 5 klíčových slov v angličtině
+Scala, JavaScript, RIA, JSON, RPC
 
 \vss}
 
+
+
+%%% Generated table of contents.
 \newpage
-
-%%% Strana s automaticky generovaným obsahem diplomové práce. U matematických
-%%% prací je přípustné, aby seznam tabulek a zkratek, existují-li, byl umístěn
-%%% na začátku práce, místo na jejím konci.
-
-\openright
 \pagestyle{plain}
 \setcounter{page}{1}
 \tableofcontents
 
-%%% Jednotlivé kapitoly práce jsou pro přehlednost uloženy v samostatných souborech
-\include{preface}
-\include{chap1}
-\include{chap2}
 
-% Ukázka použití některých konstrukcí LateXu (odkomentujte, chcete-li)
-% \include{example}
 
-\include{epilog}
+%%% Preface.
+\chapter{Introduction}
+% \addcontentsline{toc}{chapter}{Introduction}
 
-%%% Seznam použité literatury
-\include{bibliography}
+\section{Motivation}
 
-%%% Tabulky v diplomové práci, existují-li.
+\section{JavaScript}
+
+\section{Scala}
+
+\section{Scala Compiler Architecture}
+
+
+
+%%% Chapter 1.
+\chapter{Swat Compiler}
+
+\section{Package Scope}
+
+\section{Type Scope}
+
+\section{Expression Scope}
+
+\section{Build Process}
+
+
+
+%%% Chapter 2.
+\chapter{Adapters}
+
+
+
+%%% Chapter 3.
+\chapter{Runtime}
+
+\section{Client}
+
+\section{Server}
+
+\section{Standard Libraries}
+
+\subsection{Java Library}
+
+\subsection{Scala Library}
+
+\section{Integration with a Web Framework}
+
+\section{RPC}
+
+
+
+
+%%% Conclusion.
+\chapter{Conclusion}
+% \addcontentsline{toc}{chapter}{Conclusion}
+
+\section{Critical Evaluation}
+
+\section{Comparison with Similar Tools}
+
+\section{Roadmap}
+
+
+
+%%% Bibliography.
+\def\bibname{Bibliography}
+\begin{thebibliography}{99}
+\addcontentsline{toc}{chapter}{\bibname}
+
+%\bibitem{lamport94}
+%  {\sc Lamport,} Leslie.
+%  \emph{\LaTeX: A Document Preparation System}.
+%  2. vyd�n�.
+%  Massachusetts: Addison Wesley, 1994.
+%  ISBN 0-201-52983-1.
+
+\end{thebibliography}
+
+
+
+%%% Tables.
 \chapwithtoc{List of Tables}
 
-%%% Použité zkratky v diplomové práci, existují-li, včetně jejich vysvětlení.
+
+
+%%% Abbreviations.
 \chapwithtoc{List of Abbreviations}
 
-%%% Přílohy k diplomové práci, existují-li (různé dodatky jako výpisy programů,
-%%% diagramy apod.). Každá příloha musí být alespoň jednou odkazována z vlastního
-%%% textu práce. Přílohy se číslují.
+
+
+%%% Attachments.
 \chapwithtoc{Attachments}
 
-\openright
+
 \end{document}

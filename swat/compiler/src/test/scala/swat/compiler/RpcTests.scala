@@ -20,14 +20,15 @@ class RpcTests extends CompilerSuite {
                 """
                     swat.provide('A');
                     swat.require('java.lang.Object', true);
-                    swat.require('rpc.Proxy$', false);
+                    swat.require('rpc.RpcProxy$', false);
                     swat.require('scala.Any', true);
                     swat.require('scala.Int', false);
+                    swat.require('scala.Tuple1', false);
 
                     A.$init$ = (function() {
                         var $self = this;
                         swat.invokeSuper($self, '$init$', [], 'A');
-                        swat.invokeRemote('Server.foo', ['bar']);
+                        swat.invokeRemote('Server.foo', new scala.Tuple1('bar'));
                     });
                     A = swat.type('A', [A, java.lang.Object, scala.Any]);
                 """
