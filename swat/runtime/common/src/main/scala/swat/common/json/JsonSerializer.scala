@@ -4,6 +4,7 @@ import play.api.libs.json._
 import scala.reflect.runtime.universe._
 import scala.collection.mutable
 import scala.reflect.internal.MissingRequirementError
+import swat.common.reflect.CachedMirror
 
 /**
  * A custom JSON object serializer and deserializer. The JSON always has the same structure no matter what actually
@@ -41,13 +42,7 @@ import scala.reflect.internal.MissingRequirementError
  *
  */
 @swat.ignored
-class JsonSerializer(val mirror: Mirror = runtimeMirror(getClass.getClassLoader)) {
-
-    val valueField = "$value"
-    val objectsField = "$objects"
-    val idField = "$id"
-    val typeField = "$type"
-    val refField = "$ref"
+class JsonSerializer(val mirror: CachedMirror) {
 
     /**
      * Serializes the specified object to a JSON string that conforms to the specification described at
@@ -82,7 +77,7 @@ class JsonSerializer(val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
         def serializeAnyRef(obj: AnyRef): JsObject = {
             val reference = objectIds.get(obj).map(JsNumber(_)).getOrElse {
                 // The object hasn't been serialized yet.
-                val symbol = classToSymbol(obj.getClass)
+                val symbol = mirror.getInstanceSymbol(obj)
                 if (symbol.isModuleClass) {
                     // Serialize singleton object as a reference to it's type full name.
                     JsString(symbol.fullName)
@@ -95,25 +90,23 @@ class JsonSerializer(val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
                     val members = symbol.typeSignature.members
                     val getters = members.collect { case m: MethodSymbol if m.isGetter => m }
                     val serializedFields = getters.map { getter =>
-                        val objMirror = mirror.reflect(obj)
-                        val getterMirror = objMirror.reflectMethod(getter)
-                        val value = getterMirror.apply()
+                        val value = mirror.use(_.reflect(obj)).reflectMethod(getter).apply()
                         getter.name.toString -> serializeValue(value)
                     }
-                    val internalFields = Seq(idField -> JsNumber(id), typeField -> JsString(symbol.fullName))
+                    val internalFields = Seq("$id" -> JsNumber(id), "$type" -> JsString(symbol.fullName))
 
                     serializedObjects += JsObject(internalFields ++ serializedFields)
                     JsNumber(id)
                 }
             }
 
-            JsObject(Seq(refField -> reference))
+            JsObject(Seq("$ref" -> reference))
         }
 
         // Just start serializing the root object. All referenced objects get discovered during the process.
         Json.prettyPrint(JsObject(Seq(
-            valueField -> serializeValue(obj),
-            objectsField -> JsArray(serializedObjects)
+            "$value" -> serializeValue(obj),
+            "$objects" -> JsArray(serializedObjects)
         )))
     }
 
@@ -124,8 +117,22 @@ class JsonSerializer(val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
      * the purpose of a type hint, so for example conversions of numeric types can be performed.
      */
     def deserialize(json: String, tpe: Option[Type] = None): Any = {
+        val visitedObjectsIds = mutable.HashSet[Int]()
         val deserializedObjects = mutable.HashMap[Int, Any]()
         val referencesToResolve = mutable.ListBuffer[Reference]()
+
+        // Parse the JSON and if it matches the specified structure, extract the root value and all objects from it.
+        val (rootValue, serializedObjects) = Json.parse(json) match {
+            case JsObject(Seq(("$value", jsValue), ("$objects", jsObjects: JsArray))) => {
+                val objects = jsObjects.value.collect {
+                    case o@JsObject(Seq(("$id", JsNumber(id)), ("$type", JsString(typeName)), _*)) => {
+                        id -> SerializedObject(typeName, o.fields.drop(2))
+                    }
+                }
+                (jsValue, objects.toMap)
+            }
+            case _ => throw new JsonException(s"Cannot deserialize non-conforming JSON structure '$json'.")
+        }
 
         /**
          * Deserializes the specified value. Primitive types, arrays, references to singleton objects and references
@@ -137,7 +144,7 @@ class JsonSerializer(val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
             case JsNumber(n) => Right(convert(n, tpe))
             case JsString(s) => Right(convert(s, tpe))
             case JsArray(items) => Right(deserializeArray(items, tpe))
-            case JsObject(Seq((r, reference))) if r == refField => deserializeReference(reference, tpe)
+            case JsObject(Seq(("$ref", reference))) => deserializeRef(reference, tpe)
             case _ => throw new JsonException(s"Cannot deserialize unrecognized value '$value'.")
         }
 
@@ -147,55 +154,60 @@ class JsonSerializer(val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
             val itemTpe = tpe.filter(_ <:< typeOf[Array[_]]).map(t => t.asInstanceOf[TypeRefApi].args.head)
             items.map(i => deserializeValue(i, itemTpe)).zipWithIndex.foreach {
                 case (Right(v), index) => result.update(index, v)
-                case (Left(id), index) => referencesToResolve += ArrayItemReference(result, index, id)
+                case (Left(id), index) => referencesToResolve += ArrayItemReference(result, index, id, itemTpe)
             }
             result
         }
 
         /** Deserializes both references to other objects and references to singleton objects. */
-        def deserializeReference(reference: JsValue, tpe: Option[Type]): Either[Int, Any] = reference match {
-            case JsNumber(id) => deserializedObjects.get(id.toInt) match {
-                case Some(deserializedObject) => Right(convert(deserializedObject, tpe))
-                case None => Left(id.toInt)
-            }
-            case JsString(typeFullName) => Right(mirror.reflectModule(mirror.staticModule(typeFullName)).instance)
+        def deserializeRef(reference: JsValue, tpe: Option[Type]): Either[Int, Any] = reference match {
+            case JsNumber(id) => deserializeObjectRef(id.toInt, tpe)
+            case JsString(fullName) => Right(mirror.getObject(fullName))
             case _ => throw new JsonException(s"Unrecongized reference '$reference'.")
         }
 
-        /** Deserializes the specified object and registers it to the deserializedObjects under its id. */
-        def deserializeObject(value: JsValue): Any = value match {
-            case JsObject(fields) => {
-                // TODO
+        /** Deserializes both references to other objects. */
+        def deserializeObjectRef(id: Int, tpe: Option[Type]): Either[Int, Any] = deserializedObjects.get(id) match {
+            case Some(deserializedObject) => Right(convert(deserializedObject, tpe))
+            case _ if visitedObjectsIds(id) => Left(id)
+            case _ => serializedObjects.get(id) match {
+                case Some(serializedObject) => {
+                    visitedObjectsIds += id
+                    val deserializedObject = deserializeObject(serializedObject, tpe)
+                    deserializedObjects += id -> deserializedObject
+                    Right(deserializedObject)
+                }
+                case _ => throw new JsonException(s"Cannot resolve reference to object with id '$id'.")
             }
-            case _ => throw new JsonException(s"Cannot deserialize object '$value'.")
         }
 
-        /** Resolves all unresolved references. */
-        def resolveReferences() {
-            // TODO
-        }
+        /** Deserializes the specified object. */
+        def deserializeObject(serializedObject: SerializedObject, tpe: Option[Type]): Any = {
+            val deserializedFields = serializedObject.fields.map { case (name, value) =>
+                val fieldTpe = tpe.flatMap(t => getFieldType(t, name))
+                val deserializedValue = deserializeValue(value, fieldTpe).left.map(_ -> tpe)
+                name -> deserializedValue
+            }.toMap
 
-        /** Returns a deserialized object with the specified id. */
-        def dereference(id: Int): Any = deserializedObjects.get(id) match {
-            case Some(obj) => obj
-            case None => throw new JsonException(s"Cannot resolve reference to object with id '$id'.")
+            val symbol = mirror.getClassSymbol(serializedObject.typeName)
+            val constructor = symbol.toType.declaration(nme.CONSTRUCTOR).asMethod
+            val args = constructor.paramss.flatten.map(p => deserializedFields(p.name.toString).right.getOrElse(null))
+
+            val classMirror = mirror.use(_.reflectClass(symbol))
+            val constructorMirror = classMirror.reflectConstructor(constructor)
+            val instance = constructorMirror(args: _*)
+
+            referencesToResolve ++= deserializedFields.collect { case (name, Left((id, fieldTpe))) =>
+                 InstanceFieldReference(instance, name , id, fieldTpe)
+            }
+
+            instance
         }
 
         try {
-            Json.parse(json) match {
-                case JsObject(Seq((v, value), (o, objects: JsArray))) if v == valueField && o == objectsField => {
-                    // Deserialize all objects and resolve the unresolved references.
-                    objects.value.foreach(deserializeObject _)
-                    resolveReferences()
-
-                    // Return the root value.
-                    deserializeValue(value, tpe) match {
-                        case Right(x) => x
-                        case Left(id) => convert(dereference(id), tpe)
-                    }
-                }
-                case _ => throw new JsonException(s"Cannot deserialize non-conforming JSON structure '$json'.")
-            }
+            val result = deserializeValue(rootValue, tpe).right.get
+            // TODO resolveReferences()
+            result
         } catch {
             case e: MissingRequirementError => throw new JsonException(e.getMessage)
         }
@@ -209,7 +221,7 @@ class JsonSerializer(val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
         case Some(tpe) => value match {
             case null if tpe <:< typeOf[AnyRef] => null
             case null if tpe <:< typeOf[Unit] => ()
-            case v if v != null && classToSymbol(v.getClass).typeSignature <:< tpe => v
+            case v if v != null && mirror.getInstanceSymbol(v).toType <:< tpe => v
             case n: BigDecimal if tpe weak_<:< typeOf[Double] => tpe match {
                 case t if t =:= typeOf[Byte] => n.toByte
                 case t if t =:= typeOf[Short] => n.toShort
@@ -218,6 +230,7 @@ class JsonSerializer(val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
                 case t if t =:= typeOf[Float] => n.toFloat
                 case t if t =:= typeOf[Double] => n.toDouble
             }
+            case b: Boolean if tpe =:= typeOf[Boolean] => b
             case s: String if tpe =:= typeOf[Char] && s.length == 1 => s.head
             case v if tpe =:= typeOf[String] => v.toString
             case _ => throw new JsonException(s"Cannot convert '$value' to type '$tpe'.")
@@ -225,15 +238,17 @@ class JsonSerializer(val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
         case None => value
     }
 
-    /** Cache of class symbols. */
-    private val classSymbols = mutable.HashMap[Class[_], Symbol]()
-
-    /** Returns symbol corresponding to the specified class utilizing the class symbol cache. */
-    private def classToSymbol(c: Class[_]): Symbol = {
-        classSymbols.getOrElseUpdate(c, mirror.classSymbol(c))
+    /** Returns type of the specified field. */
+    def getFieldType(tpe: Type, name: String): Option[Type] = tpe.member(newTermName(name)) match {
+        case m: MethodSymbol if m.isGetter => Some(m.typeSignatureIn(tpe).asInstanceOf[NullaryMethodType].resultType)
+        case _ => None
     }
 
+    private case class SerializedObject(typeName: String, fields: Seq[(String, JsValue)])
+
     private sealed abstract class Reference
-    private case class ObjectFieldReference(target: Any, field: TermSymbol, id: Int) extends Reference
-    private case class ArrayItemReference(target: Array[Any], index: Int, id: Int) extends Reference
+    private case class InstanceFieldReference(target: Any, fieldName: String, id: Int, tpe: Option[Type])
+        extends Reference
+    private case class ArrayItemReference(target: Array[Any], index: Int, id: Int, tpe: Option[Type])
+        extends Reference
 }

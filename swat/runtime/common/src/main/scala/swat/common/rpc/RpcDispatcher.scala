@@ -2,19 +2,21 @@ package swat.common.rpc
 
 import scala.concurrent._
 import ExecutionContext.Implicits.global
-import scala.reflect.runtime.universe._
 import scala.reflect.internal.MissingRequirementError
+import scala.reflect.runtime.universe._
 import swat.common.json.JsonSerializer
+import swat.common.reflect.CachedMirror
 
 @swat.ignored
 object RpcDispatcher {
-    def invoke(methodIdentifier: String, arguments: String): Future[String] = {
-        val mirror = runtimeMirror(getClass.getClassLoader)
-        val serializer = new JsonSerializer(mirror)
 
+    val mirror = new CachedMirror
+    val serializer = new JsonSerializer(mirror)
+
+    def invoke(methodIdentifier: String, arguments: String): Future[String] = {
         future {
-            val info = methodIdentifierToInfo(methodIdentifier, mirror)
-            val parsedArguments = parseArguments(arguments, info.method.paramss.flatten, mirror)
+            val info = methodIdentifierToInfo(methodIdentifier)
+            val parsedArguments = parseArguments(arguments, info.method.paramss.flatten)
             info
         }.flatMap { data =>
             // Invoke the method.
@@ -30,7 +32,7 @@ object RpcDispatcher {
         }
     }
 
-    def methodIdentifierToInfo(methodIdentifier: String, mirror: Mirror): InvocationInfo = {
+    def methodIdentifierToInfo(methodIdentifier: String): InvocationInfo = {
         if (methodIdentifier == null || methodIdentifier == "") {
             throw new RpcException("The method identifier must be non-empty.")
         }
@@ -39,13 +41,13 @@ object RpcDispatcher {
             throw new RpcException(s"The method identifier '$methodIdentifier' is invalid.")
         }
 
-        val objectIdentifier = methodIdentifier.take(index)
+        val objectTypeFullName = methodIdentifier.take(index)
         val methodName = methodIdentifier.drop(index + 1)
 
         // The invocation target object.
         val target =
             try {
-                mirror.staticModule(objectIdentifier)
+                mirror.getObjectSymbol(objectTypeFullName)
             } catch {
                 case e: MissingRequirementError => throw new RpcException(e.getMessage)
             }
@@ -53,7 +55,7 @@ object RpcDispatcher {
         // The method that should be invoked.
         val method = target.typeSignature.member(newTermName(methodName)) match {
             case m: MethodSymbol => m
-            case NoSymbol => throw new RpcException(s"The '$objectIdentifier' doesn't contain method '$methodName'.")
+            case NoSymbol => throw new RpcException(s"The '$objectTypeFullName' doesn't contain method '$methodName'.")
         }
 
         InvocationInfo(target, method)
@@ -72,7 +74,7 @@ object RpcDispatcher {
         }
     }
 
-    private def parseArguments(arguments: String, parameters: List[Symbol], mirror: Mirror): List[Any] = {
+    private def parseArguments(arguments: String, parameters: List[Symbol]): List[Any] = {
         Nil
     }
 }

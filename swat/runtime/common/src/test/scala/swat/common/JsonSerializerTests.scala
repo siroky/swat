@@ -1,13 +1,14 @@
 package swat.common
 
+import scala.reflect.runtime.universe._
 import org.scalatest.FunSuite
 import swat.common.json.JsonSerializer
-import scala.reflect.runtime.universe._
+import swat.common.reflect.CachedMirror
 
 class A(var a: A)
 
 class JsonSerializerTests extends FunSuite {
-    val mirror: Mirror = runtimeMirror(getClass.getClassLoader)
+    val mirror = new CachedMirror
 
     test("Primitive values are serialized to JSON primitive values.") {
         () shouldSerializeTo wrapValue("null")
@@ -105,10 +106,10 @@ class JsonSerializerTests extends FunSuite {
                     }
                 ]
             }
-                             """
+        """
     }
 
-    test("Primitive values are deserialized from JSON primitive values.") {
+    /*test("Primitive values are deserialized from JSON primitive values.") {
         wrapValue("null") shouldDeserializeTo(null)
         wrapValue("true") shouldDeserializeTo(true)
         wrapValue("12") shouldDeserializeTo(12.toByte, Some(typeOf[Byte]))
@@ -129,6 +130,24 @@ class JsonSerializerTests extends FunSuite {
 
     test("Singleton objects are deserialized from references.") {
         wrapValue("""{"$ref":"scala.collection.immutable.Nil"}""") shouldDeserializeTo(Nil)
+    }*/
+
+    test("Objects are deserialized from JSON objects") {
+        """
+            {
+                "$value":{"$ref":0},
+                "$objects": [
+                    {
+                        "$id":0,
+                        "$type":"scala.Tuple4",
+                        "_1":true,
+                        "_2":123,
+                        "_3":1234,
+                        "_4":"foo"
+                    }
+                ]
+            }
+        """ shouldDeserializeTo(Tuple4(true, 123, 1234, "foo"), Some(typeOf[(Boolean, Int, BigDecimal, String)]))
     }
 
     implicit class SerializableObject(obj: Any) {
