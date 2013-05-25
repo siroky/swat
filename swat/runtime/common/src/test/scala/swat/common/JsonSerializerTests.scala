@@ -109,7 +109,7 @@ class JsonSerializerTests extends FunSuite {
         """
     }
 
-    /*test("Primitive values are deserialized from JSON primitive values.") {
+    test("Primitive values are deserialized from JSON primitive values.") {
         wrapValue("null") shouldDeserializeTo(null)
         wrapValue("true") shouldDeserializeTo(true)
         wrapValue("12") shouldDeserializeTo(12.toByte, Some(typeOf[Byte]))
@@ -118,8 +118,8 @@ class JsonSerializerTests extends FunSuite {
         wrapValue("12345") shouldDeserializeTo(12345.toLong, Some(typeOf[Long]))
         wrapValue("1234.5") shouldDeserializeTo(1234.5.toFloat, Some(typeOf[Float]))
         wrapValue("12345.6") shouldDeserializeTo(12345.6, Some(typeOf[Double]))
-        wrapValue(""""c"""") shouldDeserializeTo('c', Some(typeOf[Char]))
-        wrapValue(""""foo"""") shouldDeserializeTo("foo", Some(typeOf[String]))
+        wrapValue("\"c\"") shouldDeserializeTo('c', Some(typeOf[Char]))
+        wrapValue("\"foo\"") shouldDeserializeTo("foo", Some(typeOf[String]))
     }
 
     test("Arrays are deserialized from JSON primitive arrays.") {
@@ -130,7 +130,7 @@ class JsonSerializerTests extends FunSuite {
 
     test("Singleton objects are deserialized from references.") {
         wrapValue("""{"$ref":"scala.collection.immutable.Nil"}""") shouldDeserializeTo(Nil)
-    }*/
+    }
 
     test("Objects are deserialized from JSON objects") {
         """
@@ -148,6 +148,82 @@ class JsonSerializerTests extends FunSuite {
                 ]
             }
         """ shouldDeserializeTo(Tuple4(true, 123, 1234, "foo"), Some(typeOf[(Boolean, Int, BigDecimal, String)]))
+    }
+
+    test("Nested objects and singleton objects are deserialized from JSON objects") {
+        """
+            {
+                "$value":{"$ref":0},
+                "$objects": [
+                    {
+                        "$id":3,
+                        "$type":"scala.collection.immutable.$colon$colon",
+                        "tl":{"$ref":"scala.collection.immutable.Nil"},
+                        "hd":456
+                    },
+                    {
+                        "$id":2,
+                        "$type":"scala.collection.immutable.$colon$colon",
+                        "tl":{"$ref":3},
+                        "hd":123
+                    },
+                    {
+                        "$id":4,
+                        "$type":"scala.util.Right",
+                        "b":"foo"
+                    },
+                    {
+                        "$id":1,
+                        "$type":"scala.collection.immutable.$colon$colon",
+                        "tl":{"$ref":2},
+                        "hd":{"$ref":4}
+                    },
+                    {
+                        "$id":6,
+                        "$type":"scala.Some",
+                        "x":true
+                    },
+                    {
+                        "$id":5,
+                        "$type":"scala.Some",
+                        "x":{"$ref":6}
+                    },
+                    {
+                        "$id":0,
+                        "$type":"scala.collection.immutable.$colon$colon",
+                        "tl":{"$ref":1},
+                        "hd":{"$ref":5}
+                    }
+                ]
+            }
+        """ shouldDeserializeTo(List(Some(Some(true)), Right("foo"), 123, 456), Some(typeOf[List[Any]]))
+    }
+
+    test("Circular references are properly resolved.") {
+        """
+            {
+                "$value":{"$ref":0},
+                "$objects": [
+                    {
+                        "$id":2,
+                        "$type":"swat.common.A",
+                        "a":{"$ref":0}
+                    },
+                    {
+                        "$id":1,
+                        "$type":"swat.common.A",
+                        "a":{"$ref":2}
+                    },
+                    {
+                        "$id":0,
+                        "$type":"swat.common.A",
+                        "a":{"$ref":1}
+                    }
+                ]
+            }
+        """ shouldDeserializeTo("Circle of three instances of class A.", Some(typeOf[A]), {
+            case a: A => a.a.a.a eq a
+        })
     }
 
     implicit class SerializableObject(obj: Any) {
@@ -171,11 +247,18 @@ class JsonSerializerTests extends FunSuite {
 
     implicit class DeserializableString(json: String) {
         def shouldDeserializeTo(expected: Any, tpe: Option[Type] = None) {
+            shouldDeserializeTo(expected, tpe, {
+                case a: Array[_] => expected match {
+                    case b: Array[_] => a.length == b.length && (0 until a.length).forall(i => a(i) == b(i))
+                    case _ => false
+                }
+                case a => a == expected
+            })
+        }
+
+        def shouldDeserializeTo(expected: Any, tpe: Option[Type], predicate: PartialFunction[Any, Boolean]) {
             val actual = new JsonSerializer(mirror).deserialize(json, tpe)
-            val succeeded = (expected, actual) match {
-                case (a: Array[_], b: Array[_]) if a.length == b.length => (0 until a.length).forall(i => a(i) == b(i))
-                case (a, b) => a == b
-            }
+            val succeeded = predicate.isDefinedAt(actual) && predicate(actual)
             if (!succeeded) {
                 fail(
                     s"""|The deserialized object isn't equal to the expected.

@@ -136,7 +136,8 @@ class JsonSerializer(val mirror: CachedMirror) {
 
         /**
          * Deserializes the specified value. Primitive types, arrays, references to singleton objects and references
-         * to already deserialized objects are immediately returned.
+         * to already deserialized objects are immediately returned as the Right value. References to objects that
+         * are being deserialized are returned as the Left value.
          */
         def deserializeValue(value: JsValue, tpe: Option[Type]): Either[Int, Any] = value match {
             case JsNull => Right(convert(null, tpe))
@@ -166,10 +167,15 @@ class JsonSerializer(val mirror: CachedMirror) {
             case _ => throw new JsonException(s"Unrecongized reference '$reference'.")
         }
 
-        /** Deserializes both references to other objects. */
+        /** Deserializes references to other objects. */
         def deserializeObjectRef(id: Int, tpe: Option[Type]): Either[Int, Any] = deserializedObjects.get(id) match {
+            // The object has already been deserialized.
             case Some(deserializedObject) => Right(convert(deserializedObject, tpe))
+
+            // The object is being deserialized, so it can't be deserialized again in order to avoid cycles.
             case _ if visitedObjectsIds(id) => Left(id)
+
+            // The object hasn't been visited yet, deserialize it.
             case _ => serializedObjects.get(id) match {
                 case Some(serializedObject) => {
                     visitedObjectsIds += id
@@ -183,30 +189,55 @@ class JsonSerializer(val mirror: CachedMirror) {
 
         /** Deserializes the specified object. */
         def deserializeObject(serializedObject: SerializedObject, tpe: Option[Type]): Any = {
-            val deserializedFields = serializedObject.fields.map { case (name, value) =>
-                val fieldTpe = tpe.flatMap(t => getFieldType(t, name))
-                val deserializedValue = deserializeValue(value, fieldTpe).left.map(_ -> tpe)
-                name -> deserializedValue
-            }.toMap
-
             val symbol = mirror.getClassSymbol(serializedObject.typeName)
-            val constructor = symbol.toType.declaration(nme.CONSTRUCTOR).asMethod
-            val args = constructor.paramss.flatten.map(p => deserializedFields(p.name.toString).right.getOrElse(null))
 
+            // Deserialize fields of the object first. When determining the field type, prefer the type hint first,
+            // because it contains more information about the type. As a fallback, use the type provided by the object.
+            val deserializedFields = serializedObject.fields.map { case (name, value) =>
+                val hintFieldTpe = tpe.flatMap(getFieldType(name, _))
+                val actualFieldTpe = getFieldType(name, symbol.toType)
+                val fieldTpe = hintFieldTpe.orElse(actualFieldTpe)
+                DeserializedField(name, deserializeValue(value, fieldTpe), fieldTpe)
+            }
+
+            // Create a list of constructor arguments from the deserialized field values.
+            val constructor = symbol.toType.declaration(nme.CONSTRUCTOR).asMethod
+            val parameterNames = constructor.paramss.flatten.map(_.name.toString)
+            val args = parameterNames.map { name =>
+                deserializedFields.find(_.name == name) match {
+                    case Some(f) => f.value.right.getOrElse(null)
+                    case None => throw new JsonException(
+                        s"Value of constructor parameter '$name' not found when deserializing '$serializedObject'.")
+                }
+            }
+
+            // Create the instance using invocation of the default constructor.
             val classMirror = mirror.use(_.reflectClass(symbol))
             val constructorMirror = classMirror.reflectConstructor(constructor)
             val instance = constructorMirror(args: _*)
 
-            referencesToResolve ++= deserializedFields.collect { case (name, Left((id, fieldTpe))) =>
-                 InstanceFieldReference(instance, name , id, fieldTpe)
+            // Set the rest of the fields and register the references.
+            deserializedFields.foreach {
+                case DeserializedField(name, Left(id), fieldTpe) => {
+                    referencesToResolve += InstanceFieldReference(instance, name, id, fieldTpe)
+                }
+                case DeserializedField(name, Right(value), _) if !parameterNames.contains(name) => {
+                    setFieldValue(instance, name, value)
+                }
+                case _ => // NOOP, the field was already set via constructor.
             }
 
             instance
         }
 
         try {
+            // Deserialize the root value, which transitively deserializes all the referenced objects. Resolve the
+            // unresolved references after that.
             val result = deserializeValue(rootValue, tpe).right.get
-            // TODO resolveReferences()
+            referencesToResolve.foreach {
+                case ArrayItemReference(a, i, id, t) => a(i) = convert(deserializedObjects(id), t)
+                case InstanceFieldReference(o, n, id, t) => setFieldValue(o, n, convert(deserializedObjects(id), t))
+            }
             result
         } catch {
             case e: MissingRequirementError => throw new JsonException(e.getMessage)
@@ -219,6 +250,7 @@ class JsonSerializer(val mirror: CachedMirror) {
      */
     private def convert(value: Any, targetTpe: Option[Type]): Any = targetTpe match {
         case Some(tpe) => value match {
+            case _ if tpe.typeSymbol.isParameter => value
             case null if tpe <:< typeOf[AnyRef] => null
             case null if tpe <:< typeOf[Unit] => ()
             case v if v != null && mirror.getInstanceSymbol(v).toType <:< tpe => v
@@ -239,9 +271,26 @@ class JsonSerializer(val mirror: CachedMirror) {
     }
 
     /** Returns type of the specified field. */
-    def getFieldType(tpe: Type, name: String): Option[Type] = tpe.member(newTermName(name)) match {
+    def getFieldType(name: String, tpe: Type): Option[Type] = tpe.member(newTermName(name)) match {
         case m: MethodSymbol if m.isGetter => Some(m.typeSignatureIn(tpe).asInstanceOf[NullaryMethodType].resultType)
         case _ => None
+    }
+
+    /** Sets value of the specified field. */
+    def setFieldValue(target: Any, name: String, value: Any) {
+        // Using Java reflection to access directly the field that is lying under the getter and setter, so even vals
+        // can be set using this method. The field has to become accessible (in case it isnt) in order to be settable.
+        val field = target.getClass.getDeclaredField(name)
+        val isAccessible = field.isAccessible
+        def setAccessibleIfNeeded(accessible: Boolean) {
+            if (!isAccessible) {
+                field.setAccessible(accessible)
+            }
+        }
+
+        setAccessibleIfNeeded(true)
+        field.set(target, value)
+        setAccessibleIfNeeded(false)
     }
 
     private case class SerializedObject(typeName: String, fields: Seq[(String, JsValue)])
@@ -251,4 +300,6 @@ class JsonSerializer(val mirror: CachedMirror) {
         extends Reference
     private case class ArrayItemReference(target: Array[Any], index: Int, id: Int, tpe: Option[Type])
         extends Reference
+
+    private case class DeserializedField(name: String, value: Either[Int, Any], tpe: Option[Type])
 }
