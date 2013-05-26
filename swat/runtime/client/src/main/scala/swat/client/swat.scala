@@ -19,4 +19,5 @@ import _root_.swat.js
     def isChar(obj: Any): Boolean = ???
     def isSwatObject(obj: Any): Boolean = ???
     def access(path: String): Any = ???
+    def serialize(value: Any): String = ???
 }

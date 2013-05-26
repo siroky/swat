@@ -178,7 +178,8 @@ swat.type = function(typeIdentifier, hierarchy) {
 
 /** Returns an object accessor, which is a lazified type constructor of the object type. */
 swat.object = function(typeIdentifier, hierarchy, outer) {
-    var constructor = swat.type(typeIdentifier, hierarchy);
+    var constructor = swat.type(typeIdentifier, hierarchy, true);
+    constructor.$class.isSingleton = true;
     return swat.lazify(function() { return new constructor(outer); });
 };
 
@@ -257,7 +258,7 @@ swat.invokeSuper = function(obj, methodName, args, typeIdentifier, superTypeIden
 
 /** Invokes the specified method via RPC using the client proxy. */
 swat.invokeRemote = function(methodName, args) {
-    return rpc.Proxy$().invoke(methodName, args, 'java.lang.String, scala.Product');
+    return rpc.RpcProxy$().invoke(methodName, args, 'java.lang.String, scala.Product');
 };
 
 /** Returns a parametric field of the specified object in the specified type context. */
@@ -408,6 +409,45 @@ swat.toString = function(obj) {
     } else {
         return obj.toString();
     }
+};
+
+// TODO and maybe move to the scala serializer.
+swat.serialize = function(value) {
+    var serializedObjects = [];
+    var id = 0;
+
+    var serializeValue = function(value) {
+        if (swat.isSwatObject(value)) {
+            return serializeAnyRef(value);
+        }
+        return value;
+    };
+
+    var serializeAnyRef = function(obj) {
+        var reference = obj.$class.typeIdentifier;
+        if (swat.isSwatObject(obj) && !obj.$class.isSingletion) {
+            reference = id;
+            id++;
+            serializeObject(value, reference);
+        }
+        return { $ref: reference };
+    };
+
+    var serializeObject = function(obj, id) {
+        var serializedObject = {
+            $id: id,
+            $type: obj.$class.typeIdentifier
+        };
+        for (var field in obj.$fields) {
+            serializedObject[field] = serializeValue(obj.$fields[field]);
+        }
+        serializedObjects.push(serializedObject);
+    };
+
+    return JSON.stringify({
+        $result: serializeValue(value),
+        $objects: serializedObjects
+    });
 };
 
 /** Turns a JavaScript array into a scala.Array. */

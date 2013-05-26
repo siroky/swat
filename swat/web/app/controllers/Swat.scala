@@ -18,6 +18,8 @@ object Swat extends Controller {
     }
 
     def rpc(methodIdentifier: String) = Action { request =>
-        Async(RpcDispatcher.invoke(methodIdentifier, request.body.toString).map(Ok(_)))
+        val dispatcher = new RpcDispatcher
+        val arguments = request.body.asJson.map(_.toString()).getOrElse("")
+        Async(dispatcher.invoke(methodIdentifier, arguments).map(Ok(_)))
     }
 }

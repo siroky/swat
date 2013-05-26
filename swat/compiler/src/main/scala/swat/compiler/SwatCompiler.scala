@@ -85,9 +85,7 @@ class SwatCompiler(
         CompilationOutput(output, reporter.warnings.toList, reporter.infos.toList)
     }
 
-    /**
-     * If the javaScriptTarget is specified, produces a file for each type in the specified type outputs.
-     */
+    /** If the javaScriptTarget is specified, produces a file for each type in the specified type outputs. */
     private def produceJavaScript(typeOutputs: Map[String, js.Program]) {
         // If the javaScriptTarget is specified, create the JavaScript files there.
         javaScriptTarget.foreach { target =>
@@ -119,9 +117,7 @@ class SwatCompiler(
             val runsRightAfter = Some("swat")
         } with Erasure
 
-        /**
-         * Adds the internal compiler phases to the phases set.
-         */
+        /** Adds the internal compiler phases to the phases set. */
         override protected def computeInternalPhases() {
             super.computeInternalPhases()
 
@@ -132,9 +128,7 @@ class SwatCompiler(
             addToPhasesSet(postponedErasure, "erase types, add interfaces for traits")
         }
 
-        /**
-         * Removes the specified phase from the phases set.
-         */
+        /** Removes the specified phase from the phases set. */
         protected def removeFromPhasesSet(sub: SubComponent) {
             phasesSet -= sub
             phasesDescMap -= sub

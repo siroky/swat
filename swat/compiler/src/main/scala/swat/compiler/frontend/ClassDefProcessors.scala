@@ -76,13 +76,18 @@ trait ClassDefProcessors {
             val constructorDeclaration = processConstructorGroup(constructorGroup).toList
             val methodDeclarations = methodGroups.map(processMethodGroup _)
 
-            // The JavaScript constructor function.
-            val superClasses = classDef.symbol.baseClasses
-            val superClassIdentifiers = superClasses.map(c => typeJsIdentifier(c.tpe))
-            val jsConstructorDeclaration = processJsConstructor(js.ArrayLiteral(superClassIdentifiers))
-            superClasses.foreach(c => addDeclarationDependency(c.tpe))
+            // Linearized super classes.
+            val superClassIdentifiers = mutable.ListBuffer[js.Identifier]()
+            classDef.symbol.baseClasses.reverse.foreach { symbol =>
+                val identifier = typeJsIdentifier(symbol)
+                if (!superClassIdentifiers.contains(identifier)) {
+                    superClassIdentifiers.prepend(identifier)
+                    addDeclarationDependency(symbol.tpe)
+                }
+            }
 
             // Return the result and clear the dependencies so the method is referentially transparent.
+            val jsConstructorDeclaration = processJsConstructor(js.ArrayLiteral(superClassIdentifiers.toList))
             val ast = js.Block(constructorDeclaration ++ methodDeclarations :+ jsConstructorDeclaration)
             val result = ProcessedClassDef(dependencies.toList, ast)
             dependencies.clear()
