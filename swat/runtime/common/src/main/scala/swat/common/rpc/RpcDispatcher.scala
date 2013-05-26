@@ -16,14 +16,28 @@ object RpcDispatcher {
     def invoke(methodIdentifier: String, arguments: String): Future[String] = {
         future {
             val info = methodIdentifierToInfo(methodIdentifier)
-            val parsedArguments = parseArguments(arguments, info.method.paramss.flatten)
-            info
-        }.flatMap { data =>
+            val deserializedArguments = info.method.paramss.flatten.map(_.typeSignature).toList match {
+                case parameterTypes if parameterTypes.nonEmpty => {
+                    // Turn the method parameter types to a tuple of the types, deserialize the arguments as a tuple
+                    // and extract the parameter values from the tuple.
+                    val tupleType = mirror.getClassSymbol("scala.Tuple" + parameterTypes.length).typeSignature
+                    val typeParameters = tupleType.asInstanceOf[TypeRefApi].args.map(_.typeSymbol)
+                    val parameterTupleType = tupleType.substituteTypes(typeParameters, parameterTypes)
+                    val argumentTuple = serializer.deserialize(arguments, Some(parameterTupleType))
+                    argumentTuple.asInstanceOf[Product].productIterator.toList
+                }
+                case Nil => Nil
+            }
+
             // Invoke the method.
-            null.asInstanceOf[Future[Any]]
-        }.map { result =>
-            // Serialize the result.
-            serializer.serialize(result)
+            val target = mirror.use(_.reflectModule(info.target).instance)
+            val methodMirror = mirror.use(_.reflect(target)).reflectMethod(info.method)
+            methodMirror(deserializedArguments: _*).asInstanceOf[Future[Any]]
+
+        }.flatMap { result =>
+            // Serialize the result and flatten the nested futures.
+            result.map(serializer.serialize(_))
+
         }.recover {
             // If any exception occurred so far, serialize it. The serializer should always serialize a Throwable
             // without any exceptions (Note that it may even serialize exception that occurred during previous
@@ -58,10 +72,6 @@ object RpcDispatcher {
             case NoSymbol => throw new RpcException(s"The '$objectTypeFullName' doesn't contain method '$methodName'.")
         }
 
-        InvocationInfo(target, method)
-    }
-
-    case class InvocationInfo(target: ModuleSymbol, method: MethodSymbol) {
         // Check whether the method is actually a remote method.
         val remoteAnnotations = List(target, method).flatMap(_.annotations.collect { case r: swat.remote => r })
         if (remoteAnnotations.isEmpty) {
@@ -72,9 +82,9 @@ object RpcDispatcher {
         if (!(method.returnType <:< typeOf[Future[_]])) {
             throw new RpcException(s"The method '${method.fullName}' has to return subtype of Future[_].")
         }
+
+        InvocationInfo(target, method)
     }
 
-    private def parseArguments(arguments: String, parameters: List[Symbol]): List[Any] = {
-        Nil
-    }
+    case class InvocationInfo(target: ModuleSymbol, method: MethodSymbol)
 }

@@ -11,7 +11,9 @@
 \usepackage{graphicx}
 \usepackage{epstopdf}
 \usepackage{amsthm}
+\usepackage{nomencl}
 
+\makenomenclature
 
 
 %%% Style adjustment macros.
@@ -185,43 +187,82 @@ Scala, JavaScript, RIA, JSON, RPC
 %%% Introduction.
 \chapter{Introduction}
 
+Current state of the rich web application development, single page applications. Tendency in past couple of years to compile into JavaScript. JavaScript starts to become the assembler of the web.
+
 \section{Motivation}
+
+JavaScript disadvantages, some examples where type-safety is an advantage over dynamic typing. OOP. RPC. Code sharing.
+\nomenclature{OOP}{object oriented programming}
 
 \section{Goals}
 
+Assignment, outline of the following chapters.
 
 
 %%% Background.
 \chapter{Background}
 
+Why needed and purpose. 
+
 \section{JavaScript}
+
+Brief overview of the language, differences from conventional languages (C, Java, C\#), class-based vs prototype based inheritance, scoping.
 
 \section{Scala}
 
+Brief overview of the language with accent on where it's better than conventional languages. Differences from them and from JavaScript.
+
 \subsection{Compiler Architecture}
 
+https://wiki.scala-lang.org/display/SIW/Compiler
 
 
 %%% Compiler.
 \chapter{Swat Compiler}
 
-\section{Package Scope}
+Architecture, front end backend. Image.
 
-\section{Type Scope}
+\section{Backend}
 
-\section{Expression Scope}
+\subsection{JavaScript ASTs}
 
-\section{Build Process}
+\section{Frontend}
+
+Compile time vs runtime decision.
+
+\subsection{Package Scope}
+
+Compilation on the package level, splitting into classfiles.
+
+\subsection{Type Scope}
+
+Four types of classes, compilation of the members, methods, overloading.
+
+\subsection{Expression Scope}
+
+Everything is an expression, mainly the interesting cases.
+
+\subsection{Build Process}
+
+Integration to SBT, compiler plugin vs. standalone compiler.
 
 
 
 %%% Adapters
 \chapter{Adapters}
 
+A list of adapters, links to the specifications, walkthrough on how to create them without the necessity to blindly copy the specification using traits as shared interfaces.
+
 
 
 %%% Runtime
 \chapter{Runtime}
+
+How it works, outline of the following sections.
+
+\section{Client}
+
+Description of everything intereseting in the swat.js: inheritance, method invocation, type system.
 
 \section{Standard Libraries}
 
@@ -229,9 +270,9 @@ Scala, JavaScript, RIA, JSON, RPC
 
 \subsection{Scala Library}
 
-\section{Client}
+\section{Common}
 
-\section{Server}
+Code sharing.
 
 \subsection{Type Loader}
 
@@ -246,6 +287,9 @@ Scala, JavaScript, RIA, JSON, RPC
 %%% Sample application.
 \chapter{Sample Application}
 
+TODO. A nice example could be online SWAT compiler, that would let the user write some Scala code to a textarea, invoke the Swat compiler (through RPC on the server) and display the compiler code.
+
+
 
 %%% Conclusion.
 \chapter{Conclusion}
@@ -253,9 +297,27 @@ Scala, JavaScript, RIA, JSON, RPC
 
 \section{Critical Evaluation}
 
+What was done, what lacks the most (Scala library is the expectation numero uno), but stating that everything got done to some extent. Hopefully.
+
 \section{Comparison with Similar Tools}
 
+The tools at the time of thesis start (ScalaGWT, s2js, scalosure) and current scala-js, js-scala.
+
 \section{Roadmap}
+
+Actually the main purpose and goal is to really simplify tasks, that aren't programmer friendly in JavaScript.
+
+\subsection{Web workers}
+
+Actor like abstraction over web workers, with help of JSON serializer and class-loader.
+
+\subsection{Template engine}
+
+Problems with JavaScript templating and how it could be solved using string interpolation.
+
+\subsection{Build process}
+
+Swat as a SBT plugin.
 
 
 
@@ -282,6 +344,8 @@ Scala, JavaScript, RIA, JSON, RPC
 
 %%% Abbreviations.
 \chapwithtoc{List of Abbreviations}
+
+\printnomenclature
 
 
 

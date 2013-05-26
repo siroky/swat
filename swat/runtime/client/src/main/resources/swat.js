@@ -318,7 +318,7 @@ swat.isInstanceOf = function(obj, type) {
 
 /** Native implementation of the Scala asInstanceOf method. */
 swat.asInstanceOf = function(obj, type) {
-    if (swat.isInstanceOf(obj, type) || (obj === null && swat.isSubtypeOf(type.$class, java.lang.Object.$class))) {
+    if (swat.isInstanceOf(obj, type) || (obj === null && swat.isSubTypeOf(type.$class, java.lang.Object.$class))) {
         return obj;
     }
 
@@ -331,7 +331,7 @@ swat.asInstanceOf = function(obj, type) {
 };
 
 /** Returns whether the specified type is subtype of the specified super type. */
-swat.isSubtypeOf = function(typeClass, superTypeClass) {
+swat.isSubTypeOf = function(typeClass, superTypeClass) {
     var superTypes = typeClass.superTypes;
     for (var i = 0; i < superTypes.length; i++) {
         if (superTypes[i].$class.typeIdentifier === superTypeClass.typeIdentifier) {

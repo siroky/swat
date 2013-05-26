@@ -14,11 +14,10 @@ object Swat extends Controller {
     }
 
     def app(appObjectTypeIdentifier: String, args: String) = Action {
-        val code = TypeLoader.getApp(appObjectTypeIdentifier, args.split(",").toList)
-        Async(code.map(Ok(_)))
+        Async(TypeLoader.getApp(appObjectTypeIdentifier, args.split(",").toList).map(Ok(_)))
     }
 
     def rpc(methodIdentifier: String) = Action { request =>
-        Ok(RpcDispatcher.invoke(methodIdentifier, request.body.toString))
+        Async(RpcDispatcher.invoke(methodIdentifier, request.body.toString).map(Ok(_)))
     }
 }
