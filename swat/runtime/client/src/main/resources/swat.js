@@ -411,24 +411,54 @@ swat.toString = function(obj) {
     }
 };
 
-// TODO and maybe move to the scala serializer.
+/* Serializes the specified value to a Swat serialization format described in the server-side serializer. */
 swat.serialize = function(value) {
+    var visitedObjects = [];
     var serializedObjects = [];
     var id = 0;
 
+    var findVisitedObject = function(obj) {
+        for (var i in visitedObjects) {
+            if (visitedObjects[i].obj === obj) {
+                return visitedObjects[i];
+            }
+        }
+        return null;
+    };
+
     var serializeValue = function(value) {
-        if (swat.isSwatObject(value)) {
+        if (swat.isInstanceOf(value, scala.Array)) {
+            return serializeArray(value);
+        } if (swat.isSwatObject(value)) {
             return serializeAnyRef(value);
         }
         return value;
     };
 
+    var serializeArray = function(array) {
+        var jsArray = value.jsArray();
+        var result = [];
+        for (var i in jsArray) {
+            result.push(serializeValue(jsArray[i]));
+        }
+        return result;
+    };
+
     var serializeAnyRef = function(obj) {
         var reference = obj.$class.typeIdentifier;
-        if (swat.isSwatObject(obj) && !obj.$class.isSingletion) {
-            reference = id;
-            id++;
-            serializeObject(value, reference);
+        if (!obj.$class.isSingleton) {
+            var visitedObject = findVisitedObject(obj);
+            if (visitedObject != null) {
+                reference = visitedObject.id;
+            } else {
+                visitedObjects.push({
+                    id: id,
+                    obj: obj
+                });
+                reference = id;
+                id++;
+                serializeObject(obj, reference);
+            }
         }
         return { $ref: reference };
     };
@@ -445,7 +475,7 @@ swat.serialize = function(value) {
     };
 
     return JSON.stringify({
-        $result: serializeValue(value),
+        $value: serializeValue(value),
         $objects: serializedObjects
     });
 };

@@ -41,7 +41,7 @@ class CachedMirror(mirror: Mirror = runtimeMirror(getClass.getClassLoader)) {
     def getObject(fullName: String): Any = {
         objects.getOrElseUpdate(fullName, {
             // TODO inspect why the following doesn't work: use(_.reflectModule(getObjectSymbol(fullName))).instance
-            val c = Class.forName(fullName + "$")
+            val c = Class.forName(fullName.stripSuffix("$") + "$")
             c.getField("MODULE$").get(c)
         })
     }

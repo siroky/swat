@@ -37,11 +37,14 @@ class RpcDispatcher {
             result.map(serializer.serialize(_))
 
         }.flatMap(r => r).recover {
-            // If any exception occurred so far, serialize it. The serializer should always serialize a Throwable
-            // without any exceptions (Note that it may even serialize exception that occurred during previous
-            // serialization of successful result).
-            case e: RpcException => serializer.serialize(e)
-            case t: Throwable => serializer.serialize(new RpcException(t.getMessage))
+            // If any exception occurred so far, serialize it. (Note that it may even serialize exception that occurred
+            // during previous serialization of successful result).
+            case t: Throwable => serializer.serialize(t)
+        }.recover {
+            // Recover from exceptions thrown during serialization of an exception in the previous recover block. The
+            // Json serializer ensures to throw only serializable exceptions, so the following serialization never
+            // fails.
+            case t: Throwable => serializer.serialize(t)
         }
     }
 

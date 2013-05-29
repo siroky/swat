@@ -5,21 +5,24 @@ import ExecutionContext.Implicits.global
 import play.api.mvc._
 import swat.common.TypeLoader
 import swat.common.rpc.RpcDispatcher
+import scala.concurrent.duration.Duration
 
 object Swat extends Controller {
   
     def tpe(typeIdentifier: String) = Action {
-        val code = TypeLoader.get(List(typeIdentifier))
+        val code = TypeLoader.get(Array(typeIdentifier), Array.empty)
         Async(code.map(Ok(_)))
     }
 
     def app(appObjectTypeIdentifier: String, args: String) = Action {
-        Async(TypeLoader.getApp(appObjectTypeIdentifier, args.split(",").toList).map(Ok(_)))
+        val code = TypeLoader.getApp(appObjectTypeIdentifier, args.split(","))
+        Async(code.map(Ok(_)))
     }
 
     def rpc(methodIdentifier: String) = Action { request =>
         val dispatcher = new RpcDispatcher
         val arguments = request.body.asJson.map(_.toString()).getOrElse("")
-        Async(dispatcher.invoke(methodIdentifier, arguments).map(Ok(_)))
+        val result = dispatcher.invoke(methodIdentifier, arguments)
+        Async(result.map(Ok(_)))
     }
 }

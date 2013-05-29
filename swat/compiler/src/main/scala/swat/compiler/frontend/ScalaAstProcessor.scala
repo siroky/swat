@@ -22,8 +22,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
         "swat.java" -> "java",
         "swat.scala" -> "scala",
         "swat.common" -> "",
-        "swat.client" -> "",
-        "swat.tests" -> ""
+        "swat.client" -> ""
     )
 
     /**

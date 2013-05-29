@@ -16,12 +16,9 @@ object SwatBuild extends Build {
             "-encoding", "utf8",
             "-language:implicitConversions"
         ),
+        conflictWarning := ConflictWarning.disable,
         organization := "swat",
         version := swatVersion,
-        resolvers ++= Seq(
-            "Mandubian repository snapshots" at "https://github.com/mandubian/mandubian-mvn/raw/master/snapshots/",
-            "Mandubian repository releases" at "https://github.com/mandubian/mandubian-mvn/raw/master/releases/"
-        ),
         libraryDependencies ++= Seq(
             "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test"
         )
@@ -105,7 +102,7 @@ object SwatBuild extends Build {
     lazy val runtimeCommonProject =
         SwatProject(
             "common", file("runtime/common"), defaultSettings ++ Seq(
-                libraryDependencies += "play" % "play-json_2.10" % "2.2-SNAPSHOT"
+                libraryDependencies += "play" %% "play" % "2.1.1"
             )
         )
 

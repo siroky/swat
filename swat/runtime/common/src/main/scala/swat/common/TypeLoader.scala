@@ -23,9 +23,9 @@ object TypeLoader {
      * @param excludedTypes Identifiers of types that shouldn't be included in the result.
      */
     @swat.remote
-    def get(typeIdentifiers: List[String], excludedTypes: Set[String] = Set.empty): Future[String] = future {
+    def get(typeIdentifiers: Array[String], excludedTypes: Array[String]): Future[String] = future {
         try {
-            val sources = getNeededSources(typeIdentifiers, excludedTypes)
+            val sources = getNeededSources(typeIdentifiers.toList, excludedTypes.toSet)
             mergeSources(sources)
         } catch {
             case e: TypeLoadingException => s"alert('Swat type loading error: ${e.message}');"
@@ -39,11 +39,11 @@ object TypeLoader {
      * @param args The startup arguments.
      */
     @swat.remote
-    def getApp(appObjectTypeIdentifier: String, args: List[String] = Nil): Future[String] = {
+    def getApp(appObjectTypeIdentifier: String, args: Array[String]): Future[String] = {
         val typeIdentifier = appObjectTypeIdentifier.stripSuffix("$") + "$"
         val jsArgs = args.map("'" + _.replace("\\", "\\\\").replace("'", "\\'") + "'").mkString("[", ",", "]")
 
-        get(List(typeIdentifier)).map { code =>
+        get(Array[String](typeIdentifier), Array.empty).map { code =>
             s"""
                |$code
                |
