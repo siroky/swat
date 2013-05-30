@@ -19,5 +19,11 @@ import _root_.swat.js
     def isChar(obj: Any): Boolean = ???
     def isSwatObject(obj: Any): Boolean = ???
     def access(path: String): Any = ???
+
+    def jsArrayToScalaArray[A](a: js.Array[A]): Array[A] = ???
+    def scalaArrayToJsArray[A](a: Array[A]): js.Array[A] = ???
+
     def serialize(value: Any): String = ???
+    def findMissingTypes(value: Any): js.Array[String] = ???
+    def deserialize(value: Any): Any = ???
 }

@@ -80,7 +80,7 @@ class JsonSerializer(val mirror: CachedMirror) {
                 val symbol = mirror.getInstanceSymbol(obj)
                 if (symbol.isModuleClass) {
                     // Serialize singleton object as a reference to it's type full name.
-                    JsString(symbol.fullName)
+                    JsString(symbol.fullName + "$")
                 } else {
                     // Assign the object a new id and serialize it.
                     val id = objectId

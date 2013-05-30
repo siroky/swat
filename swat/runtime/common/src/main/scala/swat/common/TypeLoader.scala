@@ -24,12 +24,8 @@ object TypeLoader {
      */
     @swat.remote
     def get(typeIdentifiers: Array[String], excludedTypes: Array[String]): Future[String] = future {
-        try {
-            val sources = getNeededSources(typeIdentifiers.toList, excludedTypes.toSet)
-            mergeSources(sources)
-        } catch {
-            case e: TypeLoadingException => s"alert('Swat type loading error: ${e.message}');"
-        }
+        val sources = getNeededSources(typeIdentifiers.toList, excludedTypes.toSet)
+        mergeSources(sources)
     }
 
     /**

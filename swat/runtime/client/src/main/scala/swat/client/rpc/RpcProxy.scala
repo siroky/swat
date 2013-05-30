@@ -1,11 +1,11 @@
 package swat.client.rpc
 
-import scala.concurrent.{Promise, Future}
-import scala.util.{Success, Failure, Try}
+import scala.concurrent._
+import ExecutionContext.Implicits.global
 import swat.js.applications.{ActiveXObject, XMLHttpRequest}
-import swat.client.swat._
-import swat.client.json.JsonSerializer
-import swat.common.rpc.RpcException
+import swat.client.swat
+import _root_.swat.client.json.JsonSerializer
+import _root_.swat.common.rpc.RpcException
 
 object RpcProxy {
 
@@ -14,7 +14,7 @@ object RpcProxy {
         val result = promise.future
 
         val request =
-            if (isDefined(access("XMLHttpRequest"))) {
+            if (swat.isDefined(swat.access("XMLHttpRequest"))) {
                 new XMLHttpRequest()
             } else {
                 new ActiveXObject("Msxml2.XMLHTTP")
@@ -22,29 +22,32 @@ object RpcProxy {
 
         request.onreadystatechange = { _ =>
             if (request.readyState == 4 && request.status != 0) {
-                // The request is done and the status isn't invalid.
-                promise.complete(processResponse(request.responseText, request.status))
+                // The request is done and the status isn't invalid. After the processing of the response is done,
+                // complete the result promise.
+                processResponse(request.responseText, request.status).onComplete(promise.complete(_))
             }
         }
-        request.open("POST", controllerUrl + "/rpc/" + methodIdentifier, async = true)
+        request.open("POST", swat.controllerUrl + "/rpc/" + methodIdentifier, async = true)
         request.setRequestHeader("Content-Type", "application/json")
         request.send(JsonSerializer.serialize(args))
 
         result
     }
 
-    private def processResponse(response: String, status: Int): Try[Any] = {
+    private def processResponse(response: String, status: Int): Future[Any] = {
         if (status != 200 && status != 500) {
-            Failure(new RpcException(s"The RPC exited with status code $status."))
+            Future.failed(new RpcException(s"The RPC exited with status code $status."))
         } else {
             try {
-                // Deserialize the response and if it's a throwable, return Failure. Otherwise return Success.
-                JsonSerializer.deserialize(response) match {
-                    case t: Throwable => Failure(t)
-                    case x => Success(x)
-                }
+                // If the response is a successfully deserialized Throwable, turn it into a failed future.
+                JsonSerializer.deserialize(response).map(_ match {
+                    case t: Throwable => throw t
+                    case s => s
+                })
             } catch {
-                case e: Throwable => Failure(new RpcException(s"RPC result deserialization error (${e.getMessage}})."))
+                case e: Throwable => {
+                    Future.failed(new RpcException(s"RPC result deserialization error (${e.getMessage}})."))
+                }
             }
         }
     }

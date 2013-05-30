@@ -3,26 +3,31 @@ package controllers
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 import play.api.mvc._
-import swat.common.TypeLoader
+import swat.common.{TypeLoadingException, TypeLoader}
 import swat.common.rpc.RpcDispatcher
 import scala.concurrent.duration.Duration
 
 object Swat extends Controller {
   
-    def tpe(typeIdentifier: String) = Action {
-        val code = TypeLoader.get(Array(typeIdentifier), Array.empty)
-        Async(code.map(Ok(_)))
+    def tpe(typeIdentifier: String) = AsyncAction { r =>
+        TypeLoader.get(Array(typeIdentifier), Array.empty).recover {
+            case e: TypeLoadingException => s"alert('Swat type loading error: ${e.message}');"
+        }
     }
 
-    def app(appObjectTypeIdentifier: String, args: String) = Action {
-        val code = TypeLoader.getApp(appObjectTypeIdentifier, args.split(","))
-        Async(code.map(Ok(_)))
+    def app(appObjectTypeIdentifier: String, args: String) = AsyncAction { r =>
+        TypeLoader.getApp(appObjectTypeIdentifier, args.split(",")).recover {
+            case e: TypeLoadingException => s"alert('Swat application loading error: ${e.message}');"
+        }
     }
 
-    def rpc(methodIdentifier: String) = Action { request =>
+    def rpc(methodIdentifier: String) = AsyncAction { r =>
         val dispatcher = new RpcDispatcher
-        val arguments = request.body.asJson.map(_.toString()).getOrElse("")
-        val result = dispatcher.invoke(methodIdentifier, arguments)
-        Async(result.map(Ok(_)))
+        val arguments = r.body.asJson.map(_.toString()).getOrElse("")
+        dispatcher.invoke(methodIdentifier, arguments)
+    }
+
+    private def AsyncAction(a: Request[AnyContent] => Future[String]) = Action { request =>
+        Async(a(request).map(Ok(_)))
     }
 }

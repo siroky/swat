@@ -84,16 +84,21 @@ swat.extend = function(target, source) {
 /** The types that are currently loaded. Filled by the swat.provide method. */
 swat.loadedTypes = [];
 
+/** Returns whether the specified type is loaded. */
+swat.isLoaded = function(typeIdentifier) {
+    return swat.loadedTypes.indexOf(typeIdentifier) >= 0;
+};
+
 /** Checks whether the required type has already been provided in case it's a hard dependency. */
 swat.require = function(typeIdentifier, isHard) {
-    if (isHard && swat.loadedTypes.indexOf(typeIdentifier) < 0) {
-        swat.error('Required type (' + typeIdentifier + ') has not been provided yet.');
+    if (isHard && !swat.isLoaded(typeIdentifier)) {
+        swat.error('Required type (' + typeIdentifier + ') has not been loaded yet.');
     }
 };
 
 /** Marks the specified type as provided also creates it's package if it doesn't already exist. */
 swat.provide = function(typeIdentifier) {
-    if (swat.loadedTypes.indexOf(typeIdentifier) < 0) {
+    if (!swat.isLoaded(typeIdentifier)) {
         swat.loadedTypes.push(typeIdentifier);
         swat.declare(typeIdentifier);
     }
@@ -357,7 +362,7 @@ swat.equals = function(obj1, obj2) {
     } else if (swat.isJsFunction(obj1)) {
         return obj1 === obj2;
     } else if (swat.isSwatObject(obj1)) {
-        return obj1.equals(obj2, 'scala.Any');
+        return obj2 !== null && obj1.equals(obj2, 'scala.Any');
     }
     return false;
 };
@@ -411,7 +416,7 @@ swat.toString = function(obj) {
     }
 };
 
-/* Serializes the specified value to a Swat serialization format described in the server-side serializer. */
+/* Serializes the specified value to the Swat JSON format described in the server-side serializer. */
 swat.serialize = function(value) {
     var visitedObjects = [];
     var serializedObjects = [];
@@ -436,7 +441,7 @@ swat.serialize = function(value) {
     };
 
     var serializeArray = function(array) {
-        var jsArray = value.jsArray();
+        var jsArray = array.jsArray();
         var result = [];
         for (var i in jsArray) {
             result.push(serializeValue(jsArray[i]));
@@ -480,8 +485,40 @@ swat.serialize = function(value) {
     });
 };
 
+/* Finds all types in the specified Swat JSON that aren't loaded yet. */
+swat.findMissingTypes = function(swatJson) {
+    var missingTypes = [];
+
+    var processType = function(typeIdentifier) {
+        if (!swat.isLoaded(typeIdentifier)) {
+            missingTypes.push(typeIdentifier);
+        }
+    }
+
+    for (var i in swatJson.$objects) {
+        var obj = swatJson.$objects[i];
+        processType(obj.$type);
+        for (var j in obj.$fields) {
+            var field = obj.$fields[j];
+            if (swat.isJsObject(field) && swat.isJsString(field.$ref)) {
+                processType(field.$ref);
+            }
+        }
+    }
+
+    return missingTypes;
+};
+
+/* Deserializes the specified Swat JSON and returns the root value. */
+swat.deserialize = function(swatJson) {
+    return swatJson.$value;
+};
+
 /** Turns a JavaScript array into a scala.Array. */
 swat.jsArrayToScalaArray = function(array) { return scala.Array$().apply(array, 'Array'); };
+
+/** Turns a scala.Array into a JavaScript array. */
+swat.scalaArrayToJsArray = function(array) { return array.jsArray(); };
 
 // Provide the swat so this file gets involved in type loading.
 swat.provide('swat');
