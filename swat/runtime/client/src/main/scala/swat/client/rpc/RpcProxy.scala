@@ -12,7 +12,6 @@ object RpcProxy {
     def invoke(methodIdentifier: String, args: Product): Future[Any] = {
         val promise = Promise[Any]()
         val result = promise.future
-
         val request =
             if (swat.isDefined(swat.access("XMLHttpRequest"))) {
                 new XMLHttpRequest()

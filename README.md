@@ -27,7 +27,7 @@ Aim of this project is to create a set of tools that will help to create rich in
     </tr>
     <tr>
         <td>Object graph serializer/deserializer to/from JSON.</td>
-        <td><strong>80%</strong></td>
+        <td><strong>95%</strong></td>
     </tr>
     <tr>
         <td>Remote procedure call mechanism between the client-side and the server-side.</td>
@@ -35,7 +35,7 @@ Aim of this project is to create a set of tools that will help to create rich in
     </tr>
     <tr>
         <td>Classloader that can dynamically fetch compiled class definitions from the server on the fly.</td>
-        <td><strong>80%</strong></td>
+        <td><strong>100%</strong></td>
     </tr>
 </table>
 

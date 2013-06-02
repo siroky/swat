@@ -3,9 +3,8 @@ package controllers
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 import play.api.mvc._
-import swat.common.{TypeLoadingException, TypeLoader}
-import swat.common.rpc.RpcDispatcher
-import scala.concurrent.duration.Duration
+import swat.common._
+import swat.common.rpc._
 
 object Swat extends Controller {
   
@@ -22,9 +21,8 @@ object Swat extends Controller {
     }
 
     def rpc(methodIdentifier: String) = AsyncAction { r =>
-        val dispatcher = new RpcDispatcher
         val arguments = r.body.asJson.map(_.toString()).getOrElse("")
-        dispatcher.invoke(methodIdentifier, arguments)
+        RpcDispatcher.invoke(methodIdentifier, arguments)
     }
 
     private def AsyncAction(a: Request[AnyContent] => Future[String]) = Action { request =>

@@ -4,7 +4,7 @@ import scala.concurrent._
 import ExecutionContext.Implicits.global
 import swat.client.swat
 import _root_.swat.js.CommonScope._
-import _root_.swat.common.TypeLoader
+import _root_.swat.common._
 
 object JsonSerializer {
 

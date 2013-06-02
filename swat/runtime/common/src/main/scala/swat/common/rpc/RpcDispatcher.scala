@@ -4,17 +4,18 @@ import scala.concurrent._
 import ExecutionContext.Implicits.global
 import scala.reflect.runtime.universe._
 import swat.common.json.JsonSerializer
-import swat.common.reflect.CachedMirror
+import swat.common.reflect.ReflectionCache
 
 /**
  * A dispatcher of remote method calls to the singleton objects. Responsible for both deserialization of the method
  * arguments and serialization of the result.
  */
 @swat.ignored
-class RpcDispatcher {
+object RpcDispatcher {
 
-    val mirror = new CachedMirror
-    val serializer = new JsonSerializer(mirror)
+    val cache = new ReflectionCache
+    val mirror = cache.mirror
+    val serializer = new JsonSerializer(cache)
 
     /**
      * Invokes the specified remote method. Firstly verifies that the method exists and is invokable. Then deserializes
@@ -28,14 +29,15 @@ class RpcDispatcher {
         future {
             // Performing all the operations inside the future so any exception throw either here or inside the invoked
             // method can be finally processed in the recover block.
-            val (target, method) = processMethodIdentifier(methodIdentifier)
-            val arguments = deserializeArguments(serializedArguments, method)
-            val methodMirror = mirror.use(_.reflect(target)).reflectMethod(method)
+            mirror.synchronized {
+                val (target, method) = processMethodIdentifier(methodIdentifier)
+                val arguments = deserializeArguments(serializedArguments, method)
+                val methodMirror = mirror.reflect(target).reflectMethod(method)
 
-            // Invoke the method and serialize the result
-            val result = methodMirror(arguments: _*).asInstanceOf[Future[Any]]
-            result.map(serializer.serialize(_))
-
+                // Invoke the method and serialize the result
+                val result = methodMirror(arguments: _*).asInstanceOf[Future[Any]]
+                result.map(serializer.serialize(_))
+            }
         }.flatMap(r => r).recover {
             // If any exception occurred so far, serialize it. (Note that it may even serialize exception that occurred
             // during previous serialization of successful result).
@@ -52,7 +54,7 @@ class RpcDispatcher {
      * Converts the method identifier to the target object and method symbol. If the object doesn't exist, the method
      * isn't invokable or doesn't return a Future, then throws an exception.
      */
-    def processMethodIdentifier(methodIdentifier: String): (Any, MethodSymbol) = {
+    private def processMethodIdentifier(methodIdentifier: String): (Any, MethodSymbol) = {
         if (methodIdentifier == null || methodIdentifier == "") {
             throw new RpcException("The method identifier must be non-empty.")
         }
@@ -63,7 +65,7 @@ class RpcDispatcher {
 
         // The invocation target.
         val objectTypeFullName = methodIdentifier.take(index)
-        val target = mirror.getObjectSymbol(objectTypeFullName)
+        val target = cache.getObjectSymbol(objectTypeFullName)
 
         // The method to invoke.
         val methodName = methodIdentifier.drop(index + 1)
@@ -73,8 +75,8 @@ class RpcDispatcher {
         }
 
         // Check whether the method is actually a remote method.
-        val remoteAnnotations = List(target, method).flatMap(_.annotations.filter(_.tpe =:= typeOf[swat.remote]))
-        if (remoteAnnotations.isEmpty) {
+        def hasRemoteAnnotation(symbol: Symbol): Boolean = symbol.annotations.exists(_.tpe =:= typeOf[swat.remote])
+        if (!hasRemoteAnnotation(target) && !hasRemoteAnnotation(method)) {
             throw new RpcException(s"The method '${method.fullName}' has to be annotated with @swat.remote.")
         }
 
@@ -83,15 +85,15 @@ class RpcDispatcher {
             throw new RpcException(s"The method '${method.fullName}' has to return subtype of Future[_].")
         }
 
-        (mirror.getObject(objectTypeFullName), method)
+        (cache.getObject(objectTypeFullName), method)
     }
 
     /** Deserializes the remote method arguments stored in a tuple. */
-    def deserializeArguments(arguments: String, method: MethodSymbol): List[Any] = {
+    private def deserializeArguments(arguments: String, method: MethodSymbol): List[Any] = {
         val argumentTypes = method.paramss.flatten.toList.map(_.typeSignature)
         if (argumentTypes.nonEmpty) {
             // Turn the method parameter types to a tuple of the types
-            val genericTupleType = mirror.tupleTypes(argumentTypes.length)
+            val genericTupleType = cache.tupleTypes(argumentTypes.length)
             val tupleType = appliedType(genericTupleType, argumentTypes)
 
             // Deserialize the arguments as a tuple and return items of the tuple.

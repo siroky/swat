@@ -5,8 +5,6 @@ import swat.common.rpc.RpcDispatcher
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import play.api.libs.json.{JsArray, JsNumber, JsObject, Json}
-import swat.common.json.JsonSerializer
 
 class TestException(val message: String) extends Exception(message)
 
@@ -55,10 +53,9 @@ class RpcDispatcherTests extends FunSuite {
     }
 
     private def invokeRemote(methodFullName: String, arguments: String, deserialize: Boolean = true): Any = {
-        val dispatcher = new RpcDispatcher
-        val result = Await.result(dispatcher.invoke(methodFullName, arguments), Duration("1 min"))
+        val result = Await.result(RpcDispatcher.invoke(methodFullName, arguments), Duration("1 min"))
         if (deserialize) {
-            dispatcher.serializer.deserialize(result)
+            RpcDispatcher.serializer.deserialize(result)
         } else {
             result.lines.map(_.trim).mkString
         }

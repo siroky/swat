@@ -511,7 +511,57 @@ swat.findMissingTypes = function(swatJson) {
 
 /* Deserializes the specified Swat JSON and returns the root value. */
 swat.deserialize = function(swatJson) {
-    return swatJson.$value;
+    var deserializedObjects = {};
+
+    var deserializeValue = function(value) {
+        if (swat.isJsArray(value)) {
+            var result = [];
+            for (var i in value) {
+                result.push(deserializeValue(value[i]));
+            }
+            return swat.jsArrayToScalaArray(result);
+        } else if (swat.isJsObject(value)) {
+            if (swat.isJsString(value.$ref)) {
+                return swat.access(value.$ref)();
+            } else {
+                return deserializedObjects[value.$ref];
+            }
+        } else {
+            return value;
+        }
+    }
+
+    // Instantiate all the objects.
+    for (var i in swatJson.$objects) {
+        var obj = swatJson.$objects[i];
+
+        // A dummy constructor that just invokes the constructor common for all objects and setups the prototypes
+        // properly. The standard constructor can't be used because parameters of it can't be currently inspected
+        // during runtime, therefore passed in, so it can't be ensured it wouldn't throw any exceptions.
+        var prototype = swat.access(obj.$type).prototype;
+        var constructor = function() {
+            this.$prototype = prototype;
+            scala.Any.$init$.call(this);
+        };
+        constructor.prototype = prototype;
+
+        // Invoke the dummy constructor and register the object to the deserialized objects.
+        deserializedObjects[obj.$id] = new constructor();
+    }
+
+    // Deserialize values of all fields of the objects.
+    for (var i in swatJson.$objects) {
+        var obj = swatJson.$objects[i];
+        var target = deserializedObjects[obj.$id];
+        for (var j in obj) {
+            if (j !== '$id' && j !== '$type') {
+                target.$fields[j] = deserializeValue(obj[j]);
+            }
+        }
+    }
+
+    // Return the deserialized root value.
+    return deserializeValue(swatJson.$value);
 };
 
 /** Turns a JavaScript array into a scala.Array. */

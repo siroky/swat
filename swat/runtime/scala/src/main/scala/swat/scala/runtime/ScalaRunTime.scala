@@ -169,9 +169,9 @@ object ScalaRunTime {
 
   def checkInitialized[T <: AnyRef](x: T): T =
     if (x == null) throw new UninitializedError else x
-
-  def _toString(x: Product): String =
-    x.productIterator.mkString(x.productPrefix + "(", ",", ")")
+  */
+  def _toString(x: Product): String = "Product" + x.productArity
+  /* Swat TODO  x.productIterator.mkString(x.productPrefix + "(", ",", ")")
 
   def _hashCode(x: Product): Int = scala.util.hashing.MurmurHash3.productHash(x)
 

@@ -3,12 +3,9 @@ package swat.common.reflect
 import scala.reflect.runtime.universe._
 import scala.collection.mutable
 
-/**
- * Cache around a reflection mirror so same operations performed multiple times are actually done only once. Also
- * synchronizes access to it, because a reflection mirror isn't currently thread-safe.
- */
+/** Cache around a reflection mirror so same operations performed multiple times are actually done only once. */
 @swat.ignored
-class CachedMirror(mirror: Mirror = runtimeMirror(getClass.getClassLoader)) {
+class ReflectionCache(val mirror: Mirror = runtimeMirror(getClass.getClassLoader)) {
 
     /** Class to symbol cache. */
     private val classSymbols = mutable.HashMap[String, ClassSymbol]()
@@ -16,31 +13,26 @@ class CachedMirror(mirror: Mirror = runtimeMirror(getClass.getClassLoader)) {
     private val objectSymbols = mutable.HashMap[String, ModuleSymbol]()
     private val objects = mutable.HashMap[String, Any]()
 
-    /** Provides synchronized access to the reflection mirror. */
-    def use[T](f: Mirror => T): T = synchronized[T] {
-        f(mirror)
-    }
-
     /** Returns symbol with the specified type name. */
-    def getClassSymbol(fullName: String): ClassSymbol = {
-        classSymbols.getOrElseUpdate(fullName, use(_.classSymbol(Class.forName(fullName))))
+    def getClassSymbol(fullName: String): ClassSymbol = mirror.synchronized {
+        classSymbols.getOrElseUpdate(fullName, mirror.classSymbol(Class.forName(fullName)))
     }
 
     /** Returns class symbol of the specified instance. */
-    def getInstanceSymbol(instance: Any): ClassSymbol = {
+    def getInstanceSymbol(instance: Any): ClassSymbol = mirror.synchronized {
         val c = instance.getClass
-        instanceSymbols.getOrElseUpdate(c, use(_.classSymbol(c)))
+        instanceSymbols.getOrElseUpdate(c, mirror.classSymbol(c))
     }
 
     /** Returns symbol of the singleton object with the specified name. */
-    def getObjectSymbol(fullName: String): ModuleSymbol = {
-        objectSymbols.getOrElseUpdate(fullName, use(_.moduleSymbol(Class.forName(fullName))))
+    def getObjectSymbol(fullName: String): ModuleSymbol = mirror.synchronized {
+        objectSymbols.getOrElseUpdate(fullName, mirror.moduleSymbol(Class.forName(fullName)))
     }
 
     /** Returns singleton object with the specified name. */
     def getObject(fullName: String): Any = {
         objects.getOrElseUpdate(fullName, {
-            // TODO inspect why the following doesn't work: use(_.reflectModule(getObjectSymbol(fullName))).instance
+            // TODO inspect why the following doesn't work: mirror.reflectModule(getObjectSymbol(fullName))).instance
             val c = Class.forName(fullName.stripSuffix("$") + "$")
             c.getField("MODULE$").get(c)
         })

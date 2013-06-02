@@ -3,12 +3,12 @@ package swat.common
 import scala.reflect.runtime.universe._
 import org.scalatest.FunSuite
 import swat.common.json.JsonSerializer
-import swat.common.reflect.CachedMirror
+import swat.common.reflect.ReflectionCache
 
 class A(var a: A)
 
 class JsonSerializerTests extends FunSuite {
-    val mirror = new CachedMirror
+    val cache = new ReflectionCache
 
     test("Primitive values are serialized to JSON primitive values.") {
         () shouldSerializeTo wrapValue("null")
@@ -38,7 +38,7 @@ class JsonSerializerTests extends FunSuite {
                     {
                         "$id":3,
                         "$type":"scala.collection.immutable.$colon$colon",
-                        "tl":{"$ref":"scala.collection.immutable.Nil"},
+                        "tl":{"$ref":"scala.collection.immutable.Nil$"},
                         "hd":456
                     },
                     {
@@ -126,6 +126,7 @@ class JsonSerializerTests extends FunSuite {
         wrapValue("[ ]") shouldDeserializeTo(Array[Any]())
         wrapValue("[ 1, 2, 3 ]") shouldDeserializeTo(Array[Any](1, 2, 3))
         wrapValue("[ 1, 2, 3 ]") shouldDeserializeTo(Array[Int](1, 2, 3), Some(typeOf[Array[Int]]))
+        wrapValue("""[ "foo", "bar" ]""") shouldDeserializeTo(Array[String]("foo", "bar"), Some(typeOf[Array[String]]))
     }
 
     test("Singleton objects are deserialized from references.") {
@@ -229,7 +230,7 @@ class JsonSerializerTests extends FunSuite {
     implicit class SerializableObject(obj: Any) {
         def shouldSerializeTo(json: String) {
             val expected = normalize(json)
-            val actual = normalize(new JsonSerializer(mirror).serialize(obj))
+            val actual = normalize(new JsonSerializer(cache).serialize(obj))
             if (expected != actual) {
                 fail(
                     s"""|The serialized value isn't equal to the expected.
@@ -257,7 +258,7 @@ class JsonSerializerTests extends FunSuite {
         }
 
         def shouldDeserializeTo(expected: Any, tpe: Option[Type], predicate: PartialFunction[Any, Boolean]) {
-            val actual = new JsonSerializer(mirror).deserialize(json, tpe)
+            val actual = new JsonSerializer(cache).deserialize(json, tpe)
             val succeeded = predicate.isDefinedAt(actual) && predicate(actual)
             if (!succeeded) {
                 fail(
