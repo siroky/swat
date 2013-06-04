@@ -7,8 +7,14 @@ import swat.client.swat
 import _root_.swat.client.json.JsonSerializer
 import _root_.swat.common.rpc.RpcException
 
+/** An object responsible for forwarding of remote method calls to the server. */
 object RpcProxy {
 
+    /**
+     * Invokes the specified remote method. Serializes the arguments, sends them together with the methodIdentifier to
+     * the server using AJAX and returns Future of the result. When the result arrives, deserializes it and completes
+     * the returned Future.
+     */
     def invoke(methodIdentifier: String, args: Product): Future[Any] = {
         val promise = Promise[Any]()
         val result = promise.future
@@ -33,20 +39,24 @@ object RpcProxy {
         result
     }
 
+    /**
+     * Processes the AJAX response and returns Future of the result. When the deserialization finishes, completes the
+     * returned Future.
+     */
     private def processResponse(response: String, status: Int): Future[Any] = {
         if (status != 200 && status != 500) {
-            Future.failed(new RpcException(s"The RPC exited with status code $status."))
+            Future.failed(new RpcException(s"The remote method call exited with status code " + status + "."))
         } else {
             try {
-                // If the response is a successfully deserialized Throwable, turn it into a failed future.
+                // If the response is a RpcException, turn it into a failed future.
                 JsonSerializer.deserialize(response).map(_ match {
-                    case t: Throwable => throw t
+                    case r: RpcException => throw r
                     case s => s
                 })
             } catch {
-                case e: Throwable => {
-                    Future.failed(new RpcException(s"RPC result deserialization error (${e.getMessage}})."))
-                }
+                case t: Throwable => Future.failed(new RpcException(
+                    "An exception occurred during deserialization of the remote method result (" + response + ")."
+                ))
             }
         }
     }

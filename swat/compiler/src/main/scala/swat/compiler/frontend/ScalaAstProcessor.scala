@@ -155,7 +155,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
 
         identifier + suffix
     }
-    def typeIdentifier(tpe: Type): String = typeIdentifier(tpe.typeSymbol)
+    def typeIdentifier(tpe: Type): String = typeIdentifier(tpe.underlying.typeSymbol)
     def typeJsIdentifier(tpe: Type): js.Identifier = typeJsIdentifier(tpe.typeSymbol)
     def typeJsIdentifier(symbol: Symbol): js.Identifier = js.Identifier(typeIdentifier(symbol))
 

@@ -93,7 +93,7 @@ class ClassLevelDefinitionTests extends CompilerSuite {
                         }),
                         'java.lang.String', (function(foo) {
                             var $self = this;
-                            swat.invokeThis($self, '$init$', [java.lang.String$().length(foo), 'scala.Int'], 'D');
+                            swat.invokeThis($self, '$init$', [java.lang.String$().length(foo, 'java.lang.String'), 'scala.Int'], 'D');
                         }),
                         'scala.Boolean', (function(foo) {
                             var $self = this;
@@ -157,7 +157,7 @@ class ClassLevelDefinitionTests extends CompilerSuite {
                         $self.$fields.x = 'abc';
                         $self.$fields.y = 123;
                         $self.$fields.z = swat.lazify((function() {
-                            return (java.lang.String$().length($self.x()) + $self.y());
+                            return (java.lang.String$().length($self.x(), 'java.lang.String') + $self.y());
                         }));
                     });
                     T.x = swat.method('T.x', '', (function() { var $self = this; return $self.$fields.x; }));
@@ -179,7 +179,7 @@ class ClassLevelDefinitionTests extends CompilerSuite {
                         $self.$fields.x = 'abc';
                         $self.$fields.y = 123;
                         $self.$fields.z = swat.lazify((function() {
-                            return (java.lang.String$().length($self.x()) + $self.y());
+                            return (java.lang.String$().length($self.x(), 'java.lang.String') + $self.y());
                         }));
                     });
                     C.x = swat.method('C.x', '', (function() { var $self = this; return $self.$fields.x; }));
@@ -203,7 +203,7 @@ class ClassLevelDefinitionTests extends CompilerSuite {
                         $self.$fields.y = 123;
                         $self.$fields.z =
                         swat.lazify((function() {
-                            return (java.lang.String$().length($self.x()) + $self.y());
+                            return (java.lang.String$().length($self.x(), 'java.lang.String') + $self.y());
                         }));
                     });
                     O$.test = swat.method('O$.test', '', (function() {

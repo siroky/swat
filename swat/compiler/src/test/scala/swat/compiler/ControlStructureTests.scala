@@ -187,8 +187,8 @@ class ControlStructureTests extends CompilerSuite {
                     else { return case9(); }
                 };
                 function case9() {
-                    if (swat.isInstanceOf(x1, scala.Some, '')) {
-                        var x3 = swat.asInstanceOf(x1, scala.Some, '');
+                    if (swat.isInstanceOf(x1, scala.Some)) {
+                        var x3 = swat.asInstanceOf(x1, scala.Some);
                         return (function() {
                             var p2 = x3.x();
                             return (function() {
@@ -283,7 +283,7 @@ class ControlStructureTests extends CompilerSuite {
                 try {
                     return 'bar';
                 } catch (e$1) {
-                    if (swat.isInstanceOf(e$1, java.lang.RuntimeException, '')) {
+                    if (swat.isInstanceOf(e$1, java.lang.RuntimeException)) {
                         scala.Predef$().println('runtime exception', 'scala.Any');
                         return;
                     }
@@ -303,17 +303,17 @@ class ControlStructureTests extends CompilerSuite {
                 try {
                     return 'bar';
                 } catch (e$2) {
-                    if (swat.isInstanceOf(e$2, java.lang.RuntimeException, '')) {
+                    if (swat.isInstanceOf(e$2, java.lang.RuntimeException)) {
                         var r = e$2;
                         scala.Predef$().println('runtime exception', 'scala.Any');
                         return;
                     }
-                    if (swat.isInstanceOf(e$2, java.lang.Exception, '')) {
+                    if (swat.isInstanceOf(e$2, java.lang.Exception)) {
                         var e = e$2;
                         scala.Predef$().println('exeption', 'scala.Any');
                         return;
                     }
-                    if (swat.isInstanceOf(e$2, java.lang.Throwable, '')) {
+                    if (swat.isInstanceOf(e$2, java.lang.Throwable)) {
                         scala.Predef$().println('unknown exception', 'scala.Any');
                         return;
                     }
@@ -327,8 +327,8 @@ class ControlStructureTests extends CompilerSuite {
                 } catch (ex6) {
                     var x4 = ex6;
                     function case9() {
-                        if (swat.isInstanceOf(x4, java.lang.Exception, '')) {
-                            var x5 = swat.asInstanceOf(x4, java.lang.Exception, '');
+                        if (swat.isInstanceOf(x4, java.lang.Exception)) {
+                            var x5 = swat.asInstanceOf(x4, java.lang.Exception);
                             return (function() {
                                 if ((x5.getMessage() === 'foo')) {
                                     return matchEnd8(scala.Predef$().println('exception with foo message', 'scala.Any'));
@@ -356,8 +356,8 @@ class ControlStructureTests extends CompilerSuite {
                 } catch (ex9) {
                     var x6 = ex9;
                     function case12() {
-                        if (swat.isInstanceOf(x6, java.lang.Exception, '')) {
-                            var x7 = swat.asInstanceOf(x6, java.lang.Exception, '');
+                        if (swat.isInstanceOf(x6, java.lang.Exception)) {
+                            var x7 = swat.asInstanceOf(x6, java.lang.Exception);
                             return (function() {
                                 if ((x7.getMessage() === 'foo')) {
                                     return matchEnd11(scala.Predef$().println('exception with foo message', 'scala.Any'));
@@ -383,7 +383,7 @@ class ControlStructureTests extends CompilerSuite {
             (function() {
                 try { return 'baz'; }
                 catch (e$3) {
-                    if (swat.isInstanceOf(e$3, java.lang.Throwable, '')) {
+                    if (swat.isInstanceOf(e$3, java.lang.Throwable)) {
                         scala.Predef$().println('unknown exception', 'scala.Any');
                         return;
                     }
@@ -394,7 +394,7 @@ class ControlStructureTests extends CompilerSuite {
             var x = (function() {
                 try { return 'success'; }
                 catch (e$4) {
-                    if (swat.isInstanceOf(e$4, java.lang.Throwable, '')) {
+                    if (swat.isInstanceOf(e$4, java.lang.Throwable)) {
                         return 'unknown exception';
                     }
                     throw e$4;

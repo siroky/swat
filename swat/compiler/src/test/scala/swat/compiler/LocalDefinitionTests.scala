@@ -63,8 +63,8 @@ class LocalDefinitionTests extends CompilerSuite {
             var x = null;
             var x$1 = (function() { var x1 = x;
                 function case5() {
-                    if (swat.isInstanceOf(x1, scala.Tuple3, '')) {
-                        var x2 = swat.asInstanceOf(x1, scala.Tuple3, '');
+                    if (swat.isInstanceOf(x1, scala.Tuple3)) {
+                        var x2 = swat.asInstanceOf(x1, scala.Tuple3);
                         return (function() {
                             var a = x2._1();
                             var b = x2._2();
@@ -89,13 +89,13 @@ class LocalDefinitionTests extends CompilerSuite {
             var g = (function() {
                 var x1 = x;
                 function case6() {
-                    if (swat.isInstanceOf(x1, scala.Some, '')) {
-                        var x2 = swat.asInstanceOf(x1, scala.Some, '');
+                    if (swat.isInstanceOf(x1, scala.Some)) {
+                        var x2 = swat.asInstanceOf(x1, scala.Some);
                         return (function() {
                             var g = x2.x();
                             return (function() {
-                                if (swat.isInstanceOf(g, java.lang.String, '')) {
-                                    var x3 = swat.asInstanceOf(g, java.lang.String, '');
+                                if (swat.isInstanceOf(g, java.lang.String)) {
+                                    var x3 = swat.asInstanceOf(g, java.lang.String);
                                     return matchEnd5(x3);
                                 } else {
                                     return case7();

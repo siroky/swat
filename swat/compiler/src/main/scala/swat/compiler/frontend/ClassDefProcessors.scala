@@ -457,7 +457,7 @@ trait ClassDefProcessors {
 
             // Methods of the current class super classes.
             case s @ Select(Super(t: This, mixName), methodName) if t.symbol.tpe =:= classDef.symbol.tpe => {
-                val arguments = processMethodArgs(s.symbol, Some(s.qualifier), args)
+                val arguments = processMethodArgs(s.symbol, args)
                 val mix = if (mixName.isEmpty) None else Some(typeIdentifier(s.symbol.owner.tpe))
                 superCall(mix, localIdentifier(methodName), arguments)
             }
@@ -465,14 +465,14 @@ trait ClassDefProcessors {
             // Overloaded constructor call.
             case s @ Select(qualifier, name) if s.symbol.isConstructor => {
                 val methodName = js.StringLiteral(localIdentifier(name))
-                val arguments = js.ArrayLiteral(processMethodArgs(s.symbol, Some(qualifier), args))
+                val arguments = js.ArrayLiteral(processMethodArgs(s.symbol, args))
                 swatMethodCall("invokeThis", List(selfIdent, methodName, arguments, thisTypeString): _*)
             }
 
             // Method call.
             case s @ Select(qualifier, name) => {
                 val methodAccessor = memberChain(processExpressionTree(qualifier), localJsIdentifier(name))
-                val processedArgs = processMethodArgs(s.symbol, Some(qualifier), args)
+                val processedArgs = processMethodArgs(s.symbol, args)
                 js.CallExpression(methodAccessor, processedArgs)
             }
         }
@@ -484,20 +484,25 @@ trait ClassDefProcessors {
             js.CallExpression(function, processExpressionTrees(args))
         }
 
-        def processMethodArgs(method: Symbol, qualifier: Option[Tree], args: List[Tree]): List[js.Expression] =  {
-            val typeHint = method.info.paramTypes.map(typeIdentifier _).toList match {
-                case Nil if !args.exists(_.isType) => None
+        def createTypeHint(types: List[Type], alwaysNonEmpty: Boolean = false): Option[js.StringLiteral] = {
+            types.map(typeIdentifier _) match {
+                case Nil if !alwaysNonEmpty => None
                 case identifiers => Some(js.StringLiteral(identifiers.mkString(", ")))
             }
+        }
 
-            processExpressionTrees(args) ++ typeHint.toList
+        def processMethodArgs(method: Symbol, args: List[Tree]): List[js.Expression] =  {
+            val typeHint = createTypeHint(method.info.paramTypes, args.exists(_.isType))
+            processExpressionTrees(args) ++ typeHint
         }
 
         def dispatchCallToCompanion(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
-            val processedArgs = processExpressionTree(qualifier) +: processMethodArgs(method, Some(qualifier), args)
             val companion = qualifier.tpe.companionSymbol
             addRuntimeDependency(companion.tpe)
-            methodCall(objectAccessor(companion), localJsIdentifier(method.name), processedArgs: _*)
+
+            val processedArgs = processExpressionTree(qualifier) +: processExpressionTrees(args)
+            val typeHint = createTypeHint(method.owner.tpe :: method.info.paramTypes)
+            methodCall(objectAccessor(companion), localJsIdentifier(method.name), (processedArgs ++ typeHint): _*)
         }
 
         def processPrimitiveOrStringMethodCall(method: Symbol, qualifier: Tree, args: List[Tree]): js.Expression = {
@@ -533,7 +538,8 @@ trait ClassDefProcessors {
                 if (!symbol.isEqualityOperator && operand.tpe.isChar) {
                     val charCompanion = (typeOf[Char].companionSymbol)
                     addRuntimeDependency(charCompanion.tpe)
-                    methodCall(objectAccessor(charCompanion), localJsIdentifier("toInt"), processedOperand)
+                    val typeHint = js.StringLiteral("scala.Char")
+                    methodCall(objectAccessor(charCompanion), localJsIdentifier("toInt"), processedOperand, typeHint)
                 } else {
                     processedOperand
                 }
@@ -577,7 +583,7 @@ trait ClassDefProcessors {
                 processedQualifier
             } else {
                 val methodName = method.nameString.replace("##", "hashCode")
-                val processedArgs = processedQualifier +: processMethodArgs(method, Some(qualifier), args)
+                val processedArgs = processedQualifier +: processExpressionTrees(args)
                 swatMethodCall(localIdentifier(methodName), processedArgs: _*)
             }
         }
@@ -674,7 +680,7 @@ trait ClassDefProcessors {
             val args =
                 if (constructors.length > 1) {
                     // If the created class has more than one constructor, then a type hint has to be added.
-                    processMethodArgs(apply.fun.symbol, None, apply.args)
+                    processMethodArgs(apply.fun.symbol, apply.args)
                 } else {
                     processExpressionTrees(apply.args)
                 }
@@ -805,7 +811,7 @@ trait ClassDefProcessors {
 
         def processTypedPattern(typed: Typed, matchee: js.Expression, body: List[js.Statement]) = {
             addRuntimeDependency(typed.tpt.tpe)
-            val processedTypedArgs = List(matchee, typeJsIdentifier(typed.tpt.tpe), js.StringLiteral(""))
+            val processedTypedArgs = List(matchee, typeJsIdentifier(typed.tpt.tpe))
             val condition = swatMethodCall(localIdentifier("isInstanceOf"), processedTypedArgs: _*)
             List(js.IfStatement(condition, body, Nil))
         }

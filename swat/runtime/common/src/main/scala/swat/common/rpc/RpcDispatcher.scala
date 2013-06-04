@@ -6,6 +6,12 @@ import scala.reflect.runtime.universe._
 import swat.common.json.JsonSerializer
 import swat.common.reflect.ReflectionCache
 
+/** An exception of the [[swat.common.rpc.RpcDispatcher]]. */
+class RpcException(val message: String, val cause: Option[Cause] = None) extends Exception(message)
+
+/** Serializable information about an exception. */
+case class Cause(exceptionTypeName: String, message: String, stackTrace: String, cause: Option[Cause] = None)
+
 /**
  * A dispatcher of remote method calls to the singleton objects. Responsible for both deserialization of the method
  * arguments and serialization of the result.
@@ -38,15 +44,20 @@ object RpcDispatcher {
                 val result = methodMirror(arguments: _*).asInstanceOf[Future[Any]]
                 result.map(serializer.serialize(_))
             }
-        }.flatMap(r => r).recover {
-            // If any exception occurred so far, serialize it. (Note that it may even serialize exception that occurred
-            // during previous serialization of successful result).
-            case t: Throwable => serializer.serialize(t)
-        }.recover {
-            // Recover from exceptions thrown during serialization of an exception in the previous recover block. The
-            // Json serializer ensures to throw only serializable exceptions, so the following serialization never
-            // fails.
-            case t: Throwable => serializer.serialize(t)
+        }.flatMap(r => r).recover { case t: Throwable =>
+            // If any exception occurred so far, serialize it. Note that it may even serialize exception that occurred
+            // during previous serialization of successful result. Wrap all exceptions that aren't the RpcException
+            // to an RpcException so the client can easily determine, that any kind of exception occurred.
+            val rpcException = t match {
+                case r: RpcException => r
+                case _ => {
+                    val cause = Some(throwableToCause(t))
+                    new RpcException(s"An exception occurred during invocation of '$methodIdentifier'.", cause)
+                }
+            }
+
+            // The RpcException is always serializable, so it's sure the following serialization won't fail.
+            serializer.serialize(rpcException)
         }
     }
 
@@ -102,5 +113,11 @@ object RpcDispatcher {
         } else {
             Nil
         }
+    }
+
+    /** Converts the specified throwable (and the nested throwables) to a [[swat.common.rpc.Cause]]. */
+    private def throwableToCause(t: Throwable): Cause = {
+        val cause = Option(t.getCause).map(throwableToCause _)
+        Cause(t.getClass.getName, t.getMessage, t.getStackTrace.mkString("\n"), cause)
     }
 }

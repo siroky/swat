@@ -13,4 +13,12 @@ trait TestSuite {
     def assert(value: Boolean, description: String = "") {
         console.log("  " + (if (value) "OK" else "ERROR") + " - " + description)
     }
+
+    def success(description: String) {
+        assert(true, description)
+    }
+
+    def fail(description: String) {
+        assert(false, description)
+    }
 }

@@ -15,6 +15,9 @@ object String {
     @native("return s.lastIndexOf(c);")
     def lastIndexOf(s: String, c: Char): Int = ???
 
+    @native("return s.indexOf(x) === 0;")
+    def startsWith(s: String, x: String): Boolean = ???
+
     def matches(s: String, pattern: String): scala.Boolean = new RegExp(pattern, "").test(s)
 
     def valueOf(x: String) = x

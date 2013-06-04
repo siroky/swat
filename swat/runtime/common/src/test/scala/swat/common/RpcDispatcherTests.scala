@@ -1,7 +1,7 @@
 package swat.common
 
 import org.scalatest.FunSuite
-import swat.common.rpc.RpcDispatcher
+import swat.common.rpc.{RpcException, RpcDispatcher}
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -42,14 +42,16 @@ class RpcDispatcherTests extends FunSuite {
 
     test("Exceptions thrown by the infrastructure are processed.") {
         val result = invokeRemote("foo", "", deserialize = false)
-        assert(result == """{"$value" : {"$ref" : 0},"$objects" : [ {"$id" : 0,"$type" : "swat.common.rpc.RpcException","message" : "The method identifier 'foo' is invalid."} ]}""")
+        assert(result == """{"$value" : {"$ref" : 0},"$objects" : [ {"$id" : 0,"$type" : "swat.common.rpc.RpcException","cause" : {"$ref" : "scala.None$"},"message" : "The method identifier 'foo' is invalid."} ]}""")
     }
 
     test("Exceptions thrown by remote methods are processed.") {
         val methodFullName = "swat.common.TestRemote.bar"
         val arguments = "null"
-        val result = invokeRemote(methodFullName, arguments, deserialize = false)
-        assert(result == """{"$value" : {"$ref" : 0},"$objects" : [ {"$id" : 0,"$type" : "swat.common.TestException","message" : "Custom exception"} ]}""")
+        invokeRemote(methodFullName, arguments) match {
+            case r: RpcException if r.cause.exists(_.message == "Custom exception") => // Success.
+            case _ => fail()
+        }
     }
 
     private def invokeRemote(methodFullName: String, arguments: String, deserialize: Boolean = true): Any = {
