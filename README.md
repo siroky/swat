@@ -23,15 +23,15 @@ Aim of this project is to create a set of tools that will help to create rich in
     </tr>
     <tr>
         <td>Port of the most important Scala Library classes to JavaScript (hopefully with big help of Swat).</td>
-        <td><strong>30%</strong></td>
+        <td><strong>40%</strong></td>
     </tr>
     <tr>
         <td>Object graph serializer/deserializer to/from JSON.</td>
-        <td><strong>95%</strong></td>
+        <td><strong>100%</strong></td>
     </tr>
     <tr>
         <td>Remote procedure call mechanism between the client-side and the server-side.</td>
-        <td><strong>95%</strong></td>
+        <td><strong>100%</strong></td>
     </tr>
     <tr>
         <td>Classloader that can dynamically fetch compiled class definitions from the server on the fly.</td>
