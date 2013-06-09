@@ -138,7 +138,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
                 val isScope = symbol.tpe <:< typeOf[swat.js.Scope]
                 val isAdapterPackageObject = symbol.isPackageObjectOrClass && adapterPackages(symbol.owner.fullName)
                 val stripPackage = symbol.adapterAnnotation.getOrElse(true)
-                if (isScope || (isAdapterPackageObject && stripPackage)) {
+                if (isScope || isAdapterPackageObject && stripPackage) {
                     ""
                 } else {
                     val prefix = if (stripPackage) "" else packageIdentifier(symbol.owner)

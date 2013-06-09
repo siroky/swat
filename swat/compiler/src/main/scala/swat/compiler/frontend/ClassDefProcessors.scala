@@ -536,7 +536,7 @@ trait ClassDefProcessors {
             def processOperand(operand: Tree): js.Expression = {
                 val processedOperand = processExpressionTree(operand)
                 if (!symbol.isEqualityOperator && operand.tpe.isChar) {
-                    val charCompanion = (typeOf[Char].companionSymbol)
+                    val charCompanion = typeOf[Char].companionSymbol
                     addRuntimeDependency(charCompanion.tpe)
                     val typeHint = js.StringLiteral("scala.Char")
                     methodCall(objectAccessor(charCompanion), localJsIdentifier("toInt"), processedOperand, typeHint)
@@ -728,7 +728,7 @@ trait ClassDefProcessors {
             val matchResult = js.ReturnStatement(Some(js.CallExpression(firstCaseIdentifier, Nil)))
 
             scoped {
-                (processedInit ++ processedCases) :+ matchResult
+                processedInit ++ processedCases :+ matchResult
             }
         }
 
