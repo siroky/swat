@@ -1,5 +1,45 @@
-@main("Swat Runtime Tests") {
-    <h1>Swat Runtime Tests</h1>
-    <div id="test-output"></div>
-    <script src="/swat/app/swat.tests.TestRunner"></script>
+@layout("Scala Web Application Toolkit") {
+    <div class="row-fluid">
+        <div class="span5">
+            <h2>Scala</h2>
+        </div>
+        <div class="span2">
+            <button class="btn btn-danger" style="font-size: 150%; wisth: 100%; margin: 10px 0;">
+                <i class="icon-arrow-right"></i>
+                Compile
+                <i class="icon-arrow-right"></i>
+            </button>
+        </div>
+        <div class="span5">
+            <h2 class="pull-right">JavaScript</h2>
+        </div>
+    </div>
+    <div class="row-fluid">
+        <div class="span6">
+            <div id="scala-editor" style="width: 100%; height: 550px;">import scala.actors.Actor
+import scala.actors.Actor._
+
+abstract class PingMessage
+case object Start extends PingMessage
+case object SendPing extends PingMessage
+case object Pong extends PingMessage
+
+abstract class PongMessage
+case object Ping extends PongMessage
+case object Stop extends PongMessage
+
+object pingpong extends Application {
+    val pong = new Pong
+    val ping = new Ping(100000, pong)
+    ping.start
+    pong.start
+    ping ! Start
+}</div>
+        </div>
+        <div class="span6">
+            <div id="javascript-editor" style="width: 100%; height: 550px;"></div>
+        </div>
+    </div>
+    <script src="@routes.Assets.at("javascripts/ace/ace.js")" type="text/javascript" charset="utf-8"></script>
+    <script src="/swat/app/swat.web.swatter.Application"></script>
 }

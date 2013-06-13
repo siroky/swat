@@ -24,17 +24,21 @@ object SwatBuild extends Build {
         )
     )
 
-    lazy val swatProject =
+    lazy val swat =
         Project(
             "swat", file("."), settings = defaultSettings
         ).aggregate(
-            apiProject, compilerProject, runtimeProject
+            api,
+            compiler,
+            runtime,
+            swatter,
+            web
         )
 
-    lazy val apiProject =
+    lazy val api =
         Project("api", file("api"), settings = defaultSettings)
 
-    lazy val compilerProject =
+    lazy val compiler =
         Project(
             "compiler", file("compiler"), settings = defaultSettings ++ Seq(
                 libraryDependencies ++= Seq(
@@ -42,13 +46,13 @@ object SwatBuild extends Build {
                 )
             )
         ).dependsOn(
-            apiProject
+            api
         )
 
     val swatTask = TaskKey[Unit]("swat", "Swat compilation")
 
     object SwatProject {
-        def apply(id: String, path: java.io.File, settings: Seq[Setting[_]]): Project = {
+        def apply(id: String, path: java.io.File, settings: Seq[Setting[_]] = defaultSettings): Project = {
             Project(
                 id, path, settings = settings ++ Seq(
                     swatTask <<= (fullClasspath in Compile, sourceDirectory in Compile, resourceDirectory in Compile, runner) map { (cp, src, res, runner) =>
@@ -71,59 +75,67 @@ object SwatBuild extends Build {
                     }
                 )
             ).dependsOn(
-                compilerProject, apiProject
+                compiler, api
             )
         }
     }
 
-    lazy val runtimeProject =
+    lazy val runtime =
         Project(
             "runtime", file("runtime"), settings = defaultSettings
         ).aggregate(
-            runtimeJavaProject,
-            runtimeScalaProject,
-            runtimeCommonProject,
-            runtimeClientProject,
-            runtimeTestsProject
+            runtimeJava,
+            runtimeScala,
+            runtimeCommon,
+            runtimeClient,
+            runtimeTests
         ).dependsOn(
-            runtimeJavaProject,
-            runtimeScalaProject,
-            runtimeCommonProject,
-            runtimeClientProject,
-            runtimeTestsProject
+            runtimeJava,
+            runtimeScala,
+            runtimeCommon,
+            runtimeClient,
+            runtimeTests
         )
 
-    lazy val runtimeJavaProject =
-        SwatProject("java", file("runtime/java"), defaultSettings)
+    lazy val runtimeJava =
+        SwatProject("java", file("runtime/java"))
 
-    lazy val runtimeScalaProject =
+    lazy val runtimeScala =
         SwatProject("scala", file("runtime/scala"), defaultSettings ++ Seq(autoScalaLibrary := false))
 
-    lazy val runtimeCommonProject =
+    lazy val runtimeCommon =
         SwatProject(
             "common", file("runtime/common"), defaultSettings ++ Seq(
                 libraryDependencies += "play" %% "play" % "2.1.1"
             )
         )
 
-    lazy val runtimeClientProject =
+    lazy val runtimeClient =
         SwatProject(
-            "client", file("runtime/client"), defaultSettings
+            "client", file("runtime/client")
         ).dependsOn(
-            runtimeCommonProject
+            runtimeCommon
         )
 
-    lazy val runtimeTestsProject =
+    lazy val runtimeTests =
         SwatProject(
-            "tests", file("runtime/tests"), defaultSettings
+            "tests", file("runtime/tests")
         ).dependsOn(
-            runtimeCommonProject, runtimeClientProject
+            runtimeCommon, runtimeClient
         )
 
-    lazy val webProject =
+    lazy val web =
         play.Project(
             "web", swatVersion, Nil, path = file("web")
         ).dependsOn(
-            runtimeProject
+            runtime,
+            swatter
+        )
+
+    lazy val swatter =
+        SwatProject(
+            "swatter", file("web/swatter")
+        ).dependsOn(
+            compiler
         )
 }

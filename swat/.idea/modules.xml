@@ -11,6 +11,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/runtime.iml" filepath="$PROJECT_DIR$/.idea_modules/runtime.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/scala.iml" filepath="$PROJECT_DIR$/.idea_modules/scala.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat.iml" filepath="$PROJECT_DIR$/.idea_modules/swat.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/swatter.iml" filepath="$PROJECT_DIR$/.idea_modules/swatter.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/tests.iml" filepath="$PROJECT_DIR$/.idea_modules/tests.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/web.iml" filepath="$PROJECT_DIR$/.idea_modules/web.iml" />
     </modules>
