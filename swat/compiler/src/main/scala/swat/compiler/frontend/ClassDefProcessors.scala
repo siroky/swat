@@ -327,18 +327,24 @@ trait ClassDefProcessors {
             if (thisSymbol.isPackageClass) {
                 packageJsIdentifier(thisSymbol)
             } else {
-                def getNestingDepth(symbol: Symbol): Option[Int] = {
-                    if (symbol == NoSymbol) {
-                        None
-                    } else if (symbol == thisSymbol) {
-                        Some(0)
-                    } else {
-                        getNestingDepth(symbol.owner).map(_ + (if (symbol.isClass) 1 else 0))
-                    }
-                }
-                getNestingDepth(classDef.symbol).map(_ - (if (nestingIsApplied) 0 else 1)) match {
-                    case Some(d) => (1 to d).foldLeft[js.Expression](selfIdent)((z, _) => memberChain(z, outerIdent))
+                getInnerDepth(thisSymbol, classDef.symbol) match {
+                    case Some(d) => iteratedMemberChain(selfIdent, outerIdent, d)
                     case None => objectAccessor(thisSymbol)
+                }
+            }
+        }
+
+        def getInnerDepth(outer: Symbol, inner: Symbol): Option[Int] = {
+            if (outer == NoSymbol) {
+                None
+            } else if (outer == inner) {
+                Some(0)
+            } else {
+                val innerOwnerDepth = getInnerDepth(outer, inner.owner)
+                if (!inner.isClass || inner.isAnonymousTotalFunction) {
+                    innerOwnerDepth
+                } else {
+                    innerOwnerDepth.map(_ + 1)
                 }
             }
         }

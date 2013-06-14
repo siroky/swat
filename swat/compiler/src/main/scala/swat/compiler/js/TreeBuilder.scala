@@ -12,6 +12,10 @@ trait TreeBuilder {
         identifiers.foldLeft[Expression](expr)(MemberExpression(_, _))
     }
 
+    def iteratedMemberChain(expr: Expression, identifier: Identifier, count: Int): Expression = {
+        (1 to count).foldLeft[Expression](expr)((z, _) => memberChain(z, identifier))
+    }
+
     def methodCall(target: Expression, methodName: Identifier, args: Expression*): Expression = {
         CallExpression(memberChain(target, methodName), args.toList)
     }

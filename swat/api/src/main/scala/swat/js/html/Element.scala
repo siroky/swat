@@ -26,7 +26,7 @@ trait Element extends dom.Element with EventTarget {
     var title: String
     var onabort: Event[this.type] => Unit
     var onblur: FocusEvent[this.type] => Unit
-    var onclick: MouseEvent[this.type] => Boolean
+    var onclick: MouseEvent[this.type] => Unit
     var oncompositionstart: CompositionEvent[this.type] => Boolean
     var oncompositionupdate: CompositionEvent[this.type] => Unit
     var oncompositionend: CompositionEvent[this.type] => Unit

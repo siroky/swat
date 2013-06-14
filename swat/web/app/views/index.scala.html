@@ -1,43 +1,40 @@
 @layout("Scala Web Application Toolkit") {
     <div class="row-fluid">
-        <div class="span5">
-            <h2>Scala</h2>
+        <p>
+            Swat is a toolkit for rich internet application development in <a href="http://scala-lang.org">Scala</a>,
+            that brings the power of Scala into the world of JavaScript. It consists of a Scala to JavaScript compiler,
+            runtime that supports execution of the compiled code, dependency manager,
+            <a href="http://en.wikipedia.org/wiki/Remote_procedure_call">RPC</a> via AJAX with help of custom JSON
+            serializers and deserializers and many other features. For more information, visit the
+            <a href="https://github.com/siroky/Swat">Github Repository</a>. Or you may try the compiler right now, just
+            write some Scala code to the left editor and see how it compiles to JavaScript.
+        </p>
+    </div>
+    <div class="row-fluid">
+        <div class="span4">
+            <h3>Scala</h3>
         </div>
-        <div class="span2">
-            <button class="btn btn-danger" style="font-size: 150%; wisth: 100%; margin: 10px 0;">
+        <div class="span4">
+            <button id="compile-button" class="btn btn-danger" style="font-size: 130%; width: 100%; margin: 10px 0;">
                 <i class="icon-arrow-right"></i>
-                Compile
+                Compile with Swat
                 <i class="icon-arrow-right"></i>
             </button>
         </div>
-        <div class="span5">
-            <h2 class="pull-right">JavaScript</h2>
+        <div class="span4">
+            <h3 class="text-right">JavaScript</h3>
         </div>
     </div>
     <div class="row-fluid">
         <div class="span6">
-            <div id="scala-editor" style="width: 100%; height: 550px;">import scala.actors.Actor
-import scala.actors.Actor._
+            <div id="scala-editor" style="width: 100%; height: 450px;">import swat.js.DefaultScope._
 
-abstract class PingMessage
-case object Start extends PingMessage
-case object SendPing extends PingMessage
-case object Pong extends PingMessage
-
-abstract class PongMessage
-case object Ping extends PongMessage
-case object Stop extends PongMessage
-
-object pingpong extends Application {
-    val pong = new Pong
-    val ping = new Ping(100000, pong)
-    ping.start
-    pong.start
-    ping ! Start
+object HelloWorld extends App {
+    console.log("Hello World")
 }</div>
         </div>
         <div class="span6">
-            <div id="javascript-editor" style="width: 100%; height: 550px;"></div>
+            <div id="javascript-editor" style="width: 100%; height: 450px;"></div>
         </div>
     </div>
     <script src="@routes.Assets.at("javascripts/ace/ace.js")" type="text/javascript" charset="utf-8"></script>

@@ -136,6 +136,7 @@ object SwatBuild extends Build {
         SwatProject(
             "swatter", file("web/swatter")
         ).dependsOn(
+            runtime,
             compiler
         )
 }
