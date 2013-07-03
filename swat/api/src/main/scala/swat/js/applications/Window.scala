@@ -35,7 +35,9 @@ trait Window extends EventTarget with WindowTimers with WindowBase64 {
     def get(key: String) {}
     def focus() {}
     def alert(s: Any) {}
-    def open(url: String) {}
+    def open(url: String): Window = ???
+    def open(url: String, target: String): Window = ???
+    def eval(code: String): Any = ???
 }
 
 

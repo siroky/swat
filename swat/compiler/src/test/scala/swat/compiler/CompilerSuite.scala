@@ -29,7 +29,7 @@ trait CompilerSuite extends FunSuite {
 
         protected def shouldCompileTo[A](expectedOutputs: Map[String, A], astProcessor: js.Ast => A) {
             val compilationOutput = compile()
-            val actualOutputs = compilationOutput.typeOutputs.mapValues(astProcessor)
+            val actualOutputs = compilationOutput.typeOutputs.map(o => o.identifier -> astProcessor(o.program)).toMap
             val e = expectedOutputs.toSet
             val a = actualOutputs.toSet
             val difference = (a diff e) union (e diff a)
@@ -68,7 +68,9 @@ trait CompilerSuite extends FunSuite {
         private val scalaCode = new ScalaCode(s"class A { def f() { $code } }") {
             override def compile(): CompilationOutput = {
                 val output = super.compile()
-                val elements = output.typeOutputs.get(ident).toList.flatMap(_.elements)
+                val elements = output.typeOutputs.find(_.identifier == ident).toList.flatMap {
+                    case TypeOutput(_, _, p: Program) => p.elements
+                }
                 val body = elements.collect { case Block(l) => l }.flatten
                 val functions = body.flatMap {
                     case
@@ -79,7 +81,7 @@ trait CompilerSuite extends FunSuite {
                 }
                 val functionBody = functions.headOption.toList.flatten
 
-                CompilationOutput(Map(ident -> Program(functionBody)), output.warnings, output.infos)
+                CompilationOutput(List(TypeOutput(ident, "", js.Block(functionBody))), output.warnings, output.infos)
             }
         }
 

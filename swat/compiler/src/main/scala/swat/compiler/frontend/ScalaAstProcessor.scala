@@ -1,6 +1,6 @@
 package swat.compiler.frontend
 
-import swat.compiler.{SwatCompilerPlugin, js}
+import swat.compiler.{TypeOutput, SwatCompilerPlugin, js}
 
 /**
  * Swat compiler component responsible for compilation of top level Scala ASTs (compilation units, packages, classes).
@@ -30,7 +30,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
      */
     val adapterPackages = Set("swat.js")
 
-    def processUnitBody(body: Tree): Map[String, js.Program] = body match {
+    def processUnitBody(body: Tree): List[TypeOutput] = body match {
         case p: PackageDef => {
             extractClassDefs(p).map { classDef =>
                 val classSymbol = classDef.symbol
@@ -40,10 +40,12 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
                 val processedProvide = processProvide(classType)
                 val processedDependencies = processDependencies(processedClassDef.dependencies, classIdent)
                 val processedAst = astToStatement(processedClassDef.ast)
-                classIdent -> js.Program(processedProvide +: processedDependencies :+ processedAst)
-            }.toMap
+                val program = js.Program(processedProvide +: processedDependencies :+ processedAst)
+                val code = backend.astToCode(program)
+                TypeOutput(classIdent, code, program)
+            }
         }
-        case _ => Map.empty
+        case _ => Nil
     }
 
     def extractClassDefs(tree: Tree): List[ClassDef] = tree match {

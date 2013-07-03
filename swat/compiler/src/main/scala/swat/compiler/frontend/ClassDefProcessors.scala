@@ -337,7 +337,7 @@ trait ClassDefProcessors {
         def getInnerDepth(outer: Symbol, inner: Symbol): Option[Int] = {
             if (outer == NoSymbol) {
                 None
-            } else if (outer == inner) {
+            } else if (outer == inner || inner == NoSymbol) {
                 Some(0)
             } else {
                 val innerOwnerDepth = getInnerDepth(outer, inner.owner)
@@ -376,7 +376,7 @@ trait ClassDefProcessors {
          * some applications lead to an assignment statement.
          */
         def processApply(apply: Apply) = apply.fun match {
-            // Outer field getter.
+            // Outer field accessor
             case s: Select if s.symbol.isOuterAccessor => fieldGet(s.symbol)
 
             // Generic method call.
@@ -481,6 +481,9 @@ trait ClassDefProcessors {
                 val processedArgs = processMethodArgs(s.symbol, args)
                 js.CallExpression(methodAccessor, processedArgs)
             }
+
+            // Getter with the corresponding apply.
+            case i: Ident if i.symbol.isGetter => fieldGet(i.symbol)
         }
 
         def functionCall(function: Tree, args: List[Tree]): js.Expression = {

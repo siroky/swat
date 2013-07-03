@@ -1,0 +1,7 @@
+#headers .btn i {
+    margin-left: 20px;
+}
+
+#headers .btn[disabled] {
+    background-color: #CCCCCC;
+}

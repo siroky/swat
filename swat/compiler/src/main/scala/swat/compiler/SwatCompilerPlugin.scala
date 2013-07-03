@@ -4,6 +4,8 @@ import frontend.ScalaAstProcessor
 import scala.tools.nsc.Global
 import tools.nsc.plugins.{PluginComponent, Plugin}
 import scala.reflect.internal.{FatalError, Phase}
+import scala.collection.mutable
+import swat.compiler.backend.JsCodeGenerator
 
 /**
  * A compiler plugin that produces JavaScript that should behave equally to the input Scala AST.
@@ -15,7 +17,8 @@ class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcess
     val name = "swat-compiler"
     val description = "Swat Compiler of Scala code into JavaScript."
     val components = List[PluginComponent](SwatCompilationComponent)
-    var output = Map.empty[String, js.Program]
+    var typeOutputs = mutable.ListBuffer[TypeOutput]()
+    val backend = new JsCodeGenerator
 
     /**
      * The only component of the plugin.
@@ -37,7 +40,7 @@ class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcess
                 // in the compiler plugin. To avoid that, all exceptions are consumed here and reported as an internal
                 // error of the Swat compiler.
                 try {
-                    output ++= processUnitBody(unit.body)
+                    typeOutputs ++= processUnitBody(unit.body)
                 } catch {
                     case f: FatalError => swatError(f.msg.lines.toBuffer.last, f.getStackTrace)
                     case t: Throwable => swatError(t.toString, t.getStackTrace)
@@ -58,9 +61,17 @@ class SwatCompilerPlugin(val global: Global) extends Plugin with ScalaAstProcess
 }
 
 /**
+ * A compilation output of one type.
+ * @param identifier Identifier of the type.
+ * @param code The output JavaScript program.
+ * @param program The output JavaScript program represented as an AST.
+ */
+case class TypeOutput(identifier: String, code: String, program: js.Ast)
+
+/**
  * An output of the swat plugin phase compilation.
- * @param typeOutputs A map of compiled types with corresponding JavaScript programs.
+ * @param typeOutputs A list of type outputs.
  * @param warnings A list of warnings that occurred during compilation.
  * @param infos A list of infos that occurred during compilation.
  */
-case class CompilationOutput(typeOutputs: Map[String, js.Program], warnings: List[String], infos: List[String])
+case class CompilationOutput(typeOutputs: List[TypeOutput], warnings: List[String], infos: List[String])

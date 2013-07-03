@@ -1,9 +1,15 @@
 package swat.common
 
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 import scala.io.Source
 import scala.concurrent._
 import ExecutionContext.Implicits.global
+
+/** Dependency on a type with the specified identifier. */
+case class Dependency(identifier: String, isHard: Boolean)
+
+/** A type source file with known dependencies. */
+case class TypeSource(identifier: String, source: String, dependencies: List[Dependency])
 
 /**
  * A loader of JavaScript files that depend on each other.
@@ -50,15 +56,19 @@ object TypeLoader {
         }
     }
 
-    /** A type source file with known dependencies. */
-    case class TypeSource(identifier: String, source: String, dependencies: immutable.List[String])
+    /**
+     * Returns all dependencies from the specified source file.
+     */
+    def extractDependencies(source: String): List[Dependency] = {
+        source.lines.collect { case Require(i, isHard) => Dependency(i, isHard == "true") }.toList
+    }
 
     /**
      * Returns all sources together with their dependencies that have to be declared if the specified types should
      * work. It traverses a dependency graph of the specified types and returns all visited sources. The excluded
      * types are ignored during the traversal.
      */
-    private def getNeededSources(typeIdentifiers: List[String], excludedTypes: Set[String]): List[TypeSource] = {
+    def getNeededSources(typeIdentifiers: List[String], excludedTypes: Set[String]): List[TypeSource] = {
         val sources = mutable.ListBuffer.empty[TypeSource]
         val toProcess = mutable.Set[String](typeIdentifiers: _*)
         val processed = mutable.Set.empty[String]
@@ -69,14 +79,14 @@ object TypeLoader {
 
             // Find all dependencies in the source and if they should be processed, enqueue them to the queue.
             val source = getSource(identifier)
-            val dependencies = source.lines.collect { case Require(i, isHard) =>
-                val isExcluded = excludedTypes(i)
-                if (!processed(i) && !isExcluded) {
-                    toProcess += i
+            val dependencies = extractDependencies(source).flatMap { d =>
+                val isExcluded = excludedTypes(d.identifier)
+                if (!processed(d.identifier) && !isExcluded) {
+                    toProcess += d.identifier
                 }
-                if (isHard == "true" && !isExcluded) Some(i) else None
+                if (!isExcluded) Some(d) else None
             }
-            sources += TypeSource(identifier, source, dependencies.flatten.toList)
+            sources += TypeSource(identifier, source, dependencies)
         }
 
         // While there is anything to process, process it.
@@ -89,7 +99,7 @@ object TypeLoader {
     /**
      * Returns content of the source file corresponding to the specified type.
      */
-    private def getSource(typeIdentifier: String): String = {
+    def getSource(typeIdentifier: String): String = {
         val pathPrefix = typeIdentifier.replace(".", "/")
         val sourcePaths = List(".swat.js", ".js").map(pathPrefix + _)
         val classLoader = getClass.getClassLoader
@@ -102,7 +112,7 @@ object TypeLoader {
     /**
      * Merges the specified sources into one source by traversing the dependency graph in the hard dependency order.
      */
-    private def mergeSources(sources: List[TypeSource]): String = {
+    def mergeSources(sources: List[TypeSource]): String = {
         val sourceGraph = sources.map(s => (s.identifier, s)).toMap
         val result = mutable.ListBuffer.empty[String]
         val toProcess = mutable.Set[String](sourceGraph.keys.toSeq: _*)
@@ -119,9 +129,9 @@ object TypeLoader {
                 toProcess -= identifier
                 processing += identifier
 
-                // Process all dependencies of the type first and then add the type source to the result.
+                // Process all hard dependencies of the type first and then add the type source to the result.
                 val typeSource = sourceGraph(identifier)
-                typeSource.dependencies.foreach(process _)
+                typeSource.dependencies.filter(_.isHard).foreach(d => process(d.identifier))
                 result ++= typeSource.source.lines
 
                 // Move the type from processing to processed set.

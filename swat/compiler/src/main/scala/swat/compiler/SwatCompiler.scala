@@ -3,10 +3,9 @@ package swat.compiler
 import scala.tools.nsc.{SubComponent, Global, Settings}
 import scala.tools.nsc.io.{File, Directory}
 import tools.nsc.reporters.Reporter
-import reflect.internal.util.Position
 import collection.mutable
 import scala.tools.nsc.transform.Erasure
-import swat.compiler.backend.JsCodeGenerator
+import scala.reflect.internal.util.Position
 
 /**
  * A Scala compiler that, on the top of the standard Scala compiler, includes the [[swat.compiler.SwatCompilerPlugin]]
@@ -75,25 +74,25 @@ class SwatCompiler(
             }
         }
 
-        val output = compiler.swatPlugin.output
+        val typeOutputs = compiler.swatPlugin.typeOutputs.toList
         if (reporter.errors.nonEmpty) {
             throw new CompilationException(reporter.errors.mkString("\n"))
         }
 
         // Produce the output and return the output JavaScript ASTs.
-        produceJavaScript(output)
-        CompilationOutput(output, reporter.warnings.toList, reporter.infos.toList)
+        produceJavaScript(typeOutputs)
+        CompilationOutput(typeOutputs, reporter.warnings.toList, reporter.infos.toList)
     }
 
     /** If the javaScriptTarget is specified, produces a file for each type in the specified type outputs. */
-    private def produceJavaScript(typeOutputs: Map[String, js.Program]) {
+    private def produceJavaScript(typeOutputs: List[TypeOutput]) {
         // If the javaScriptTarget is specified, create the JavaScript files there.
         javaScriptTarget.foreach { target =>
-            val codeGenerator = new JsCodeGenerator
-            typeOutputs.mapValues(codeGenerator.astToCode _).foreach { case (typeIdentifier, program) =>
-                val typeFile = new File(new java.io.File(target + "/" + typeIdentifier.replace(".", "/") + ".swat.js"))
+            typeOutputs.foreach { typeOutput =>
+                val typeFileName = target + "/" + typeOutput.identifier.replace(".", "/") + ".swat.js"
+                val typeFile = new File(new java.io.File(typeFileName))
                 typeFile.parent.createDirectory()
-                typeFile.writeAll(program)
+                typeFile.writeAll(typeOutput.code)
             }
         }
     }

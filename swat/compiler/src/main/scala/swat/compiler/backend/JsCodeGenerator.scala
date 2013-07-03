@@ -2,7 +2,7 @@ package swat.compiler.backend
 
 import swat.compiler.js._
 
-class JsCodeGenerator {
+class JsCodeGenerator extends Backend {
 
     def astToCode(ast: Ast): String = process(ast)(Indent("    "))
 
