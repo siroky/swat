@@ -38,6 +38,17 @@
             <div id="javascript-editor" style="width: 100%; height: 450px;"></div>
         </div>
     </div>
-    <script src="@routes.Assets.at("javascripts/ace/ace.js")" type="text/javascript" charset="utf-8"></script>
+    <div id="compiling-modal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-header">
+            <h3>Compiling</h3>
+        </div>
+        <div class="modal-body">
+            <p>The Scala code is being compiled to JavaScript…</p>
+            <div class="progress progress-striped active">
+                <div class="bar" style="width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+    <script src="@routes.Assets.at("javascripts/ace/ace.js")"></script>
     <script src="/swat/app/swat.web.swatter.Client"></script>
 }

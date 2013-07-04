@@ -6,7 +6,6 @@ import scala.util.{Failure, Success}
 import swat.js.DefaultScope._
 import swat.adapter
 import swat.common.rpc.RpcException
-import swat.js.html.Element
 
 object Client extends App {
 
@@ -39,6 +38,7 @@ object Client extends App {
     updateControls()
 
     compileButton.onclick = e => {
+        showCompilingModal()
         Server.compile(scalaEditor.getValue).onComplete { result =>
             currentCodePackage = result.toOption
             updateControls()
@@ -48,6 +48,7 @@ object Client extends App {
                 case Failure(e: RpcException) => javaScriptEditor.setValue(e.message)
             }
             javaScriptEditor.selection.clearSelection()
+            hideCompilingModal()
         }
     }
 
@@ -63,6 +64,12 @@ object Client extends App {
             runButton.removeAttribute("disabled")
         }
     }
+
+    @swat.native("$('#compiling-modal').modal();")
+    private def showCompilingModal() {}
+
+    @swat.native("$('#compiling-modal').modal('hide');")
+    private def hideCompilingModal() {}
 }
 
 @adapter object ace {
