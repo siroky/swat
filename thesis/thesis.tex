@@ -193,13 +193,37 @@ During past couple of years, JavaScript has been used so extensively, that devel
 
 \section{Motivation}
 
-\begin{itemize}
-\item Disadvantages of JavaScript in the context of larger applications (lack of packaging, everything is accessible, prototype based OOP, dynamic typing, everything has to be in documentation or comments).
-\item Disadvantages of JavaScript development tools (refactoring, code analysis, intellisense).
-\item Adding packages, classes and static type system (sometimes optional) to JS solves most of the problems. Examples of some languages that improve JavaScript - CoffeeScript, Dart, TypeScript, but they're completely new languages, so one has to learn not only JS, but also them.
-\item Using an existing language that would mitigate the JavaScript disadvantages seems reasonable. Moreover it brings code-sharing and reuse of existing code. Possibility to write whole application together with the server-side in one language (the motiviation behind Node.js). GWT in the Java world, Script\# or SharpKit in the C\# world, and corresponding tools in other languages.
-\item Scala is nice, new and perspective, currently gaining a lot of momentum and being adopted by commercial companies (Twitter, LinkedIn) so it has been chosen as the source language.
-\end{itemize}
+The vast amount of compilers targetting JavaScript suggests, there actually are objective reasons and motivation behind them, which drive their development efforts. And because compilation is a development step, that isn't present while writing plain JavaScript programs, the motivation has to be strong enough, so programmers are willing to bear this additional step. The following sections should summarize the main disadvantages of JavaScript and briefly describe current trends in the field of JavaScript improving and compilation to it.
+
+\subsection{JavaScript Disadvantages}
+
+When evaluating a programming language, it's always necessary to specify the context of its usage. Here, we're interested in the area of large and complex web applications, so it doesn't mean that JavaScript shouldn't be used for small and even middle-sized applications.
+
+\paragraph{Language} The JavaScript itself is a dynamically typed language with prototype-based inheritance, which is rather different from the mainstream enterprise languages. It has no notion of classes, modules, packages or any other such concepts. The whole program consists of bunch of functions and nested objects, which are all accessible from the global scope, due to the fact that object is a key-value table without any access modifiers. There also isn't any way how to define interface and its implementation, so it's impossible to hide the complexity of components behind interfaces. All this leads to a drawback, that JavaScript programs are difficult to modularize. Advantages of static typing over dynamic typing are nicely summarized in \cite{meijer} as: 
+
+\begin{quote}
+"...earlier detection of programming mistakes (e.g. preventing adding an integer to a boolean), better documentation in the form of type signatures (e.g. incorporating number and types of arguments when resolving names), more opportunities for compiler optimizations (e.g. replacing virtual calls by direct calls when the exact type of the receiver is known statically), increased runtime efficiency (e.g. not all values need to carry a dynamic type), and a better design time developer experience (e.g. knowing the type of the receiver, the IDE can present a drop-down menu of all applicable members)."
+\end{quote}
+
+Even though inheritance is present in JavaScript, its very different from the class-based inheritance most of the programmers are used to, so it takes some time to fully understand it and take advantage of it. The JavaScript community realizes some of the disadvantages and tries to remedy them on the language level using sometimes peculiar constructs, but there is no standardized or widely adopted way so those efforts stay in the position of suggested conventions.
+
+\paragraph{Distribution} The most common way of library distribution is one big JavaScript file containing everything. Therefore when a fraction of a library is used, the whole library has to be loaded into the page. And dependencies among the libraries are described in the documentation, so an absence of dependency causes runtime error claiming that a function or an object is undefined. This leads to an environment where the libraries are more likely monolithic and don't share the common functionality even if they could. Similar problem arises when the single application is subdivided into multiple source files. Then all the files have to be declared in the page using script elements in their dependency order. There already exist loaders that handle packaging (RequireJS, HeadJS) but all share the common disadvantage that the organization od source files into modules and dependencies among them have to be explicitly declared.
+
+\paragraph{Development process} As a consequence of the dynamic typing, some of the automatic development tools aren't as powerful as in statically typed languages or are even unusable. Code analyzers and optimizers from the principle can't do that much, but there are couple of such tools (JSLint, JSHint, Google Closure Compiler). Automatic refactoring can't be utilized at all, so in real life it boils down to unreliable operation "replace in files". Intellisense in IDEs is currently at least partially usable however still far behind statically typed languages. Hand in hand with intellisense comes the source documentation in form of documentation comments, because when it doesn't pop up in the IDE, programmers are less motivated to write it.
+
+\subsection{Improving JavaScript}
+
+To sort out most of the aforementioned language issues, it's basically enough to use a programming language with static (or at least optionally static) type system, packages, classes, interfaces and access modifiers, allow the developers to write programs in that languages and compile them into JavaScript. Consequently the development process issues disappear too. Ideally the source language should be much more expressive than JavaScript, no only small superset in terms of language features, so the compilation step really pays off. Similarly to the step from assembler to C. 
+
+\paragraph{New languages} One branch of the improvement process leads to design of new programming languages solely with the purpose to extend JavaScript. The most well-known examples are Dart, CoffeeScript and TypeScript. Their advantage is that they're designed with the knowledge that programs would be compiled to JavaScript, so for example primitive types don't deviate from JavaScript primitive types and some of them allow optional typing which is good for interoperation with existing libraries. Another benefit is, that from the syntax point of view, they're mostly quite similar to JavaScript so the learning curve is steep for established web application developers. On the other hand, the fact they're brand new implies, that for the whole application, one has to be familiar with three programming languages at a time (one for server side, the new language and JavaScript). The type systems of those languages aren't that complex and their expressiveness is rather close to JavaScript, therefore the improvement isn't as big as it theoretically could be. Dart is however the farthest one in that direction.
+
+\paragraph{Existing languages} The more appealing idea is to use existing proven language and add the JavaScript backend to its compiler. And if the language is well-suited for web applications or APIs, then even better, because the two ultimate aims could be accomplished: having the whole application written in one language and code-sharing and reuse between server-side and client-side.\footnote{These goals are so attractive, that the project Node.js tackles them from the other side by enabling usage of JavaScript on the servers.} With this setup, even things like remote method invocation are possible. Drawback is that the languages differ from JavaScript a lot, interoperation with it is more inconvenient and in some cases, they're less expressive than JavaScript (e.g. lack of closures in Java). The most famous representatives of this branch are Google Web Toolkit for Java and SharpKit for C\#, but almost all established languages have their JavaScript compilers.
+
+\subsection{Why Scala}
+
+During development of one web application in Scala, whose big part should run in the web browser, it was decided that it would be nice to implement that part using something like GWT, just for Scala. However no such tool turned out to be both usable, maintained and not abandoned. That lead to an origin of the project to implement such a tool for Scala. Later it emerged that it'd be more likely a set of tools, therefore the name of the project and also title of this thesis converged to "Scala Web Application Toolkit".
+
+Scala is relatively new, yet already established programming language. Among the family of modern programming languages that run on top of JVM (Groovy, Clojure, Kotlin) it's the most popular one according to TIOBE as of writing this thesis, currently gaining a lot of momentum and being already adopted by commercial companies like Twitter or LinkedIn. Moreover it's backed by strong academic community, so the language with all the concepts and paradigms are well thought through. All these facts determined that it'd be good idea to start the project, because there's a possibility for a lot of potential.
 
 \section{Goals}
 
@@ -421,6 +445,11 @@ Swat as a SBT plugin, resident compilation that would simplify the development p
   {\sc Ashkenas,} Jeremy.
   \emph{List of languages that compile to JS}.
   https://github.com/jashkenas/coffee-script/wiki/List-of-languages-that-compile-to-JS
+	
+\bibitem{meijer}
+	{\sc Meijer,} Erik and {\sc Drayton,} Peter.
+	\emph{Static Typing Where Possible, Dynamic Typing When Needed: The End of the Cold War Between Programming Languages}.
+	http://research.microsoft.com/en-us/um/people/emeijer/Papers/RDL04Meijer.pdf
 
 \end{thebibliography}
 
