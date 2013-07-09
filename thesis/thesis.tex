@@ -225,36 +225,58 @@ During development of one web application in Scala, whose big part should run in
 
 Scala is relatively new, yet already established programming language. Among the family of modern programming languages that run on top of JVM (Groovy, Clojure, Kotlin) it's the most popular one according to TIOBE as of writing this thesis, currently gaining a lot of momentum and being already adopted by commercial companies like Twitter or LinkedIn. Moreover it's backed by strong academic community, so the language with all the concepts and paradigms are well thought through. All these facts determined that it'd be good idea to start the project, because there's a possibility for a lot of potential.
 
-\section{Goals}
+\section{Project Aim}
 
-\subsection{Core}
+It may be already apparent from the motivation, but the main aim of the project is to create a Scala to JavaScript compiler. From the topmost level point of view, it should take Scala code on the input and produce JavaScript code on the output. The generated code should be somehow embedded or loaded into a web page, so when the page is displayed, it runs and on the algorithmical level does the same thing as if the original Scala code was executed on the JRE. Moreover, it should be possible to access both native JavaScript APIs (e.g. DOM, browser-related APIs) and other already existing libraries (e.g. jQuery) from the Scala code, in order to manipulate with the web page or with the browser.
 
-\begin{itemize}
-\item Compile from Scala to JavaScript
-\item Easily interoperate with JavaScript APIs and libraries.
-\item Enable code reuse by embracing usage of standard Java and Scala library.
-\item Provide runtime support if needed.
-\item Simple distribution of libraries (both Scala and JavaScript together). 
-\end{itemize}
+With the decribed setup, it should be possible to take advantage of the fact that both client and server are written in one language and implement simple RPC (Remote procedure call\cite{rpc}) mechanism. The obvious implication is, that objects would have to be sent through HTTP protocol in both directions and therefore serialized to some common format. To accomplish that, a client side (de)serializer and a server side (de)serializer has to be implemented.
 
-\subsection{Enhancements}
+To make the development simple and user-friendly, the tool should be integrated into the SBT (Scala Build Tool\cite{sbt}) which is currently the most used and to some extent an industry standard in the Scala ecosystem. Moreover, it should be relatively straightforward, to integrate the Swat infrastructure into any web application framework. As a reference, the Play Framework\cite{play} has been chosen. SBT and Play FW are supported by the Typesafe\cite{typesafe} which is a company founded by the authors of Scala, so both projects are higly maintained with big communities around them.
 
-In principle could do without them, but bring more comfort to the further development.
+Finally, a sample application that demostrates usage of the toolkit should be created. Because the whole toolkit is quite complex piece of software whose size spans behind the scope of this thesis, it's presupposed that not all aspects of it would be fully completed. However the most challenging and diffcult parts should be finished. The areas that aren't so interesting from the architecture or design point of view would be given lower priority. So the sample application will be rather small.
 
-\begin{itemize}
-\item Loader that can load compiled JavaScript files from the server on the fly.
-\item JSON serializer \& deserializer (usable not only for Scala $\leftrightarrow$ JavaScript communication).
-\item RPC.
-\end{itemize}
+\subsection{Goals}
+
+To get better understanding, what has to be done, and to somehow break down the project, it's possible to identify couple of steps that have to be analyzed, decided and possibly implemented. The first set of core goals that are critically necessary for the toolkit consists of the following:
+
+\begin{description}
+\item[Compiler] The Scala to JavaScript compiler and its integration to SBT. It should be the most extensively tested component of the toolkit.
+\item[Interoperation] A way how to interoperate with JavaScript APIs and libraries.
+\item[Runtime] In case when the generated code isn't executable by itself, a runtime that would support the execution.
+\item[Libraries] Provide subset of the Scala and Java standard libraries relevant to the web environment.
+\item[Integration] Straightforward means of toolkit integration to a web application framework.
+\item[Distribution] In the ideal case, a library distribution unit should contain both Scala and the generated JavaScript code.
+\end{description}
+
+When the core goals are finished, it's possible to start working on other tasks, that the toolkit in principle could do without. But they bring more comfort to the further development and provide the competitive advantage over other similar tools. The enhanement goals are the following:
+
+\begin{description}
+\item[Serialization] The serializer \& deserializer usable not only for Scala $\leftrightarrow$ generated JavaScript communication.
+\item[Loading] An equivalent to Java classloader that can load compiled JavaScript files from the server on the fly.
+\item[RPC] The possibility to mark some methods as remote and infrastructure taking care of the communication.
+\item[Application] The sample application.
+\end{description}
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Background}
 
-Both Scala and JavaScript aren't mainstream languages in the sense of chosen paradigms and used concepts, so the following sections will focus mainly on the differences form the conventional languages (C++, Java, C\#) and on differences between the two, which are important from the compiler perspective.
+Both Scala and JavaScript aren't mainstream languages in the sense of the chosen paradigms and used concepts, so the following sections will focus mainly on the differences from the conventional languages (C++, Java, C\#) and on differences between the two, which are important from the compiler perspective. If you're already familiar with any of the languages, you may skip the corresponding sections. The last third of this chapter is dedicated to the Scala compiler, its internal processes and related data structures.
 
 \section{JavaScript}
+
+JavaScript originated as an in-browser scripting language, more recently it expanded to other areas like game-development, desktop applications and server applications. It was designed by Brendan Eich for Netscape, but when it became adopted by other companies, Netscape submitted the language specification to Ecma international which subsequently formalized it in the ECMAScript language standard. Regarding syntax and control structures, it was mostly influenced by C and Java, but from the design point of view, the main principles are taken from Self.
+
+\paragraph{Style} The language is imperative and to some extent functional. It supports standard control structures (e.g. if-then-else, while), makes distinction between expressions and statements, the functions are first-class citizens (i.e. objects themselves that can be manipulated with). One big difference is scoping. Unlike most of the standard languages which have block scoping, JavaScript has function scoping. So for example a variable declared inside "else" branch of an "if" statement is visible everywhere in the function body.
+
+\paragraph{Type system} JavaScript is dynamically typed, types are associated with values, not variables. The possible types are String, Boolean and Number for primitives, Array for mutable arrays that behave more like lists, Function representing functions and Object which is the supertype of all of the aforementioned types. Objects are associative arrays, so accessing properties is equivalent to dereferencing values in the associative array by the property names. Note that there isn't any integral numeric type (e.g. int, short), the Number is a 64bit double-precision floating point type. Nor the character type (char) is present.
+
+\begin{figure}[h]
+  \centering
+		\includegraphics{img/javascript-types.pdf}
+	\caption{JavaScript types}
+\end{figure}
 
 \begin{itemize}
 \item Scripting, object-oriented, imperative, functional, dynamic type system, interpreted. 
@@ -450,6 +472,22 @@ Swat as a SBT plugin, resident compilation that would simplify the development p
 	{\sc Meijer,} Erik and {\sc Drayton,} Peter.
 	\emph{Static Typing Where Possible, Dynamic Typing When Needed: The End of the Cold War Between Programming Languages}.
 	http://research.microsoft.com/en-us/um/people/emeijer/Papers/RDL04Meijer.pdf
+	
+\bibitem{rpc}
+	\emph{Remote procedure call}.
+	http://en.wikipedia.org/wiki/Remote\_procedure\_call
+	
+\bibitem{sbt}
+	{\emph Scala Build Tool}
+	http://www.scala-sbt.org/
+	
+\bibitem{play}
+	{\emph Play}
+	http://www.playframework.com/
+	
+\bibitem{typesafe}
+	{\emph Typesafe}
+	http://typesafe.com/
 
 \end{thebibliography}
 

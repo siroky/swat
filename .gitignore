@@ -25,7 +25,6 @@ swat/.idea/libraries
 
 # Thesis
 thesis/*.pdf
-thesis/img/*.pdf
 thesis/*.aux
 thesis/*.bbl
 thesis/*.blg
