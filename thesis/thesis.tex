@@ -15,13 +15,15 @@
 \usepackage{nomencl}
 \usepackage{parskip}
 \usepackage{listings}
+\usepackage{enumitem}
+\usepackage{nameref}
 
 \makenomenclature
 
 % Scala listing.
 \lstdefinelanguage{Scala}{
   morekeywords={abstract,case,catch,class,def,%
-    do,else,extends,false,final,finally,%
+    do,else,extends,false,final,finally,lazy,%
     for,if,implicit,import,match,mixin,%
     new,null,object,override,package,%
     private,protected,requires,return,sealed,%
@@ -36,6 +38,16 @@
   morestring=[b]"""
 }
 \lstset{language=Scala}
+
+% JavaScript listing.
+\lstdefinelanguage{JavaScript}{
+  keywords={break, case, catch, continue, debugger, default, delete, do, else, finally, for, function, if, in, instanceof, new, return, switch, this, throw, try, typeof, var, void, while, with},
+  morecomment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]",
+  sensitive=true
+}
 
 % Less indented chapter titles.
 \makeatletter
@@ -273,7 +285,7 @@ Finally, a sample application that demostrates usage of the toolkit should be cr
 
 To get better understanding, what has to be done, and to somehow break down the project, it is possible to identify couple of steps that have to be analyzed, decided and possibly implemented. The first set of core goals that are critically necessary for the toolkit consists of the following:
 
-\begin{description}
+\begin{description}[style=multiline,leftmargin=5cm]
 \item[1 - Compiler] The Scala to JavaScript compiler and its integration to SBT. It should be the most extensively tested component of the toolkit.
 \item[2 - Interoperation] A way how to interoperate with JavaScript APIs and libraries.
 \item[3 - Runtime] In case when the generated code is not executable by itself, a runtime that would support the execution.
@@ -284,8 +296,8 @@ To get better understanding, what has to be done, and to somehow break down the 
 
 When the core goals are finished, it is possible to start working on other tasks, that the toolkit in principle could do without. But they bring more comfort to the further development and provide the competitive advantage over other similar tools. The enhanement goals are the following:
 
-\begin{description}
-\item[7 - Serialization] The serializer \& deserializer usable not only for Scala $\leftrightarrow$ generated JavaScript communication.
+\begin{description}[style=multiline,leftmargin=5cm]
+\item[7 - Serialization] The serializer \& deserializer usable not only for communication between server-side Scala and client-side generated JavaScript.
 \item[8 - Loading] An equivalent to Java classloader that can load compiled JavaScript files from the server on the fly.
 \item[9 - RPC] A possibility to mark some methods as remote and infrastructure taking care of the communication.
 \item[10 - Application] A sample application.
@@ -296,7 +308,7 @@ When the core goals are finished, it is possible to start working on other tasks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Background}
 
-Both Scala and JavaScript are not mainstream languages in the sense of the chosen paradigms and used concepts, so the following sections will focus mainly on the differences from the conventional object-oriented languages (C++, Java, C\#) and on differences between the two, which are important from the compiler perspective. If you are already familiar with any of the languages, you may skip the corresponding sections. The section \ref{sec:ScalaCompiler}  is dedicated to the Scala compiler, its internal processes and related data structures.
+Both Scala and JavaScript are not mainstream languages in the sense of the chosen paradigms and used concepts, so the following sections will focus mainly on the differences from the conventional object-oriented languages (C++, Java, C\#) and on differences between the two, which are important from the compiler perspective. If you are already familiar with any of the languages, you may skip the corresponding sections. The section \ref{sec:ScalaCompiler} is dedicated to the Scala compiler, its internal processes and related data structures.
 
 \section{JavaScript}
 
@@ -417,35 +429,129 @@ The famous diamond inheritance problem that always emerges with the multiple inh
 \section{Scala Compiler}
 \label{sec:ScalaCompiler}
 
-https://wiki.scala-lang.org/display/SIW/Compiler
-http://lampwww.epfl.ch/~odersky/papers/ScalableComponent.pdf
+In the context of the thesis, it is also important to know how the scala compiler works, because it may be used by the Swat as a library for tasks that are specific for Scala compilation, but not that relevant from the Scala to JavaScript compilation perspective. The compiler architecture is summarized by Martin Odersky in \cite{ScalableComponents}:
 
-\begin{itemize}
-\item Compiler architecture overview.
-\item Compiler phases, pluggability.
-\end{itemize}
+\begin{quote}
+"The Scala compiler, \texttt{scalac}, consists of several phases. The first phase is syntax analysis, implemented by a scanner and a conventional recursive descent parser. The result of this phase is an abstract syntax tree. The next phase attributes the syntax tree with symbol and type information. This is followed by a number of phases that transform the syntax tree. Most transformations replace some high-level Scala-specific constructs with lower-level constructs that can more directly be represented in bytecode. Other transformations perform optimizations such as inlining or tail call elimination. Transformations always consume and produce attributed trees."
+\end{quote}
+
+So the compiler can be understood as a sequence of phases where each phase takes an abstract syntax tree (AST) as its input from the previous phase, adds attributes to the AST or modifies the AST and passes the modified tree to the consequent phase.
+
+In order to represent a scala program in the compiler, a couple of data structures needs to be defined\cite{Reflection}
+. \texttt{Name}s represent identifiers that appear in the source code, e.g. class names or field names. \texttt{Symbol}s are used to bind a name and the entity it refers to, such as a class or a method. Anything that can be given a name has a symbol associated with it. Instances of the \texttt{Type} class represent information about the type of a corresponding symbol (the information include member methods, fields, base types etc). Finally, the ASTs are represented by \texttt{Tree} and its subclasses that correspond to various source code elements such as class definitions (\texttt{ClassDef}), method invocations (\texttt{Apply}) or if-else statements (\texttt{If}).
+
+The only up-to-date description of the phases, the scalac consists of, can be found in the source code (class \texttt{scala.tools.nsc.Global}). Here are the most important ones:
+
+\begin{description}[style=multiline,leftmargin=5cm]
+\item[\texttt{syntaxAnalyzer}] Parses source code into ASTs, performs simple desugaring.
+\item[\texttt{analyzer.namerFactory}] Parses source code into ASTs, performs simple desugaring.
+\item[\texttt{analyzer.typerFactory}] Assigns types to symbols, the most complex phase.
+\item[\texttt{patmat}] Converts the \texttt{match} expressions into if-else statements, labels and jumps.
+\item[\texttt{uncurry}] Performs the opposite of currying, trnasforms variadic parameters to sequences, converts closures to anonymous classes and a lot of other similar, rather simple, operations. 
+\item[\texttt{explicitOuter}] For each nested class, adds a field for the reference to the outer class instance. 
+\item[\texttt{erasure}] Erases generic types, adds interfaces for traits.
+\item[\texttt{lazyVals}] Converts lazy fields into methods.
+\item[\texttt{constructors}] Moves field initialization into constructors.
+\item[\texttt{mixer}] Performs the mix-in composition.
+\item[\texttt{cleanup}] Platform specific cleanup.
+\item[\texttt{deadCode}] One of many optimization phases, eliminates dead code.
+\item[\texttt{jvm}] Generates the Java bytecode.
+\end{description}
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Analysis}
 
-This chapter shouldn't be somewhat biased by the fact, that the source language is Scala. The accent should be on how to transpose particular higher-level language concepts to JavaScript equivalent and how to solve related issues. So it should be applicable in different languages.
+This chapter should not be somewhat biased by the fact, that the source language is Scala. The accent should be on how to transpose particular higher-level language concepts to JavaScript equivalent and how to solve related issues. Therefore the information here should be applicable in different languages.
 
 \section{Setup}
 
-\begin{itemize}
-\item Plugging into compiler vs. extending and modifying it (in order to reorder and exclude phases). Suggested architecture (Source language AST $\rightarrow$ Compilation $\rightarrow$ JS AST $\rightarrow$ possibly other phases (not used in Swat) $\rightarrow$ ... $\rightarrow$ JS Code Gen $\rightarrow$ possibly other tools applied on the resulting JS, e.g. Google Closure compiler). 
-\item Choice of phase, after which the JavaScript compilation runs, highly determines the resulting code and also the need of runtime support. Swat decided to run in a point when the Scala ASTs most resemble JavaScript, even though it's not the most simple way to go and also causes some runtime overhead. The motivation behind it is to simplify debugging.
-\end{itemize}
+Compiler architecture has throughout years converged to a data flow consisting of canonical components. The source code is consumed by a scanner, that performs lexical analysis and produces a stream of lexical tokens. A parser takes the token stream on the input, performs syntactical analysis and builds up the ASTs. The ASTs are then processed by a semantical analyzer which validates them, assigns types to symbols and possibly transforms the ASTs. These three components are marked as the frontend components. When the abstract syntax trees leave the frontend, they go to a backend, which is resposnible for generation of the target language/assembly/byte code. The backend usually consists of several subcomponents that firstly produce some intermediate code, optimize it and then generate the machine specific code. Such a data flow can be seen on the top part of the pricture \ref{Compiler}.
+
+\begin{figure}[ht]
+  \centering
+	\includegraphics[width=\linewidth,height=\textheight,keepaspectratio]{img/Compiler.pdf}
+	\caption{Compiler architecture}
+	\label{Compiler}
+\end{figure}
+
+In order to transform programs to JavaScript, one needs to work with them programmatically. ASTs exactly serve this purpose and because standard compilers (e.g. javac, csc, scalac) already handle the transformation from source code to ASTs, reusing that functionality is definitely the way to go. The standard compiler architecture offers few places where the ASTs can be obtained. As depicted on the figure \ref{Compiler}, it is either before the semantic analysis (option A) or after the semantic analysis (option C). If the compiler components are subdivided into phases, it may be even possible to access the syntax trees in the middle of the sematic analysis (option B). That mostly depends on architecture of the source language compiler, whether it allows such an interception.
+
+Choice of the point when the ASTs are obtained determines abilities of the JavaScript frontend to some extent. Before the semantic analysis, the abstract syntax trees just mirror the source code and do not contain any added deduced information. After the analysis, the program is on one hand proven correct and e.g. all the variables have known type. On the other hand, the particular ASTs may be oversimplified and desugared, even if the original trees are directly expressible in JavaScript (for example closure desugaring to anonymous classes). If the semantic analysis is sequential, it is possible to access the ASTs after each phase and thus have wider range of choices.
+
+The JavaScript frontend is responsible for creation of JavaScript ASTs that correspond to the input Scala ASTs. It may use different approaches to tackle its task. One option is to construct the JavaScript ASTs utilizing only JavaScript language primitives and internal functions, so the resulting code would be executable as it is. The other way is to move some of the logic to a JavaScript runtime library, so the outputted JavaScript code would run only if the runtime library is present in the global scope. The two approaches are illustrated on how the Scala snippet \ref{lst:ScalaComVsRun} could be compiled to JavaScript - listings \ref{lst:JsCompileTime} and \ref{lst:JsRunTime}.
+
+\begin{lstlisting}[frame=single,caption={Scala input.},label={lst:ScalaComVsRun}]
+lazy val foo = reallyLongOperation()
+
+// Causes evaluation of foo.
+val bar = foo 
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript,frame=single,caption={Compile-time option outcome.},label={lst:JsCompileTime}]
+var foo_value = undefined;
+var foo = function() {
+  if (typeof foo_value === "undefined") {
+    foo_value = reallyLongOperation();
+  }
+  return foo_value;
+};
+
+var bar = foo();
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript,frame=single,caption={Runtime option outcome.},label={lst:JsRunTime}]
+// runtime.lazy is a library function.
+var foo = runtime.lazy(function() {
+  return reallyLongOperation();
+});
+
+var bar = foo();
+\end{lstlisting}
+
+After the JavaScript frontend, which may itself consist of multiple phases, comes the JavaScript backend. It generates JavaScript code corresponding to the ASTs and may optimize the output either by itself or by an external tool (Google Closure compiler\cite{GoogleClosure} is the most popular).
+
+In the Swat, initial decision was to produce JavaScript code that would resemble Scala as much as possible and use just the compiler phases that analyze the code (\texttt{syntaxAnalyzer}, \texttt{analyzer.namerFactory}, \texttt{analyzer.typerFactory}). The motivation behind that was to simplify debugging of the compiled code in a web browser. But it turned out that it would be a lot work to implement JavaScript runtime counterparts of Scala control structures that are not present in JavaScript. Moreover, it would be beneficial to execute some of the latter phases before Swat, however Scala compiler phases have fixed order and dependencies and it is not possible left out a phase from the sequence. 
+
+So the resulting solution is a compromise between "similarity to Scala" and "reimplementation of what the latter phases do". This can be illustrated on the \texttt{patmat} phase which desugars \texttt{match} expressions into sequences of conditions. Not using \texttt{patmat} would basically mean to reimplement in on the JavaScript runtime level. The phase \texttt{erasure} has been chosen as the one the Swat will run before. From the top level point of view, the phases that somehow modify method bodies or parameters are executed before Swat. The phases that operate on the class level (e.g. transform traits into class and interface pairs, perform the mix-in composition) run after the Swat.
+
+A disadvantage is that the resulting code sometimes does not resemble the source Scala code, which means that debugging in the browser is tricky. Solution for this issue are source maps\cite{SourceMaps} that establish mapping between the executed JavaScript code (minified, compiled) and the original code (not minified, even possibly not JavaScript) and allow an user to debug the original code.
+
+In order to minimize size and bilerplate in the produced JavaScript and to increase its readability, the Swat JavaScript fronted counts with a runtime library and tries to move functionality there if it is both possible and beneficial. In cases when the compile-time option nor the runtime option is apparently better than the other, the runtime option is chosen, because modifying the runtime is by far simpler than modifying the compiler.
 
 \section{Interoperation with JavaScript}
 
-Has to be compatible with standard Scala Compiler so it won't fail before the custom plugin. Two ways how to solve it: 
-\begin{itemize}
-\item Using dynamic.
-\item Strongly typed adapters and why they're better.
-\end{itemize}
+One of the crucial requirements of a compiler targetting JavaScript is enabling the programs written in a source language to interoperate with the JavaScript environment. Inherent restriction is, that the used solution should not violate syntax of the source language. The following three ways turned out to be the most usable and moreless orthogonal to each other: 
+
+\begin{description}
+\item[Annotations] A method or a field is annotated with an annotation that takes JavaScript code as the only string parameter. When the compiler encounters a method AST or a field AST that is annotated with such annotation, it simply ignores the field value or method body and instead uses the JavaScript code stored in the annotation.
+\item[Adapters] For all the JavaScript APIs and objects that should be usable from the source language, so called "adapter" classes are defined in the source language. They should exactly match the JavaScript definitions in terms of names, fields, methods, parameters etc. and should be marked with an annotation in order to be distinguishable. They do not have to be implemented, but the type signatures should match the specification. When the compiler encounters such an adapter class, it knows that it is something that is already present in the JavaScript environment, so it can be completely ignored. 
+\item[Dynamic] This option is relevant only to source languages that support the concept of a dynamic class. In Scala, one would define an object representing the JavaScript global scope: \texttt{object global extends Dynamic}. The object mixes-in the \texttt{scala.Dynamic}\cite{ScalaDynamic} trait, so any field can be selected or any method can be invoked on that particular object. For example \texttt{global.window} will be turned by the Scala compiler into \texttt{global.selectDynamic("window")} which can be later transformed by the JavaScript frontend into \texttt{window}.
+\end{description}
+
+All three approaches are presented on the listing \ref{lst:Interoperation}. The JavaScript output would be same for each of them.
+
+\begin{lstlisting}[frame=single,caption={Scala interoperation options.},label={lst:Interoperation}]
+// Annotations.
+@native("window.document")
+val document1: Any = null
+
+// Adapters.
+@adapter class Document {
+  // ...
+}
+@adapter object window {
+  val document: Document = null
+  // ...
+} 
+val document2: Document = window.document
+
+// Dynamic.
+val document3: Any = global.window.document
+\end{lstlisting}
+
+As it was mentioned in the motivation, static typing is an advantage in the context of large applications, so the option {\it Adapters} is the preferred one. Unlike the two other, it preserves type safety. The tradeoff is that it is uncomparably more time-consuming compared to the other options. The {\it Annotations} and {\it Dynamic} provide similar functionality and but should be used as a last resort only if the {\it Adapters} are not applicable. Swat uses and favors the {\it Adapters} and for the exceptional cases the {\it Annotations} which are little more flexible than the {\it Dynamic} option.
 
 \section{Compilation}
 
