@@ -463,7 +463,7 @@ The only up-to-date description of the phases, the scalac consists of, can be fo
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Analysis}
 
-This chapter should not be somewhat biased by the fact, that the source language is Scala. The accent should be on how to transpose particular higher-level language concepts to JavaScript equivalent and how to solve related issues. Therefore the information here should be applicable in different languages.
+This chapter proposes, how some of the defined goals can be fulfilled, while providing more possibilities with their pros and cons. It should not be biased by the fact, that the source language is Scala, so the described methods could be applied even in a different environment. But for example purposes, Scala will be used, because it is the source language of the Swat. Moreover, this chapter elaborates on which of the proposed approaches is used by the Swat and why.
 
 \section{Setup}
 
@@ -478,7 +478,7 @@ Compiler architecture has throughout years converged to a data flow consisting o
 
 In order to transform programs to JavaScript, one needs to work with them programmatically. ASTs exactly serve this purpose and because standard compilers (e.g. javac, csc, scalac) already handle the transformation from source code to ASTs, reusing that functionality is definitely the way to go. The standard compiler architecture offers few places where the ASTs can be obtained. As depicted on the figure \ref{Compiler}, it is either before the semantic analysis (option A) or after the semantic analysis (option C). If the compiler components are subdivided into phases, it may be even possible to access the syntax trees in the middle of the sematic analysis (option B). That mostly depends on architecture of the source language compiler, whether it allows such an interception.
 
-Choice of the point when the ASTs are obtained determines abilities of the JavaScript frontend to some extent. Before the semantic analysis, the abstract syntax trees just mirror the source code and do not contain any added deduced information. After the analysis, the program is on one hand proven correct and e.g. all the variables have known type. On the other hand, the particular ASTs may be oversimplified and desugared, even if the original trees are directly expressible in JavaScript (for example closure desugaring to anonymous classes). If the semantic analysis is sequential, it is possible to access the ASTs after each phase and thus have wider range of choices.
+Choice of the point when the ASTs are obtained determines abilities of the JavaScript frontend to some extent. Before the semantic analysis, the abstract syntax trees just mirror the source code and do not contain any added deduced information. After the analysis, the program is on one hand proven correct and e.g. all the variables have known type. On the other hand, some particular ASTs may be oversimplified and desugared, even if the original trees are directly expressible in JavaScript (for example closure desugaring to anonymous classes). If the semantic analysis is sequential, it is possible to access the ASTs after each phase and thus have wider range of choices.
 
 The JavaScript frontend is responsible for creation of JavaScript ASTs that correspond to the input Scala ASTs. It may use different approaches to tackle its task. One option is to construct the JavaScript ASTs utilizing only JavaScript language primitives and internal functions, so the resulting code would be executable as it is. The other way is to move some of the logic to a JavaScript runtime library, so the outputted JavaScript code would run only if the runtime library is present in the global scope. The two approaches are illustrated on how the Scala snippet \ref{lst:ScalaComVsRun} could be compiled to JavaScript - listings \ref{lst:JsCompileTime} and \ref{lst:JsRunTime}.
 
@@ -527,7 +527,7 @@ One of the crucial requirements of a compiler targetting JavaScript is enabling 
 \begin{description}
 \item[Annotations] A method or a field is annotated with an annotation that takes JavaScript code as the only string parameter. When the compiler encounters a method AST or a field AST that is annotated with such annotation, it simply ignores the field value or method body and instead uses the JavaScript code stored in the annotation.
 \item[Adapters] For all the JavaScript APIs and objects that should be usable from the source language, so called "adapter" classes are defined in the source language. They should exactly match the JavaScript definitions in terms of names, fields, methods, parameters etc. and should be marked with an annotation in order to be distinguishable. They do not have to be implemented, but the type signatures should match the specification. When the compiler encounters such an adapter class, it knows that it is something that is already present in the JavaScript environment, so it can be completely ignored. 
-\item[Dynamic] This option is relevant only to source languages that support the concept of a dynamic class. In Scala, one would define an object representing the JavaScript global scope: \texttt{object global extends Dynamic}. The object mixes-in the \texttt{scala.Dynamic}\cite{ScalaDynamic} trait, so any field can be selected or any method can be invoked on that particular object. For example \texttt{global.window} will be turned by the Scala compiler into \texttt{global.selectDynamic("window")} which can be later transformed by the JavaScript frontend into \texttt{window}.
+\item[Dynamic] This option is relevant only to source languages that support the concept of a dynamic class. In Scala, one would define an object representing the JavaScript global scope: \texttt{object global extends Dynamic}. The object mixes-in the \texttt{scala.Dynamic}\cite{ScalaDynamic} trait, so any field can be selected or any method can be invoked on that particular object. For example \texttt{global.window} will be turned by the Scala compiler before the typing phase into \texttt{global.selectDynamic("window")}. Such an invocation can later be transformed by the JavaScript frontend into \texttt{window}.
 \end{description}
 
 All three approaches are presented on the listing \ref{lst:Interoperation}. The JavaScript output would be same for each of them.
@@ -551,19 +551,48 @@ val document2: Document = window.document
 val document3: Any = global.window.document
 \end{lstlisting}
 
-As it was mentioned in the motivation, static typing is an advantage in the context of large applications, so the option {\it Adapters} is the preferred one. Unlike the two other, it preserves type safety. The tradeoff is that it is uncomparably more time-consuming compared to the other options. The {\it Annotations} and {\it Dynamic} provide similar functionality and but should be used as a last resort only if the {\it Adapters} are not applicable. Swat uses and favors the {\it Adapters} and for the exceptional cases the {\it Annotations} which are little more flexible than the {\it Dynamic} option.
+As it was mentioned in the motivation, static typing is an advantage in the context of large applications, so the option {\it Adapters} is the preferred one. Unlike the two other, it preserves type safety. The tradeoff is that it is uncomparably more time-consuming compared to the other options. The {\it Annotations} and {\it Dynamic} provide similar functionality, but should be used as a last resort only if the {\it Adapters} are not applicable. Swat uses and favors the {\it Adapters} and for the exceptional cases the {\it Annotations} which are little bit more flexible than the {\it Dynamic} option.
 
-\section{Compilation}
+\section{Frontend}
 
-The compiler starts given the whole program (or its top level part) in form of an AST. It's natural to start with the top-level ASTs that encapsulate everything else and go down the tree through class definitions, their member definitions to expressions on the bottom of the tree.
+A heart of the whole toolkit is the JavaScript frontend responsible for transformation of source language AST to JavaScript ASTs. It starts given the whole program (or its top level part) in the form of a syntax tree, traverses the AST and produces JavaScript ASTs. According to the current subtree, whose root the fronted is  visitng, it should produce JavaScrit counterpart for that subtree. The following sections describe, how particular tree types should be represented in JavaScript. It is natural to start with the top-level ASTs that encapsulate everything else and traverse down the tree through class definitions, their member definitions to the simplest expressions on the leaf level of the tree.
 
 \subsection{Scope of a Compilation Unit}
 
+The top level tree type represents a compilation unit (one source file) and it contains possibly nested definitions of packages. The package definitions are usually non-empty, they encapsulate type definitions (definitions of classes, objects and traits).
+
+Important decision on this level is, whether the whole compilation unit should be transformed into one JavaScript AST which would be consequently turned by the JavaScript backend into one JavaScript file. Or whether the compilation unit should be somehow splitted into multiple files. An inspiration can be found in the standard Scala compiler which splits the compilation unit into type definitions and produces separate classfiles (\texttt{*.class}) for each type definition.
+
+For a compiler targetting JavaScript, the splitting opens up a possibility, to track and store dependencies of each type definition together with its outputted JavaScript typefile (analogue to a Java classfile). A dependency is either an instantiated class, an accessed singleton object, an used type or a supertype of the type definition. With this information, the JavaScript typefiles form an oriented dependency graph. It would also be possible to track dependencies among compilation units, however it wouldn't be any advantage over dependencies among type definitions and wouldn't be as transparent either.
+
+The entry point to an application, in the Scala environment, is a singleton object that mixes-in the \texttt{scala.App} trait, in other languages it is a static class. But not all web applications are in the form of a single page. It is quite common that there are multiple pages with different functionality, therefore the application has multiple entry-points corresponding to the different pages. 
+
+So in order to run an application on a page, a typefile corresponding to the entry point has to be loaded with all its transitive dependencies. If the particular entry point has just a few dependencies, then the size of the resulting JavaScript, that has to be downloaded by the client, is small. Even though the whole project may consist of hundreds of classes. The same applies for external libraries. If a library is structured in the same manner (typefiles with dependencies) and the application uses just a fraction of the library, then resulting JavaScript still stays small.
+
+For Swat, extracting all type definitions from the compilation unit and producing standalone typefiles for each of them is a necessity, because the Scala standard library\cite{ScalaLibrary}, which is an implicit dependency of all Scala programs, contains thousands of classes. Having the library packed in a single file whose size would exceed megabytes wouldn't be acceptable in any real-world usage scenario. 
+
+\subsection{Types}
+
+As the compilation unit handling is sorted out, it now comes to how the type definitions should be represented in JavaScript. Packages or namespaces are not an issue because solution for them is pretty straightforward (illustrated on the listing \ref{lst:JavaScriptPackages}).
+
+\begin{lstlisting}[language=JavaScript,frame=single,caption={Packages in JavaScript.},label={lst:JavaScriptPackages}]
+// Declaration of the package "foo.bar.baz".
+var foo = {};
+foo.bar = {};
+foo.bar.baz = {};
+
+// Definition of types in the package.
+foo.bar.baz.Animal = {
+  // ...
+};
+
+foo.bar.baz.Dog = {
+  // ...
+};
+\end{lstlisting}
+
 \begin{itemize}
-\item Extracting so called types (classes, traits, objects) from the compilation unit.
-\item Compiling the types separately, while tracking dependencies (two different kinds) among them.
 \item Inheritance, solving static initialization order, encoding type information.
-\item Producing type files which form an oriented dependency graph.
 \end{itemize}
 
 \subsection{Scope of a Type}
