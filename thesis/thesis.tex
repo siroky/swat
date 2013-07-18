@@ -492,7 +492,7 @@ val bar = foo
 \begin{lstlisting}[language=JavaScript,frame=single,caption={Compile-time option outcome.},label={lst:JsCompileTime}]
 var foo_value = undefined;
 var foo = function() {
-  if (typeof foo_value === "undefined") {
+  if (typeof foo_value === 'undefined') {
     foo_value = reallyLongOperation();
   }
   return foo_value;
@@ -559,11 +559,11 @@ A heart of the whole toolkit is the JavaScript frontend responsible for transfor
 
 \subsection{Scope of a Compilation Unit}
 
-The top level tree type represents a compilation unit (one source file) and it contains possibly nested definitions of packages. The package definitions are usually non-empty, they encapsulate type definitions (definitions of classes, objects and traits).
+The top level tree type represents a compilation unit (one source file) and it contains possibly nested definitions of packages. The package definitions are usually non-empty, they encapsulate type definitions (definitions of classes, singleton objects and traits).
 
 Important decision on this level is, whether the whole compilation unit should be transformed into one JavaScript AST which would be consequently turned by the JavaScript backend into one JavaScript file. Or whether the compilation unit should be somehow splitted into multiple files. An inspiration can be found in the standard Scala compiler which splits the compilation unit into type definitions and produces separate classfiles (\texttt{*.class}) for each type definition.
 
-For a compiler targetting JavaScript, the splitting opens up a possibility, to track and store dependencies of each type definition together with its outputted JavaScript typefile (analogue to a Java classfile). A dependency is either an instantiated class, an accessed singleton object, an used type or a supertype of the type definition. With this information, the JavaScript typefiles form an oriented dependency graph. It would also be possible to track dependencies among compilation units, however it wouldn't be any advantage over dependencies among type definitions and wouldn't be as transparent either.
+For a compiler targetting JavaScript, the splitting opens up a possibility, to track and store dependencies of each type definition together with its outputted JavaScript typefile (analogue to a Java classfile). A dependency is either an instantiated class, an accessed singleton object, an used type or a supertype of the type definition. With this information, the JavaScript typefiles form an oriented dependency graph. It would also be possible to track dependencies among compilation units, however it wouldn't be any advantage over dependencies among type definitions and would not be as transparent either.
 
 The entry point to an application, in the Scala environment, is a singleton object that mixes-in the \texttt{scala.App} trait, in other languages it is a static class. But not all web applications are in the form of a single page. It is quite common that there are multiple pages with different functionality, therefore the application has multiple entry-points corresponding to the different pages. 
 
@@ -571,7 +571,7 @@ So in order to run an application on a page, a typefile corresponding to the ent
 
 For Swat, extracting all type definitions from the compilation unit and producing standalone typefiles for each of them is a necessity, because the Scala standard library\cite{ScalaLibrary}, which is an implicit dependency of all Scala programs, contains thousands of classes. Having the library packed in a single file whose size would exceed megabytes wouldn't be acceptable in any real-world usage scenario. 
 
-\subsection{Types}
+\subsection{Type Definitions}
 
 As the compilation unit handling is sorted out, it now comes to how the type definitions should be represented in JavaScript. Packages or namespaces are not an issue because solution for them is pretty straightforward (illustrated on the listing \ref{lst:JavaScriptPackages}).
 
@@ -591,17 +591,105 @@ foo.bar.baz.Dog = {
 };
 \end{lstlisting}
 
-\begin{itemize}
-\item Inheritance, solving static initialization order, encoding type information.
-\end{itemize}
+A type definition (class, trait or singleton object) is identified by a name, has an ordered sequence of supertypes, consists of members and has a constructor. A member is either a method definition or a field definition. In case of a singleton object or static constructors, the runtime is responsible for their initialization.
+
+There are many possibilities, how to encode such type definitions in JavaScript, because JavaScript is really flexible. Even different JavaScript frameworks, that introduce the concept of class-based inheritance, encode it slightly differently. As mentioned earlier, the favored encoding would be to produce only the necessary information about the type definition. And let the runtime take care of the constructor function and inheritance setup (i.e. initialization of the prototype chain). An example of how a Scala class (listing \ref{lst:ScalaClassEncoding}) could be encoded can be seen on listing \ref{lst:JavaScriptClassEncoding}.
+
+\begin{lstlisting}[frame=single,caption={Scala class example.},label={lst:ScalaClassEncoding}]
+package animals {
+  class Dog extends Animal with FourLegged {
+    def bark() { /* ... */ }
+    override def live() { /* ... */ }
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript,frame=single,caption={Class in JavaScript.},label={lst:JavaScriptClassEncoding}]
+// Definition of the class handled by the runtime.
+animals.Dog = runtime.class(
+  
+  // Full name of the class.
+  'animals.Dog',
+	
+  // Super types.
+  [Animal, FourLegged, java.lang.Object, Any],
+	
+  // Members of the class.
+  {
+    bark: function() { /* ... */ },
+    live: function() { /* ... */ }
+  }
+);
+\end{lstlisting}
+
+So it is completely up to runtime, namely the function \texttt{runtime.class}, to set up the inheritance by chaining \texttt{Dog} prototype with the supertype prototypes and to define the constructor function. The \texttt{runtime.class} function returns a contructor function of the \texttt{animals.Dog} so new instances can be created simply by \texttt{new animals.Dog()}.
+
+One thing that has to be taken special care of is an initialization of singleton objects. Singleton objects behave similarly to static constructors, they should be initialized before they are accessed for the first time. To ensure that, it is sufficient enough not to reference them directly, but use an accessor function instead, which follows the lazy initialization pattern\cite{Lazy}. When a singleton object is accessed for the first time via the accessor function, the function knows it has not been initialized yet, initializes it and returns in.
 
 \subsection{Scope of a Type}
 
-\begin{itemize}
-\item Extracting members.
-\item Processing fields, nothing has to be declared in JS, therefore setting initial values in constructor is enough, lazy fields.
-\item Processing methods, taking care of overloading and constructor.
-\end{itemize}
+A type has two kinds of members: field definitions and method definitions. Fields of JavaScript objects do not have to be declared in advance, they come into existnce when they are assigned. Therefore the JavaScript frontend can safely ignore the declaration part, take the assignment part (e.g. \texttt{foo = 123}) and move it into a new synthesized field initialization function. The field initializer invocation has to be put in the beginning of each constructor, so when a constructor body is being executed, the fields are already initialized.
+
+In Scala, there is a notion of a default constructor. If a class has multiple constructors, the overloaded constructors have to, as their first statement, call either another overloaded constructor or the default constructor. But the invocation chain always has to end up in the default constructor, otherwise the Scala compiler reports an error. As a consequence, there is no need for the synthetic field initializer, the field initialization can be placed on the top of default constructor body.
+
+Scala also supports lazy fields, that are initialized when firstly accessed. The same approach as with the singleton object initializers can be utilized, which gives an opportunity to a runtime function \texttt{runtime.lazify} usable for both cases.
+
+With method definitions, the situation is much more complicated. Depending on the source language, a method can be overloaded and it can have parameters with defualt values or a variadic parameter. Some of the features may already be handled by the source language compiler, namely the variadic parameters (but even if not, their processing is not a big challenge).
+
+\paragraph{Method overloading} Because JavaScript does not support multiple variables with the same name in a scope, methods of JavaScript objects cannot be overloaded. Overloaded methods differ by their type singatures, therefore one possible solution is to somehow encode the type signature into the method name. The other, not so straightforward way, is to have one "wrapper" method named the same as all the overloaded methods. The wrapper method can take a type signature as an additional string parameter and based on its value, it decides which variant to actually invoke. The listings \ref{lst:ScalaOverloading} and \ref{lst:JavaScriptOverloading} show how declarations and invocations of methods processed by both of the approaches could look like.
+
+\begin{lstlisting}[frame=single,caption={Scala overloading example.},label={lst:ScalaOverloading}]
+class A {
+  def foo(x: String) { /* ... */ }
+  def foo(x: Int) { /* ... */ }
+  def test() {
+    foo("test")
+    foo(123)
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript,frame=single,caption={Overloading in JavaScript.},label={lst:JavaScriptOverloading}]
+// The method name encoding approach.
+runtime.class('A', [java.lang.Object, Any], {
+  foo__java_lang_String: function(x) { /* ... */ },
+  foo__scala_Int: function(x) { /* ... */ },
+  test: function() {
+    foo__java_lang_String('test');
+    foo__scala_Int(123);
+  }
+});
+
+// The wrapper method approach.
+runtime.class('A', [java.lang.Object, Any], {
+  foo: runtime.overloaded({
+    'java.lang.String': function(x) { /* ... */ },
+    'scala.Int': function(x) { /* ... */ }
+  }),
+  test: function() {
+    foo('test', 'java.lang.String');
+    foo(123, 'scala.Int');
+  }
+});
+\end{lstlisting}
+
+The former approach has a big advantage in zero runtime overhead. On the other hand, methods with a few parameters of nontrivial types would have really long names, so the resulting code would be rather unreadable.
+The most important information about a method call in the use site, is the method name and the arguments. With this solution, they would be separated by the type signature encoding.
+
+The latter way obviously causes runtime overhead both during declaration (the \texttt{runtime.overload} function has to create the "wrapper" method) and during invocation (choosing the variant according to the provided type signature). A benefit is, that the resulting code is more readable - the important information occur in the code earlier, than the less important type signature. Another advantage is, that calling a method compiled to JavaScript directly from JavaScript is simpler, because the one who calls it does not have to know, how a type signature is encoded into a method name. It is enough to know fully qualified names of the method parameter types.
+
+If performance is the main priority, then the "name encoding" variant is the one to use. In Swat, the "wrapper method" approach is used mainly for the sake of code readability, however it is not a big deal to change it to the other one.
+
+\paragraph{Default parameter values} If the source language allows to define method parameter default values, then the best approach is to exploit the JavaScript \texttt{undefined} constant which has no counterpart in the most of other programming languages. In the invocation site, if an argument is not provided (i.e. the default value should be used), the JavaScript frontend can use the \texttt{undefined} as the argument. And on the top of the method body, all the arguments have to be checked whether they are the \texttt{undefined}. If so, the default value should be used instead as it is demonstrated on the listing \ref{lst:JavaScriptDefaultParameters}.
+
+\begin{lstlisting}[language=JavaScript,frame=single,caption={Default parameters in JavaScript.},label={lst:JavaScriptDefaultParameters}]
+function(x) {
+  if (typeof x === 'undefined') {
+    x = 'default value';	
+  }
+  // ...
+}
+\end{lstlisting}
 
 \subsection{Expression Scope}
 
@@ -616,11 +704,11 @@ foo.bar.baz.Dog = {
 
 \section{Library Distribution}
 
-Storing the compiled JavaScript files as resources of the very same module, so they're included in the packaged jar together with the Java classfiles. Integration of such library and using it on both platforms is therefore simple. Implies need of a type loader, that can access the type files.
+A simple to use distribution process is in the context of the tool particularly important. The solution however, to further extent, depends on the source language platform and distribution means there. In the Scala ecosystem, programs and libraries are distributed exactly the same way as in the Java environment - in the form of \texttt{*.jar} files (Java Archives). Such an archive usually contains class files, metadata associated with them and additional resources.
 
-\section{Runtime}
+Integrating distribution of the compiled JavaScript with the existing methods of Scala program distribution is without a doubt the ideal approach, because the existing infrustructure (build tools, dependency management tools) could be utilized. The proposed solution is, to trivially output all the generated JavaScript files into the resources directory of the very same module. So during standard compilation, which produces classfiles, the compiler to JavaScript is executed in order to produce the JavaScript typefiles. The typefiles are stored into the resources of the module, using the same directory structure that is used in the \texttt{target} directory for classfiles. Finally, when the module is packaged into a \texttt{*.jar}, both the classfiles and typefiles are included. And that is exactly what the user of the library needs. The classfiles for standard compilation and execution of pragrams that use the library, the typefiles for client side programs that are compiled to JavaScript and rely on the library.
 
-The only interesting thing, from the analysis point of view, is encoding class/trait inheritance in JavaScript using the object prototype chaining.
+Such a distribution method implicitly raises a new requirement on a JavaScript type loader, which should be able to extract typefile from resources of a module based on fully qualified name of the type that is stored in the typefile. Because a typefile may have other typefiles as its dependenecies, the typeloader explores the dependency graph and yields the required typefile together with all its transitive dependencies. So the requested typefile can be immediately executed in a page in a browser.
 
 
 
