@@ -49,18 +49,13 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
     }
 
     def extractClassDefs(tree: Tree): List[ClassDef] = tree match {
-        case p: PackageDef => p.stats.flatMap(extractClassDefs _)
-        case c: ClassDef if c.symbol.isCompiled => c :: c.impl.body.flatMap(extractClassDefs _)
+        case p: PackageDef => p.stats.flatMap(extractClassDefs)
+        case c: ClassDef if c.symbol.isCompiled => c :: c.impl.body.flatMap(extractClassDefs)
         case _ => Nil
     }
 
     def processClassDef(classDef: ClassDef): ProcessedClassDef = {
-        val classSymbol = classDef.symbol
-        classSymbol.jsAnnotation.map { code =>
-            ProcessedClassDef(classSymbol.dependencyAnnotations, js.RawCodeBlock(code))
-        }.getOrElse {
-            ClassDefProcessor(classDef).process
-        }
+        ClassDefProcessor(classDef).process
     }
 
     def processProvide(dependencyType: Type): js.Statement = {

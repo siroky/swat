@@ -123,7 +123,7 @@ trait ClassDefProcessors {
             // added. E.g. 'Int', function(i) { ... },  'String, String', function(s1, s2) { ... }.
             val overloads = defDefs.flatMap { defDef =>
                 val parameterTypes = defDef.vparamss.flatten.map(p => p.tpt.tpe)
-                val parameterIdents = parameterTypes.map(typeIdentifier _)
+                val parameterIdents = parameterTypes.map(typeIdentifier)
                 List(js.StringLiteral(parameterIdents.mkString(", ")), defDefProcessor(defDef))
             }
 
@@ -178,11 +178,8 @@ trait ClassDefProcessors {
 
         def processDefDef(defDef: DefDef, firstStatement: Option[js.Statement] = Some(selfDeclaration)) = {
             val processedParameters = defDef.vparamss.flatten.map(p => localJsIdentifier(p.name))
-            val jsCode = defDef.symbol.jsAnnotation
             val processedBody =
-                if (jsCode.isDefined) {
-                    js.RawCodeBlock(jsCode.get)
-                } else if (defDef.symbol.isGetter && defDef.symbol.isLazy) {
+                if (defDef.symbol.isGetter && defDef.symbol.isLazy) {
                     // Body of a lazy val (which is assigned to the corresponding field in the primary constructor)
                     // can be replaced by simple return of the field, where the lazy val is stored.
                     js.ReturnStatement(Some(fieldGet(defDef.symbol)))

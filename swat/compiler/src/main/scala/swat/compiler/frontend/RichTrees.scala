@@ -46,22 +46,6 @@ trait RichTrees {
             s.constantAtIndex(0).map(_.booleanValue).getOrElse(true)
         }
 
-        def jsAnnotation: Option[String] = typedAnnotation(typeOf[swat.native]).map { i =>
-            i.stringArg(0).getOrElse {
-                throw new CompilationException("The jsCode argument of the @native annotation must be a constant.")
-            }
-        }
-
-        def dependencyAnnotations = typedAnnotations(typeOf[swat.dependency]).map { i =>
-            val dependencyType = i.constantAtIndex(0).map(_.typeValue).getOrElse {
-                throw new CompilationException("The cls argument of the @dependency annotation is invalid.")
-            }
-            val isHard = i.constantAtIndex(1).map(_.booleanValue).getOrElse {
-                throw new CompilationException("The isHard argument of the @dependency annotation must be a constant.")
-            }
-            Dependency(Right(dependencyType), isHard)
-        }
-
         def hasAnnotation(tpe: Type) = typedAnnotation(tpe).nonEmpty
         def typedAnnotation(tpe: Type) = typedAnnotations(tpe).headOption
         def typedAnnotations(tpe: Type) = s.annotations.filter(_.atp =:= tpe)

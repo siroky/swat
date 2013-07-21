@@ -16,38 +16,6 @@ class ClassDefinitionTests extends CompilerSuite {
         """ shouldCompileToPrograms Map.empty
     }
 
-    test("Native classes aren't compiled and get replaced with the native code") {
-        """
-            @swat.native("A = function() { this.a = 'foo'; };")
-            class A
-        """ shouldCompileTo Map(
-            "A" ->
-                """
-                    swat.provide('A');
-                    A = function() { this.a = 'foo'; };
-                """
-        )
-    }
-
-    test("Dependencies with native annotations are supported") {
-        """
-            import swat._
-
-            @native("A = function() { };")
-            @dependency(classOf[Boolean], false)
-            @dependency(classOf[String], true)
-            class A
-        """ shouldCompileTo Map(
-            "A" ->
-                """
-                    swat.provide('A');
-                    swat.require('java.lang.String', true);
-                    swat.require('scala.Boolean', false);
-                    A = function() { };
-                """
-        )
-    }
-
     test("Definitions are properly qualified with respect to packages and outer classes") {
         """
             import swat._
