@@ -499,6 +499,7 @@ The only up-to-date description of the phases, the scalac consists of, can be fo
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Analysis}
+\label{sec:Analysis}
 
 This chapter proposes, how some of the defined goals can be fulfilled, while providing more possibilities with their pros and cons. It should not be biased by the fact, that the source language is Scala, so the described methods could be applied even in a different environment. But for example purposes, Scala will be used, because it is the source language of the Swat. Moreover, this chapter elaborates on which of the proposed approaches is used by the Swat and why.
 
@@ -877,33 +878,55 @@ Such a distribution method implicitly raises a new requirement on a JavaScript t
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Implementation}
 
 \section{Environment}
 
-Prerequisities, Scala, versions, build tools.
+Nature of the Swat toolkit and how it should be used by other programmers implies that it has to be tightly cooperating both with the standard Scala compiler and the build tool SBT. The compiler to JavaScript works with internal data structures and interfaces defined by the Scala compiler, however those may change even from minor version to minor version. No backward compatibility of those internal structures is guaranteed. So as of writing the thesis the most current version of Scala (Scala 2.10.1) has been chosen to be the only supported version. 
 
-\section{Project Overview}
+Build process and execution of the toolkit is handled by SBT which means that the only requirement on the host system is to have the Java Runtime Environment in version 1.6 or higher installed. All dependencies of the Swat (e.g. Scala compiler, Scala library) are obtained by SBT from the internet. SBT is distributed together with the toolkit with motiviation to make the usage as simple as possible - just downloading the toolkit and running the included SBT. The whole toolkit is divided into multiple projects, everything is defined in a SBT configuration file (\texttt{project/SwatBuild.scala}). SBT is not tightly connected with any particular IDE, but it is possible to generate IDE specific project files for the most used ones (IntelliJ Idea, Eclipse) based on the SBT configuration file.
 
-The big picture of the whole project, interaction of all components and description of the processes in it so one can get understanding of how the whole thing works, including the type loading, RPC and JSON serializers.
+\section{Toolkit Overview}
 
-\section{API \& Adapters}
+The two core projects are the \texttt{api} and \texttt{compiler}. They are the only dependencies required to be able to compile Scala programs to JavaScript. The \texttt{api} contains adapter classes and Swat specific annotations that are meant to be used by the programs compiled to JavaScript. The \texttt{compiler} performs the compilation step and incorporates most of the logic that was described in the section \ref{sec:Analysis}.
 
-Description of the annotations: ignored, adapter, native, dependency. Walkthrough (or rather example) on how to create adapters without the necessity to blindly copy the specification using traits as shared interfaces.
+All the projects that enable execution of the compiled programs are placed in the \texttt{runtime} directory and are compiled using the Swat compiler thmselves. They also contain sources directly in JavaScript which are not affected by the Swat compiler. As it is depicted on the figure \ref{Project} the \texttt{runtime} projects depend on the \texttt{api} (in order to interoperate with JavaScript environment), get compiled by Swat compiler and packaged to Java Archives (consisting of Java classfiles and JavaScript typefiles).
+
+The \texttt{runtime/java} is a reimplementation of core Java classes in Scala in order to be compilable using Swat compiler and therefore usable in a web browser. The \texttt{runtime/scala} is similar case, however it does not have to be reimplemented. The existing sources of Scala Library are used and modified with respect to fact that the classes will be executed as JavaScript so for example everything related to threading can be excluded. The \texttt{runtime/common} defines Swat internal classes that are meant to be usable both on the server and on the client side. Finally the \texttt{runtime/client} is the runtime library that was mentioned multiple times in {\it Analysis} (section \ref{sec:Analysis}). It is partially implemented in Scala and partially directly in JavaScript.
+
+\begin{figure}[ht]
+  \centering
+	\includegraphics[width=\linewidth,height=\textheight,keepaspectratio]{img/Project.pdf}
+	\caption{Runtime project compilation.}
+	\label{Project}
+\end{figure}
+
+An application that should be compiled to JavaScript (e.g. \texttt{web/swatter}) depends on the \texttt{runtime/common} and \texttt{runtime/client} so the application can access additional APIs provided by the Swat runtime. It implicitly depends (as all Scala applications) on the Standard Scala Library and Java Class Library. It does not depend on the versions \texttt{runtime/java} and \texttt{runtime/scala} adjusted for Swat. Consequently all types defined in the application could be used even on the server side because they do not depend on the adjusted versions of standard libraries. Pupose of the adjusted versions is to store typefiles of standard Java and Scala types, because obviously the typefiles are not present in the standard libraries as they are not compiled with Swat compiler.
+
+\section{API}
+
+The \texttt{api} library is completely visible to users of the toolkit and contains means for interoperation with JavaScript environment and a few annotations that somehow affect the compilation process. The annotations are currently only two, the \texttt{swat.ingored} makes the Swat compiler completely ingore the annotated type, the \texttt{swat.adapter} informs the compiler that the annotated type is an adapter of JavaScript native object.
+
+The most important part of the \texttt{api} are predefined adapters for native JavaScript APIs. The adapters are added in a lazy manner which means that a new adapter is added when there is a need for it. There are couple of predefined adapters that should more less cover the following JavaScript APIs:
+
+\begin{itemize}
+\item Document Object Model (DOM) Level 3 Core Specification.\\
+http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/
+\item Document Object Model (DOM) Level 3 Events Specification.\\
+http://www.w3.org/TR/DOM-Level-3-Events/
+\item JavaScript Objects, Browser Objects and HTML DOM Element Objects.\\
+http://www.w3schools.com/jsref/default.asp
+\item Web Workers.\\
+http://www.w3.org/TR/workers/
+\end{itemize}
+
+First thing to notice is that the adapters do not blindly copy the specifications because the specifications are in some cases redundant and contain duplicities. Usage of Scala which is great for abstraction of common functionality allows to define a new trait (with no counterpart in the specification) for the shared operations. The trait can later be mixed into all adapters that have the specified operations. The \texttt{swat.js.html.elements.InputLike} trait is an example of such approach. It defines interface that is shared among all form input HTML elements and is mixed into \texttt{Input}, \texttt{Select} and \texttt{TextArea} adapters.
+
+The second interesting part is how the global scope is established. The global scope richness depends on a context in which JavaScript code is executed. If a script is being executed in the standard context (applies to all scripts inside a page) then it may access the \texttt{window} object or manipulate with the page. On the other hand if a script is being executed inside a web worker (analogue to a thread) then it is forbidden to access the \texttt{window}. So the object \texttt{swat.js.CommonScope} defines API that is availible in all execution contexts, \texttt{swat.js.DefaultScope} defines what is availible inside the default execution context and \texttt{swat.js.SharedWorkerScope} what is accessible in a web worker. The preferred way is to use the \texttt{swat.js.CommonScope} which ensures that the code works in all execution contexts. And only when it is required use a more specific global scope.
 
 \section{Compiler}
 
 Basically a big match against all types of Scala ASTs that follows the principles described in analysis.
-
-\subsection{Build Process}
-
-Integration to SBT.
 
 \section{Runtime}
 
@@ -931,6 +954,14 @@ Support from the compiler, thin client proxy and server dispatcher. Only non-blo
 
 Should be as simple as possible, Play Framework example.
 
+\section{Build Process}
+
+Integration with SBT was initially planned as a plugin to SBT. A user of the toolkit would specify that his solution requires the "Swat SBT plugin" which would allow him to define not only standard Scala projects but also "Swat projects". SBT would download the plugin from the internet during startup and the plugin would be responsible for invocation of the Swat compiler during compilation of a "Swat project". 
+
+The proposed setup would be nice, however it turned out that SBT plugins have to be binary compatible with SBT itself (i.e. use same version of Scala as SBT). The proposed "Swat SBT plugin" would have to use Scala 2.10.1 because it invokes the Swat compiler which uses Scala 2.10.1 itself. On the other hand the latest version of SBT (at time of writing the thesis) uses Scala 2.9 and therefore the plugin would be incompatible with SBT.
+
+It has been solved by a new SBT action: besides standard compilation action \texttt{compile} a new action \texttt{swat} is introduced. The \texttt{swat} action invokes the Swat compiler explicitly, but it is not that user friendly and compilation to JavaScript is not done in one step together with standard compilation. As soon as SBT comes out with Scala 2.10.1 build, the proposed plugin should be implemented and replace the temporary hack.
+
 \section{Tests}
 
 
@@ -947,7 +978,7 @@ The tools at the time of thesis start (ScalaGWT, s2js, scalosure) and current sc
 
 \section{Critical Evaluation}
 
-What was done, what lacks the most (Scala library), but stating that everything got done to some extent. Discussion about the overloading problem and the taken decision.
+What was done, what lacks the most (Scala library), but stating that everything got done to some extent.
 
 \section{Roadmap}
 
