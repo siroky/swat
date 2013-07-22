@@ -8,7 +8,7 @@ import swat.compiler.SwatCompilerPlugin
  * Swat compiler component responsible for compilation of ClassDefs (classes, traits, objects) and everything that
  * can reside inside them. Nested classes are compiled separately, so this component ignores them.
  */
-trait ClassDefProcessors {
+trait TypeDefProcessors {
     self: SwatCompilerPlugin with ScalaAstProcessor =>
     import global._
 
@@ -17,7 +17,7 @@ trait ClassDefProcessors {
      * @param dependencies Dependencies of the compiled class.
      * @param ast JavaScript tree produced by the compilation.
      */
-    case class ProcessedClassDef(dependencies: List[Dependency], ast: js.Ast)
+    case class ProcessedTypeDef(dependencies: List[Dependency], ast: js.Ast)
 
     /**
      * Dependency of processed ClassDef on another type.
@@ -27,10 +27,10 @@ trait ClassDefProcessors {
     case class Dependency(tpe: Either[String, Type], isHard: Boolean)
 
     /**
-     * Factory for ClassDefProcessors.
+     * Factory for TypeDefProcessors.
      */
-    object ClassDefProcessor {
-        def apply(classDef: ClassDef): ClassDefProcessor = {
+    object TypeDefProcessor {
+        def apply(classDef: ClassDef): TypeDefProcessor = {
             val symbol = classDef.symbol
             if (symbol.isAnonymousTotalFunction) {
                 new AnonymousFunctionClassProcessor(classDef)
@@ -46,7 +46,7 @@ trait ClassDefProcessors {
         }
     }
 
-    class ClassDefProcessor(val classDef: ClassDef) {
+    class TypeDefProcessor(val classDef: ClassDef) {
 
         val dependencies = mutable.ListBuffer[Dependency]()
         val nestingIsApplied = true
@@ -70,11 +70,11 @@ trait ClassDefProcessors {
         def addRuntimeDependency(tpe: Type) { addDependency(Right(tpe), false) }
         def addRuntimeDependency(tpe: String) { addDependency(Left(tpe), false) }
 
-        def process: ProcessedClassDef = {
+        def process: ProcessedTypeDef = {
             // Process the single constructor group and method groups
             val (constructorGroup, methodGroups) = extractDefDefGroups(classDef)
             val constructorDeclaration = processConstructorGroup(constructorGroup).toList
-            val methodDeclarations = methodGroups.map(processMethodGroup _)
+            val methodDeclarations = methodGroups.map(processMethodGroup)
 
             // Linearized super classes.
             val superClassIdentifiers = mutable.ListBuffer[js.Identifier]()
@@ -89,7 +89,7 @@ trait ClassDefProcessors {
             // Return the result and clear the dependencies so the method is referentially transparent.
             val jsConstructorDeclaration = processJsConstructor(js.ArrayLiteral(superClassIdentifiers.toList))
             val ast = js.Block(constructorDeclaration ++ methodDeclarations :+ jsConstructorDeclaration)
-            val result = ProcessedClassDef(dependencies.toList, ast)
+            val result = ProcessedTypeDef(dependencies.toList, ast)
             dependencies.clear()
             result
         }
@@ -105,7 +105,7 @@ trait ClassDefProcessors {
         def processConstructorGroup(constructors: Option[List[DefDef]]): Option[js.Statement] = {
             val constructorExpression = constructors match {
                 case Some(List(constructor)) => Some(processConstructor(constructor))
-                case Some(cs) => Some(processDefDefGroup(cs, processConstructor _))
+                case Some(cs) => Some(processDefDefGroup(cs, processConstructor))
                 case _ => None
             }
             val qualifier = memberChain(thisTypeJsIdentifier, constructorIdent)
@@ -259,9 +259,9 @@ trait ClassDefProcessors {
             }
         }
 
-        def processStatementTrees(trees: List[Tree]): List[js.Statement] = trees.map(processStatementTree _)
+        def processStatementTrees(trees: List[Tree]): List[js.Statement] = trees.map(processStatementTree)
 
-        def processExpressionTrees(trees: List[Tree]): List[js.Expression] = trees.map(processExpressionTree _)
+        def processExpressionTrees(trees: List[Tree]): List[js.Expression] = trees.map(processExpressionTree)
 
         def processBlock(block: Block): js.Ast = block match {
             case Block(List(c: ClassDef), _) if c.symbol.isAnonymousTotalFunction => processLocalClassDef(c)
@@ -666,7 +666,7 @@ trait ClassDefProcessors {
 
         def processLocalClassDef(classDef: ClassDef): js.Ast = {
             // Process the class def and transitively depend on its dependencies.
-            val processedClassDef = processClassDef(classDef)
+            val processedClassDef = processTypeDef(classDef)
             dependencies ++= processedClassDef.dependencies
 
             processedClassDef.ast match {
@@ -713,7 +713,7 @@ trait ClassDefProcessors {
         def processLoop(loop: Loop): js.Expression = {
             // Because the whole loop is scoped, the stats may be unscoped (double scoping isn't necessary). As a
             // consequence, all top level return statements have to be omitted. Otherwise it'd terminate the loop.
-            val processedStats = processStatementTrees(loop.stats).flatMap(unScoped _).map {
+            val processedStats = processStatementTrees(loop.stats).flatMap(unScoped).map {
                 case js.ReturnStatement(Some(e)) => js.ExpressionStatement(e)
                 case s => s
             }
@@ -844,7 +844,7 @@ trait ClassDefProcessors {
         def superCall(mixName: Option[String], methodName: String, args: List[js.Expression]): js.Expression = {
             val method = js.StringLiteral(methodName)
             val arguments = js.ArrayLiteral(args)
-            val typeHints = thisTypeString :: mixName.map(js.StringLiteral(_)).toList
+            val typeHints = thisTypeString :: mixName.map(js.StringLiteral).toList
             swatMethodCall("invokeSuper", (selfIdent :: method :: arguments :: typeHints): _*)
         }
 
@@ -882,11 +882,11 @@ trait ClassDefProcessors {
         }
     }
 
-    private class ClassProcessor(c: ClassDef) extends ClassDefProcessor(c)
+    private class ClassProcessor(c: ClassDef) extends TypeDefProcessor(c)
 
-    private class TraitProcessor(c: ClassDef) extends ClassDefProcessor(c)
+    private class TraitProcessor(c: ClassDef) extends TypeDefProcessor(c)
 
-    private class ObjectProcessor(c: ClassDef) extends ClassDefProcessor(c) {
+    private class ObjectProcessor(c: ClassDef) extends TypeDefProcessor(c) {
         override def processJsConstructor(superClasses: js.ArrayLiteral): js.Statement = {
             // A local object depends on the outer class so a reference to the outer class has to be passed to the
             // constructor.
@@ -898,15 +898,15 @@ trait ClassDefProcessors {
 
     private class PackageObjectProcessor(c: ClassDef) extends ObjectProcessor(c)
 
-    private class AnonymousFunctionClassProcessor(c: ClassDef) extends ClassDefProcessor(c) {
+    private class AnonymousFunctionClassProcessor(c: ClassDef) extends TypeDefProcessor(c) {
         override val nestingIsApplied = false
 
-        override def process: ProcessedClassDef = {
+        override def process: ProcessedTypeDef = {
             val applyDefDef = c.defDefs.filter(_.symbol.isApplyMethod).head
             val arity = applyDefDef.vparamss.flatten.length
             val processedApply = processDefDef(applyDefDef, None)
             val ast = swatMethodCall("func", js.NumericLiteral(arity), processedApply)
-            ProcessedClassDef(dependencies.toList, ast)
+            ProcessedTypeDef(dependencies.toList, ast)
         }
     }
 }

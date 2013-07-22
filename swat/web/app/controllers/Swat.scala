@@ -7,17 +7,12 @@ import swat.common._
 import swat.common.rpc._
 
 object Swat extends Controller {
-  
     def tpe(typeIdentifier: String) = AsyncAction { r =>
-        TypeLoader.get(Array(typeIdentifier), Array.empty).recover {
-            case e: TypeLoadingException => s"alert('Swat type loading error: ${e.message}');"
-        }
+        TypeLoader.getOrAlert(Array(typeIdentifier), Array.empty)
     }
 
-    def app(appObjectTypeIdentifier: String, args: String) = AsyncAction { r =>
-        TypeLoader.getApp(appObjectTypeIdentifier, args.split(",")).recover {
-            case e: TypeLoadingException => s"alert('Swat application loading error: ${e.message}');"
-        }
+    def app(typeIdentifier: String, args: String) = AsyncAction { r =>
+        TypeLoader.getAppOrAlert(typeIdentifier, args.split(","))
     }
 
     def rpc(methodIdentifier: String) = AsyncAction { r =>
@@ -25,7 +20,7 @@ object Swat extends Controller {
         RpcDispatcher.invoke(methodIdentifier, arguments)
     }
 
-    private def AsyncAction(a: Request[AnyContent] => Future[String]) = Action { request =>
-        Async(a(request).map(Ok(_)))
+    private def AsyncAction(a: Request[AnyContent] => Future[String]) = Action { r =>
+        Async(a(r).map(Ok(_)))
     }
 }

@@ -1,6 +1,9 @@
 package swat.scala
 
+import swat.js
+
 trait App {
-    @swat.native("return swat.startupArgs;")
-    protected def args: Array[String] = ???
+    protected def args: Array[String] = js.native {
+        "return swat.startupArgs;"
+    }
 }

@@ -34,6 +34,12 @@ object TypeLoader {
         mergeSources(sources)
     }
 
+    def getOrAlert(typeIdentifiers: Array[String], excludedTypes: Array[String]): Future[String] = {
+        get(typeIdentifiers, excludedTypes).recover {
+            case e: TypeLoadingException => s"alert('Swat type loading error: ${e.message}');"
+        }
+    }
+
     /**
      * Returns the JavaScript code of the specified object that extends the [[scala.App]] trait together with all
      * its dependencies. The application is started with the specified startup args provided.
@@ -53,6 +59,12 @@ object TypeLoader {
                |swat.startupArgs = swat.jsArrayToScalaArray($jsArgs);
                |$typeIdentifier();
             """.stripMargin
+        }
+    }
+
+    def getAppOrAlert(appObjectTypeIdentifier: String, args: Array[String]): Future[String] = {
+        getApp(appObjectTypeIdentifier, args).recover {
+            case e: TypeLoadingException => s"alert('Swat application loading error: ${e.message}');"
         }
     }
 

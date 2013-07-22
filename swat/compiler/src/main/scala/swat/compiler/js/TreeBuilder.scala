@@ -9,7 +9,7 @@ trait TreeBuilder {
 
     def memberChain(expr: Expression, identifiers: Identifier*): Expression = {
         require(identifiers.length > 0)
-        identifiers.foldLeft[Expression](expr)(MemberExpression(_, _))
+        identifiers.foldLeft[Expression](expr)(MemberExpression)
     }
 
     def iteratedMemberChain(expr: Expression, identifier: Identifier, count: Int): Expression = {

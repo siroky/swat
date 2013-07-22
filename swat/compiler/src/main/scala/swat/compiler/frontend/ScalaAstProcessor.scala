@@ -5,7 +5,7 @@ import swat.compiler.{TypeOutput, SwatCompilerPlugin, js}
 /**
  * Swat compiler component responsible for compilation of top level Scala ASTs (compilation units, packages, classes).
  */
-trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProcessors {
+trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with TypeDefProcessors {
     self: SwatCompilerPlugin =>
     import global._
 
@@ -32,14 +32,14 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
 
     def processUnitBody(body: Tree): List[TypeOutput] = body match {
         case p: PackageDef => {
-            extractClassDefs(p).map { classDef =>
-                val classSymbol = classDef.symbol
-                val classType = classSymbol.tpe.underlying
-                val classIdent = typeIdentifier(classSymbol)
-                val processedClassDef = processClassDef(classDef)
-                val processedProvide = processProvide(classType)
-                val processedDependencies = processDependencies(processedClassDef.dependencies, classIdent)
-                val processedAst = astToStatement(processedClassDef.ast)
+            extractTypeDefs(p).map { typeDef =>
+                val typeSymbol = typeDef.symbol
+                val typeDefType = typeSymbol.tpe.underlying
+                val classIdent = typeIdentifier(typeSymbol)
+                val processedTypeDef = processTypeDef(typeDef)
+                val processedProvide = processProvide(typeDefType)
+                val processedDependencies = processDependencies(processedTypeDef.dependencies, classIdent)
+                val processedAst = astToStatement(processedTypeDef.ast)
                 val program = js.Program(processedProvide +: processedDependencies :+ processedAst)
                 val code = backend.astToCode(program)
                 TypeOutput(classIdent, code, program)
@@ -48,14 +48,14 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with ClassDefProce
         case _ => Nil
     }
 
-    def extractClassDefs(tree: Tree): List[ClassDef] = tree match {
-        case p: PackageDef => p.stats.flatMap(extractClassDefs)
-        case c: ClassDef if c.symbol.isCompiled => c :: c.impl.body.flatMap(extractClassDefs)
+    def extractTypeDefs(tree: Tree): List[ClassDef] = tree match {
+        case p: PackageDef => p.stats.flatMap(extractTypeDefs)
+        case c: ClassDef if c.symbol.isCompiled => c :: c.impl.body.flatMap(extractTypeDefs)
         case _ => Nil
     }
 
-    def processClassDef(classDef: ClassDef): ProcessedClassDef = {
-        ClassDefProcessor(classDef).process
+    def processTypeDef(classDef: ClassDef): ProcessedTypeDef = {
+        TypeDefProcessor(classDef).process
     }
 
     def processProvide(dependencyType: Type): js.Statement = {

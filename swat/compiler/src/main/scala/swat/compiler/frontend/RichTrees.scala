@@ -3,7 +3,7 @@ package swat.compiler.frontend
 import swat.compiler.{SwatCompilerPlugin, CompilationException}
 
 trait RichTrees {
-    self: SwatCompilerPlugin with ScalaAstProcessor with ClassDefProcessors =>
+    self: SwatCompilerPlugin with ScalaAstProcessor with TypeDefProcessors =>
 
     import global._
 

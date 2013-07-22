@@ -903,7 +903,7 @@ The \texttt{runtime/java} is a reimplementation of core Java classes in Scala in
 
 An application that should be compiled to JavaScript (e.g. \texttt{web/swatter}) depends on the \texttt{runtime/common} and \texttt{runtime/client} so the application can access additional APIs provided by the Swat runtime. It implicitly depends (as all Scala applications) on the Standard Scala Library and Java Class Library. It does not depend on the versions \texttt{runtime/java} and \texttt{runtime/scala} adjusted for Swat. Consequently all types defined in the application could be used even on the server side because they do not depend on the adjusted versions of standard libraries. Pupose of the adjusted versions is to store typefiles of standard Java and Scala types, because obviously the typefiles are not present in the standard libraries as they are not compiled with Swat compiler.
 
-\section{API}
+\section{API (package \texttt{swat.api})}
 
 The \texttt{api} library is completely visible to users of the toolkit and contains means for interoperation with JavaScript environment and a few annotations that somehow affect the compilation process. The annotations are currently only two, the \texttt{swat.ingored} makes the Swat compiler completely ingore the annotated type, the \texttt{swat.adapter} informs the compiler that the annotated type is an adapter of JavaScript native object.
 
@@ -924,9 +924,29 @@ First thing to notice is that the adapters do not blindly copy the specification
 
 The second interesting part is how the global scope is established. The global scope richness depends on a context in which JavaScript code is executed. If a script is being executed in the standard context (applies to all scripts inside a page) then it may access the \texttt{window} object or manipulate with the page. On the other hand if a script is being executed inside a web worker (analogue to a thread) then it is forbidden to access the \texttt{window}. So the object \texttt{swat.js.CommonScope} defines API that is availible in all execution contexts, \texttt{swat.js.DefaultScope} defines what is availible inside the default execution context and \texttt{swat.js.SharedWorkerScope} what is accessible in a web worker. The preferred way is to use the \texttt{swat.js.CommonScope} which ensures that the code works in all execution contexts. And only when it is required use a more specific global scope.
 
-\section{Compiler}
+\section{Compiler (package \texttt{swat.compiler})}
 
-Basically a big match against all types of Scala ASTs that follows the principles described in analysis.
+The Swat compiler is implemented as a plugin (\texttt{SwatCompilerPlugin}) to the Scala compiler, so it follows the Scala compiler plugin design guidelines\cite{CompilerPlugins}. The plugin adds one phase to the standard set of compiler phases. When the phase is executed during compilation it does not modify the input Scala ASTs at all and delegates control to the JavaScript frontend (class \texttt{ScalaAstProcessor}) as it can be seen on the figure \ref{SwatCompiler}. Additionaly there is also the \texttt{SwatCompiler} which wraps the whole plugged Scala compiler, adds a programmer friendly interface thus it is possible to perform the compilation to JavaScript programmatically.
+
+\begin{figure}[ht]
+  \centering
+	\includegraphics[width=\linewidth,height=\textheight,keepaspectratio]{img/SwatCompiler.pdf}
+	\caption{Swat compiler implementation.}
+	\label{SwatCompiler}
+\end{figure}
+
+There are three main subpackages: \texttt{js}, \texttt{frontend} and \texttt{backend}. The \texttt{js} package contains definitions of JavaScript ASTs and other syntax related constructs (e.g. keywords). The classes that represent syntax trees mirror the specification of JavaScript syntax\cite{EcmaScript} so any imaginable JavaScript program could be represented with these classes. In addition the \texttt{TreeBuilder} is a factory for some commonly used ASTs.
+
+The \texttt{backend} package allows to generate JavaScript code from the ASTs. There is only one important class - \texttt{JsCodeGenerator}. From the top level point of view, it is just one big \texttt{match} expression against all types of ASTs where each \texttt{case} is responsible for one type. In most cases it works recursively becuase an AST is often composed of other ASTs. Therefore the encapsulated ASTs are processed first and then the resulting code fragments are somehow combined together.
+
+\subsection{Frontend (package \texttt{swat.compiler.frontend})}
+
+An entry point to the frontend is the \texttt{ScalaAstProcessor} class. Its functionality is pretty straightforward as it just traverses body of a \texttt{CompilationUnit} in order to find all type definitions. Then for each type definition it creates a new \texttt{TypeDefProcessor} and lets it process the type definition.
+
+The \texttt{TypeDefProcessor} is an abstract class resposible for transformation of a type definition Scala ASTs to JavaScript ASTs. It defines functionality common for all kinds of type definitions and for each kind it has corresponding subclass: \texttt{ClassProcessor} for class definitions, \texttt{TraitProcessor} for trait definitions and \texttt{ObjectProcessor} for singleton object definitions. The subclasses are very simple, most of the functionality is shared and defined in the \texttt{TypeDefProcessor}.
+
+An approach used inside the \texttt{TypeDefProcessor} is very similar to how the \texttt{JsCodeGenerator} generates JavaScript code, the main difference is that the \texttt{TypeDefProcessor} generates JavaScript ASTs. First of all, methods are extracted from the type definition, groupped by their names and processed as it is described in the {\it Analysis}. Processing a method group means that all overloaded variants are processed separately and then encoded to a single JavaScript AST representing the whole method group. The approach with a \texttt{match} against all Scala AST types is used for transformation of a method body. Only important thing is that it has to transform the ASTs according to {\it Analysis}, the rest are more less technical details that are not interesting in the context of the thesis. Finally when all the method groups are processed the type definition can be encoded into a single JavaScript AST containing the members, type name and linearized supertypes.
+
 
 \section{Runtime}
 
@@ -952,7 +972,39 @@ Support from the compiler, thin client proxy and server dispatcher. Only non-blo
 
 \section{Integration with a Web Framework}
 
-Should be as simple as possible, Play Framework example.
+The Swat toolkit was designed with focus on simple integration to existing web application frameworks. The web application has to handle the following four HTTP requests which are used by the toolkit:
+
+\begin{itemize}
+\item \texttt{GET /swat/tpe/<typeIdentifier>}\\
+Returns JavaScript code of the specified type.
+\item \texttt{GET /swat/app/<typeIdentifier>/<args?>}\\
+Returns JavaScript code of the specified type that mixes-in the \texttt{scala.App}. When executed in a browser the specified application starts running. The arguments are optional and allow simple parametrization of the application.
+\item \texttt{POST /swat/rpc/<methodIdentifier>}\\
+Returns result of the specified remote method invocation.  
+\end{itemize}
+
+For all those requests the Swat toolkit already defines complete implementation so the web application just has to forward such requests to Swat classes. An example integration to the Play MVC Framework\cite{Play} can be seen on the listing \ref{lst:PlayIntegration}. You may also notice that the toolkit uses Scala Futures\cite{ScalaFutures} so when an operation blocks on e.g. system operation, the thread may be used to handle another request. As a consequence scalability of the whole application increases.
+
+\begin{lstlisting}[caption={Integration of Swat toolkit to Play Framework.},label={lst:PlayIntegration}	,basicstyle=\scriptsize\ttfamily,]
+object Swat extends Controller {
+    def tpe(typeIdentifier: String) = AsyncAction { r =>
+        TypeLoader.getOrAlert(Array(typeIdentifier), Array.empty)
+    }
+
+    def app(typeIdentifier: String, args: String) = AsyncAction { r =>
+        TypeLoader.getAppOrAlert(typeIdentifier, args.split(","))
+    }
+
+    def rpc(methodIdentifier: String) = AsyncAction { r =>
+        val arguments = r.body.asJson.map(_.toString()).getOrElse("")
+        RpcDispatcher.invoke(methodIdentifier, arguments)
+    }
+
+    private def AsyncAction(a: Request[AnyContent] => Future[String]) = Action { r =>
+        Async(a(r).map(Ok(_)))
+    }
+}
+\end{lstlisting}
 
 \section{Build Process}
 
@@ -963,6 +1015,8 @@ The proposed setup would be nice, however it turned out that SBT plugins have to
 It has been solved by a new SBT action: besides standard compilation action \texttt{compile} a new action \texttt{swat} is introduced. The \texttt{swat} action invokes the Swat compiler explicitly, but it is not that user friendly and compilation to JavaScript is not done in one step together with standard compilation. As soon as SBT comes out with Scala 2.10.1 build, the proposed plugin should be implemented and replace the temporary hack.
 
 \section{Tests}
+
+Most of the libraries in the toolkit are covered with tests with purpose to early detect bugs that can later be introduced. Especially the \texttt{compiler} tests are useful, because a simple modification that seems correct may actually break compilation of an AST when it is used in a different context. To run the tests start the SBT and execute the \texttt{test} action (i.e. write "test" and confirm it with enter).
 
 
 

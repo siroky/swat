@@ -5,6 +5,8 @@ trait jQuery {
     def css(propertyName: String, value: String)
     def addClass(addClass: String)
     def removeClass(removeClass: String)
+    def modal()
+    def modal(action: String)
 }
 
 object jQuery {

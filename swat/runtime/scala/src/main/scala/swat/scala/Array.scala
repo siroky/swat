@@ -1,7 +1,6 @@
 package swat.scala
 
 import swat.js
-import swat.native
 
 class Array[T](_length: Int) extends java.io.Serializable with java.lang.Cloneable {
 
@@ -9,11 +8,15 @@ class Array[T](_length: Int) extends java.io.Serializable with java.lang.Cloneab
 
     def length: Int = _length
 
-    @native("return $self.$fields.jsArray[i];")
-    def apply(i: Int): T = ???
+    def apply(i: Int): T = js.native {
+        "return $self.$fields.jsArray[i];"
+    }
 
-    @native("$self.$fields.jsArray[i] = x;")
-    def update(i: Int, x: T) { }
+    def update(i: Int, x: T) {
+        js.native {
+            "$self.$fields.jsArray[i] = x;"
+        }
+    }
 
     override def clone(): Array[T] = {
         val c = new Array[T](jsArray.length)
