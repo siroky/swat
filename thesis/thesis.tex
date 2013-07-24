@@ -1021,18 +1021,60 @@ Most of the libraries in the toolkit are covered with tests with purpose to earl
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Comparison with Similar Tools}
-
-The tools at the time of thesis start (ScalaGWT, s2js, scalosure) and current scala-js, js-scala.
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Conclusion}
 
-\section{Critical Evaluation}
+With regard to the planned goals it can be stated the requirements of on the toolkit have been met. The compiler is able to compile Scala programs to JavaScript and has no problems with any kinds of Scala language constructs. Interoperation with JavaScript is covered by quite rich set of addapters and a possibility to use native JavaScript code blocks inside Scala programs. The runtime environment manages to support the compiled code during execution while being consise. The toolkit was used to compile all the core Java and Scala classes necessary for its operation, moreover the futures and promises are fully supported. On the other hand the supported library classes were added in a lazy-manner so there is nothing more. Mainly lack of the Scala collection library (due to its size and complexity) is currently the most limiting factor. Integration to a web application framework is straightforward and distribution of libraries is as simple as it possibly can be.
 
-What was done, what lacks the most (Scala library), but stating that everything got done to some extent.
+The enhancement goals were also fulfilled. The JSON (de)serializer is usable both on the client side and on the server side. On the top of standard functionality it also allows to serialize object graphs containing reference cycles. The type loader is fully implemetned, RPC infractructure is conceptually solved and usable for remote method invocation, but support for more advanced scenarios involving authorization is not implemted yet.
+
+To sum it up, all the "big" challenges have been solved, some of them even to a near-production or production extent. On the other hand the repetitive tasks that are not that interesting from the theoretical point of view were given lower priority, so the adapters and Scala library support have to be worked on.
+
+\section{Similar Tools}
+
+When the project started there have already been a few tools with the same or similar goal to compile Scala to JavaScript, namely ScalaGWT\cite{ScalaGwt}, s2js\cite{S2js}, Scalosure\cite{Scalosure} and js-scala \cite{JsScala}. But it soon turned out that for a real web application they are not very usable. People in the Scala academic community also realized it so a new project Scala.js\cite{ScalaJs} started during the work on the thesis.
+
+\subsubsection*{ScalaGWT}
+
+The ScalaGWT is a new backend for the Scala compiler. The interesting thing is that in the first step it transforms Scala ASTs into Jribble language which is a new language described as a "looser" Java. The second step is to transform Jribble into Java. Finally the resulting Java program is processed by the Google Web Toolkit\cite{Gwt} which transforms it into JavaScript. Motivation behind the middle step (i.e. Jribble) is to open possibilities for other languages to be transformed into JavaScript. And it is simpler to have Jribble as the target language instead of Java.
+
+Drawbacks are that the project is abandoned for more than two years, is not well integrated with Scala tools and frameworks and is rather in a prototype phase (the Scala library is not well supported). The author works primarily on the standard Scala compiler so ScalaGWT is a side-project for him.
+
+\subsubsection*{S2js and Scalosure}
+
+Scalosure started as a fork of S2js, so these two tools are very similar to each other. Both of them are however unfinished, do not even support compilation of all Scala language constructs, the Scala library is mostly unsupported and the projects are not maintained. On the other hand they served as a great example on how to implement such a tool.
+
+\subsubsection*{js-scala}
+
+The approach js-scala uses is a bit different but it is mentioned here for the sake of completeness. It is a domain specific language that can be embedded into Scala programs. Its compiler plugin translates fragments of the DSL into JavaScript. The main disadvantage is that fragments of code that should be transformed using js-scala have to be rewritten in order to follow rules of the DSL. Existing code cannot be used without modifications which is apparently the reason why Scala Library is unsupported.
+
+\subsubsection*{Scala.js}
+
+The project originated in January 2013 and is developped in EPFL (École Polytechnique Fédérale de Lausanne) which is the heart of the Scala community. Therefore it has big support from people that are directly involved in Scala language, compiler or Library. The compilation process works practically the same way as in Swat, only difference is that Scala.js compiler plugin runs after all the standard phases are executed.
+
+The biggest achievement of this project is that whole Scala Library was compiled to JavaScript and proven to be usable. The support of source maps is in progress and it has a tool for importing of TypeScript adapter definitions to Scala. A downside is that the concept similar to Swat typefiles is not utilized so the compiled library has couple of megabytes after minification and compression.
+
+\subsection{Comparison}
+
+It is difficult to exactly quantify abilities of each of the aforementioned tools becuase they are mostly undocumented. It is also not easy to stay unbiased in favor of the Swat toolkit but the table \ref{tbl:Comparison} should summarize level of maturity of each tool by different criteria (Compiler - Scala language construct support; Interoperation - JavaScript interoperation; Libraries - standard library support; Distribution - ease of library distribution and code reuse; Tooling - build, debug, runtime and other tools; Overall - overall impression). One star means minimal or zero suppot, two stars medium support and three stars rich support compared to other other tools or to what is achievable.
+
+\begin{table}[h]\footnotesize
+	\def\arraystretch{1.5}
+	\centering
+	\begin{tabular}{l || c | c | c | c | c  || r}
+		Tool				& Compiler 						& Interoperation		& Libraries 				& Distribution			& Tooling 					& Overall 					\\
+		\hline						
+	  ScalaGWT		& $\star\star$				&	$\star$						& $\star$						& $\star$						&	$\star$						& $\star\star$			\\
+		s2js				& $\star$							& $\star$ 					& $\star$ 					&	$\star$						& $\star$						& $\star$			 			\\
+		Scalosure		& $\star$							& $\star$ 					& $\star$ 					& $\star$						& $\star$						& $\star$			  		\\
+		js-scala		& $\star$ 						& $\star\star$ 			& $\star$						& $\star\star$ 			& $\star$ 					& $\star\star$ 			\\
+		Scala.js		& $\star\star\star$ 	& $\star\star\star$	& $\star\star\star$ &	$\star$						& $\star\star$			& $\star\star\star$ \\
+		Swat				& $\star\star\star$ 	& $\star\star$			& $\star\star$			& $\star\star\star$	& $\star\star$			& $\star\star\star$ \\
+	\end{tabular}
+	\caption{Comparison of Swat with other similar tools.}
+	\label{tbl:Comparison}
+\end{table}
+
+The fact that Scala.js and Swat have three stars in the Overall criterion does not necessarily mean they are ready for production use. It means they are closest to it so they are already suitable for programmers to start experimenting with.
 
 \section{Roadmap}
 
