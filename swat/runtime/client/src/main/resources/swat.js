@@ -109,13 +109,13 @@ swat.provide = function(typeIdentifier) {
  * stored. For each succeeding invocation, the stored result is returned.
  */
 swat.lazify = function(f) {
-    var l = function() {
-        if (swat.isUndefined(l.$result)) {
-            l.$result = f.apply(this, arguments);
+    var x;
+    return function() {
+        if (swat.isUndefined(x)) {
+            x = f.apply(this, arguments);
         }
-        return l.$result;
+        return x;
     };
-    return l;
 };
 
 /** Converts the specified function literal f to a FunctionN-like object. */

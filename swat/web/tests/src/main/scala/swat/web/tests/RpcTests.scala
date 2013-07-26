@@ -1,4 +1,4 @@
-package swat.tests
+package swat.web.tests
 
 import scala.concurrent._
 import ExecutionContext.Implicits.global
@@ -65,7 +65,7 @@ class RpcTests extends TestSuite {
 
         val complexParamsMessage = "RPC call with complex parameters."
         TestRemote.complexParams(Complex.sample).onComplete {
-            case Success(x) => assert(x.startsWith("(Some(test),List(3, 5, 7),swat.tests.Link@"), complexParamsMessage)
+            case Success(x) => assert(x.startsWith("(Some(test),List(3, 5, 7),swat.web.tests.Link@"), complexParamsMessage)
             case _ => fail(complexParamsMessage)
         }
 

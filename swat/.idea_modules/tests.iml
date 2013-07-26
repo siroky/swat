@@ -13,17 +13,17 @@
     </facet>
   </component>
   <component name="NewModuleRootManager" inherit-compiler-output="false">
-    <output url="file://$MODULE_DIR$/../runtime/tests/target/scala-2.10/classes" />
-    <output-test url="file://$MODULE_DIR$/../runtime/tests/target/scala-2.10/test-classes" />
+    <output url="file://$MODULE_DIR$/../web/tests/target/scala-2.10/classes" />
+    <output-test url="file://$MODULE_DIR$/../web/tests/target/scala-2.10/test-classes" />
     <exclude-output />
-    <content url="file://$MODULE_DIR$/../runtime/tests">
-      <sourceFolder url="file://$MODULE_DIR$/../runtime/tests/src/main/scala" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../runtime/tests/src/main/java" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../runtime/tests/src/main/resources" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../runtime/tests/src/test/scala" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/../runtime/tests/src/test/java" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/../runtime/tests/src/test/resources" isTestSource="true" />
-      <excludeFolder url="file://$MODULE_DIR$/../runtime/tests/target" />
+    <content url="file://$MODULE_DIR$/../web/tests">
+      <sourceFolder url="file://$MODULE_DIR$/../web/tests/src/main/scala" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../web/tests/src/test/scala" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../web/tests/src/test/java" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../web/tests/src/test/resources" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/../web/tests/src/main/java" />
+      <excludeFolder url="file://$MODULE_DIR$/../web/tests/src/main/resources" />
+      <excludeFolder url="file://$MODULE_DIR$/../web/tests/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -67,8 +67,7 @@
     <orderEntry type="library" scope="TEST" name="SBT: org.scala-lang:scala-actors:2.10.0:test" level="project" />
     <orderEntry type="module" module-name="compiler" exported="" />
     <orderEntry type="module" module-name="api" exported="" />
-    <orderEntry type="module" module-name="common" exported="" />
-    <orderEntry type="module" module-name="client" exported="" />
+    <orderEntry type="module" module-name="runtime" exported="" />
   </component>
 </module>
 

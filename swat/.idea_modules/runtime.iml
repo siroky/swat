@@ -69,7 +69,6 @@
     <orderEntry type="module" module-name="scala" exported="" />
     <orderEntry type="module" module-name="common" exported="" />
     <orderEntry type="module" module-name="client" exported="" />
-    <orderEntry type="module" module-name="tests" exported="" />
   </component>
 </module>
 

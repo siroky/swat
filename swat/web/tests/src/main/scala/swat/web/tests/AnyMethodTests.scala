@@ -1,4 +1,4 @@
-package swat.tests
+package swat.web.tests
 
 class C extends A {
     // Intentionally implemented strangely, to test that new C == new A holds (i.e. that custom equals is used).
@@ -53,9 +53,9 @@ class AnyMethodTests extends A with TestSuite {
         { val a: Any = "abcdef"; val b: Any = "abcdef"; assert(a == b, "Same string equals."); }
         { val a: Any = "abcdef"; val b: Any = "fdsfsf"; assert(a != b, "Different string equals."); }
         { val a: Any = this; val b: Any = this; assert(a == b, "Same object default equals."); }
-        { val a: Any = (new C); val b: Any = (new C); assert(a == b, "Same object custom equals."); }
-        { val a: Any = this; val b: Any = (new C); assert(a != b, "Different object default equals."); }
-        { val a: Any = (new C); val b: Any = this; assert(a == b, "Different object custom equals."); }
+        { val a: Any = new C; val b: Any = new C; assert(a == b, "Same object custom equals."); }
+        { val a: Any = this; val b: Any = new C; assert(a != b, "Different object default equals."); }
+        { val a: Any = new C; val b: Any = this; assert(a == b, "Different object custom equals."); }
     }
 
     override def hashCode = 1234

@@ -36,7 +36,6 @@
     <orderEntry type="module" module-name="api" exported="" />
     <orderEntry type="module" module-name="compiler" exported="" />
     <orderEntry type="module" module-name="runtime" exported="" />
-    <orderEntry type="module" module-name="swatter" exported="" />
     <orderEntry type="module" module-name="web" exported="" />
   </component>
 </module>

@@ -13,21 +13,21 @@ class JsCodeGenerator extends Backend {
         case _ => false
     }
 
-    private def astsAreEmpty(asts: List[Ast]): Boolean = asts.foldLeft(true)(_ && astIsEmpty(_))
+    private def astsAreEmpty(asts: List[Ast]): Boolean = asts.forall(astIsEmpty)
 
     private def process(ast: Ast)(implicit indent: Indent): String = {
         if (astIsEmpty(ast)) {
             ""
         } else {
             ast match {
-                case Program(elements) => elements.map(process _).mkString
+                case Program(elements) => elements.map(process).mkString
                 case stmt: Statement => processStatement(stmt)
                 case expr: Expression => processExpression(expr)
             }
         }
     }
 
-    private def process(ast: Option[Ast])(implicit indent: Indent): String = ast.map(process(_)).mkString
+    private def process(ast: Option[Ast])(implicit indent: Indent): String = ast.map(process).mkString
 
     private def process(asts: List[Ast])(implicit indent: Indent): List[String] = {
         val (liveAsts, deadAsts) = asts.span {
@@ -36,7 +36,7 @@ class JsCodeGenerator extends Backend {
         }
 
         // Omit all statements after the first occurance of return or throw statement.
-        (liveAsts ++ deadAsts.headOption.toList).map(process(_))
+        (liveAsts ++ deadAsts.headOption.toList).map(process)
     }
 
     private def processStatement(statement: Statement)(implicit indent: Indent): String = {

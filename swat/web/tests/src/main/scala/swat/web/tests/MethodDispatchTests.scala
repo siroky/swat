@@ -1,4 +1,4 @@
-package swat.tests
+package swat.web.tests
 
 trait A {
     def foo(x: String) = "A.foo(String)"

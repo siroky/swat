@@ -7,6 +7,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/common.iml" filepath="$PROJECT_DIR$/.idea_modules/common.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/compiler.iml" filepath="$PROJECT_DIR$/.idea_modules/compiler.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/java.iml" filepath="$PROJECT_DIR$/.idea_modules/java.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea_modules/playground.iml" filepath="$PROJECT_DIR$/.idea_modules/playground.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/runtime.iml" filepath="$PROJECT_DIR$/.idea_modules/runtime.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/scala.iml" filepath="$PROJECT_DIR$/.idea_modules/scala.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea_modules/swat.iml" filepath="$PROJECT_DIR$/.idea_modules/swat.iml" />

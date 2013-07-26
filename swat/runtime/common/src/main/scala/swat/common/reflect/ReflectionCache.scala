@@ -32,7 +32,7 @@ class ReflectionCache(val mirror: Mirror = runtimeMirror(getClass.getClassLoader
     /** Returns singleton object with the specified name. */
     def getObject(fullName: String): Any = {
         objects.getOrElseUpdate(fullName, {
-            // TODO inspect why the following doesn't work: mirror.reflectModule(getObjectSymbol(fullName))).instance
+            // TODO find out why the following doesn't work: mirror.reflectModule(getObjectSymbol(fullName))).instance
             val c = Class.forName(fullName.stripSuffix("$") + "$")
             c.getField("MODULE$").get(c)
         })
@@ -40,7 +40,7 @@ class ReflectionCache(val mirror: Mirror = runtimeMirror(getClass.getClassLoader
 
     /**
      * Types of tuples by their arity.
-     * TODO inspect why the following doesn't work instead: mirror.getClassSymbol("scala.Tuple" + n).typeSignature
+     * TODO find out why the following doesn't work instead: mirror.getClassSymbol("scala.Tuple" + n).typeSignature
      */
     lazy val tupleTypes = Map(
         1 -> typeOf[Tuple1[_]],

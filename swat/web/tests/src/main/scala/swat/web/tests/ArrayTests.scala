@@ -1,4 +1,4 @@
-package swat.tests
+package swat.web.tests
 
 class ArrayTests extends TestSuite {
     def test() {

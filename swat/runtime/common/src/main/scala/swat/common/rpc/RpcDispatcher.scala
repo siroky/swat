@@ -42,7 +42,7 @@ object RpcDispatcher {
 
                 // Invoke the method and serialize the result
                 val result = methodMirror(arguments: _*).asInstanceOf[Future[Any]]
-                result.map(serializer.serialize(_))
+                result.map(serializer.serialize)
             }
         }.flatMap(r => r).recover { case t: Throwable =>
             // If any exception occurred so far, serialize it. Note that it may even serialize exception that occurred
@@ -117,7 +117,7 @@ object RpcDispatcher {
 
     /** Converts the specified throwable (and the nested throwables) to a [[swat.common.rpc.Cause]]. */
     private def throwableToCause(t: Throwable): Cause = {
-        val cause = Option(t.getCause).map(throwableToCause _)
+        val cause = Option(t.getCause).map(throwableToCause)
         Cause(t.getClass.getName, t.getMessage, t.getStackTrace.mkString("\n"), cause)
     }
 }

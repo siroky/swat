@@ -1,4 +1,4 @@
-package swat.tests
+package swat.web.tests
 
 import swat.js.DefaultScope._
 
