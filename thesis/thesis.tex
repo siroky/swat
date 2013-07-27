@@ -933,35 +933,48 @@ Build process and execution of the toolkit is handled by SBT which means that th
 
 The two core projects are the \texttt{api} and \texttt{compiler}. They are the only dependencies required to be able to compile Scala programs to JavaScript. The \texttt{api} contains adapter classes and Swat specific annotations that are meant to be used by the programs compiled to JavaScript. The \texttt{compiler} performs the compilation step and incorporates most of the logic that was described in the section \ref{sec:Analysis}.
 
-All the projects that enable execution of the compiled programs are placed in the \texttt{runtime} directory and are compiled using the Swat compiler itself. They also contain sources directly in JavaScript which are not affected by the Swat compiler. As it is depicted on the figure \ref{Project} the \texttt{runtime} projects depend on the \texttt{api} (in order to interoperate with JavaScript environment), get compiled by Swat compiler and packaged to Java Archives (consisting of Java classfiles and JavaScript typefiles).
+All the projects that enable execution of the compiled programs are placed in the \texttt{runtime} directory and are compiled using the Swat compiler itself. They also contain sources directly in JavaScript which are not affected by the Swat compiler. As it is depicted on the figure \ref{RuntimeCompilation} the \texttt{runtime} projects depend on the \texttt{api} (in order to interoperate with JavaScript environment), get compiled by Swat compiler and packaged to Java Archives (consisting of Java classfiles and JavaScript typefiles).
 
-The \texttt{runtime/java} is a reimplementation of core Java classes in Scala in order to be compilable using Swat compiler and therefore usable in a web browser. The \texttt{runtime/scala} is carefully selected subset of Scala Library classes that is supported by the Swat toolkit. The existing sources of Scala Library are used and modified with respect to fact that the classes will be executed as JavaScript so for example everything related to threading can is excluded. 
-
-The \texttt{runtime/client} is the runtime library that was mentioned multiple times in {\it Analysis} (section \ref{sec:Analysis}). It is partially implemented in Scala and partially directly in JavaScript. Finally the \texttt{runtime/common} contains the enhancements like type loader or RPC infrastructure. Part of it runs only on the server, part of it is compiled to JavaScript and used both on the server and on the client.
+The \texttt{runtime/java} is a reimplementation of core Java classes in Scala in order to be compilable using Swat compiler and therefore usable in a web browser. The \texttt{runtime/scala} is carefully selected subset of Scala Library classes that is supported by the Swat toolkit. The existing sources of Scala Library are used and modified with respect to fact that the classes will be executed as JavaScript so for example everything related to threading can is excluded.
 
 \begin{figure}[ht]
   \centering
-	\includegraphics[width=\linewidth,height=\textheight,keepaspectratio]{img/Project.pdf}
+	\includegraphics[width=\linewidth,height=\textheight,keepaspectratio]{img/RuntimeCompilation.pdf}
 	\caption{Runtime project compilation.}
-	\label{Project}
+	\label{RuntimeCompilation}
 \end{figure}
 
-An application that should be compiled to JavaScript (e.g. \texttt{web/swatter}) depends on the \texttt{runtime/common} and \texttt{runtime/client} so the application can access additional APIs provided by the Swat runtime. It implicitly depends (as all Scala applications) on the Standard Scala Library and Java Class Library. It does not depend on the versions \texttt{runtime/java} and \texttt{runtime/scala} adjusted for Swat. Consequently all types defined in the application could be used even on the server side because they do not depend on the adjusted versions of standard libraries. Pupose of the adjusted versions is to store typefiles of standard Java and Scala types, because obviously the typefiles are not present in the standard libraries as they are not compiled with Swat compiler.
+The \texttt{runtime/client} is the runtime library that was mentioned multiple times in {\it Analysis} (section \ref{sec:Analysis}). It is partially implemented in Scala and partially directly in JavaScript. Finally the \texttt{runtime/common} contains the enhancements like type loader or RPC infrastructure. Part of it runs only on the server, part of it is compiled to JavaScript and used both on the server and on the client.
+
+There are four additional projects that either test or demonstrate capabilities of the toolkit. The \texttt{web} in the root is a server side web application in the Play Framework \cite{Play}. It serves three web pages where each page contains one client side application written in Scala and compiled to JavaScript using the Swat compiler. The \texttt{web/tests} is an application that executes tests of the Swat Runtime (there is no other simple way how to test the runtime directly). The \texttt{web/swatter} is a sample application that presents some of the toolkit features. Finally the \texttt{web/playground} is an empty application meant to be used for experiments.
+
+An application that should be compiled to JavaScript depends during compilation on the \texttt{api} (in order to use adapters), \texttt{runtime/client} (so it can use e.g. serializer) and \texttt{runtime/common} (for access to type loader etc.). It also implicitly depends (as all Scala applications) on the Standard Scala Library and Java Class Library. It does not depend on the versions \texttt{runtime/java} and \texttt{runtime/scala} adjusted for Swat. Consequently all types defined in the application could be used even on the server side because they do not depend on the adjusted versions of standard libraries. Purpose of the adjusted versions is to store typefiles of standard Java and Scala library classes. The compilation process is depicted on the figure \ref{AppCompilation}.
+
+\begin{figure}[ht]
+  \centering
+	\includegraphics[width=\linewidth,height=\textheight,keepaspectratio]{img/AppCompilation.pdf}
+	\caption{Swat application compilation.}
+	\label{AppCompilation}
+\end{figure}
 
 \section{API (package \texttt{swat.api})}
 
 The \texttt{api} library is completely visible to users of the toolkit and contains means for interoperability with JavaScript environment and a few annotations that somehow affect the compilation process. The annotations are currently only two, the \texttt{swat.ingored} makes the Swat compiler completely ingore the annotated type, the \texttt{swat.adapter} informs the compiler that the annotated type is an adapter of JavaScript native object.
 
-The most important part of the \texttt{api} are predefined adapters for native JavaScript APIs. The adapters are added in a lazy manner which means that a new adapter is added when there is a need for it. There are couple of predefined adapters that should more less cover the following JavaScript APIs:
+The most important part of the \texttt{api} are predefined adapters for native JavaScript APIs. It is not meant to cover all possible JavaScript APIs, mostly the adapters are added/extended when needed during development of an application. There are couple of predefined adapters that should more less cover the following JavaScript APIs:
 
 \begin{itemize}
 \item Document Object Model (DOM) Level 3 Core Specification.\\
+Package \texttt{swat.js.dom}.\\
 http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/
 \item Document Object Model (DOM) Level 3 Events Specification.\\
+Package \texttt{swat.js.events}.\\
 http://www.w3.org/TR/DOM-Level-3-Events/
 \item JavaScript Objects, Browser Objects and HTML DOM Element Objects.\\
+Packages \texttt{swat.js}, \texttt{swat.js.applications}, \texttt{swat.js.html}.\\
 http://www.w3schools.com/jsref/default.asp
-\item Web Workers.\\
+\item Web Workers and Communication.\\
+Packages \texttt{swat.js.workers}, \texttt{swat.js.communication}, \texttt{swat.js.url}.\\
 http://www.w3.org/TR/workers/
 \end{itemize}
 
@@ -971,7 +984,7 @@ The second interesting part is how the global scope is established. The global s
 
 \section{Compiler (package \texttt{swat.compiler})}
 
-The Swat compiler is implemented as a plugin (\texttt{SwatCompilerPlugin}) to the Scala compiler, so it follows the Scala compiler plugin design guidelines \cite{CompilerPlugins}. The plugin adds one phase to the standard set of compiler phases. When the phase is executed during compilation it does not modify the input Scala ASTs at all and delegates control to the JavaScript frontend (class \texttt{ScalaAstProcessor}) as it can be seen on the figure \ref{SwatCompiler}. Additionaly there is also the \texttt{SwatCompiler} which wraps the whole plugged Scala compiler, adds a programmer friendly interface thus it is possible to perform the compilation to JavaScript programmatically.
+The Swat compiler is implemented as a plugin (\texttt{SwatCompilerPlugin}) to the Scala compiler, so it follows the Scala compiler plugin design guidelines \cite{CompilerPlugins}. The plugin adds one phase to the standard set of compiler phases. When the phase is executed during compilation it does not modify the input Scala ASTs at all and delegates control to the JavaScript frontend (class \texttt{ScalaAstProcessor}) as it can be seen on the figure \ref{SwatCompiler}. Additionaly there is also the \texttt{SwatCompiler} class which wraps the whole plugged Scala compiler, adds a programmer friendly interface thus it is possible to perform the compilation to JavaScript programmatically.
 
 \begin{figure}[ht]
   \centering
@@ -982,7 +995,7 @@ The Swat compiler is implemented as a plugin (\texttt{SwatCompilerPlugin}) to th
 
 There are three main subpackages: \texttt{js}, \texttt{frontend} and \texttt{backend}. The \texttt{js} package contains definitions of JavaScript ASTs and other syntax related constructs (e.g. keywords). The classes that represent syntax trees mirror the specification of JavaScript syntax \cite{EcmaScript} so any imaginable JavaScript program could be represented with these classes. In addition the \texttt{TreeBuilder} is a factory for some commonly used ASTs.
 
-The \texttt{backend} package allows to generate JavaScript code from the ASTs. There is only one important class - \texttt{JsCodeGenerator}. From the top level point of view, it is just one big \texttt{match} expression against all types of ASTs where each \texttt{case} is responsible for one type. In most cases it works recursively becuase an AST is often composed of other ASTs. Therefore the encapsulated ASTs are processed first and then the resulting code fragments are somehow combined together.
+The \texttt{backend} package allows to generate JavaScript code from the ASTs. There is only one important class - \texttt{JsCodeGenerator}. From the top level point of view, it is just one big \texttt{match} expression against all types of ASTs where each \texttt{case} is responsible for one type. In most cases it works recursively because an AST is often composed of other ASTs. Therefore the encapsulated ASTs are processed first and then the resulting code fragments are somehow combined together. It also takes care of indentation and white spaces of the outputted code so it is readable.
 
 \subsection{Frontend (package \texttt{swat.compiler.frontend})}
 
@@ -1017,7 +1030,7 @@ Support from the compiler, thin client proxy and server dispatcher. Only non-blo
 
 \section{Integration with a Web Framework}
 
-The Swat toolkit was designed with focus on simple integration to existing web application frameworks. The web application has to handle the following four HTTP requests which are used by the toolkit:
+In order for the client application to be fully functional the server side has to respond to a few requests that are generated by the Swat infrastructure on the client side. The toolkit was designed with focus on simple integration to existing web application frameworks so it is just necessary to forward the following three HTTP requests to the Swat server runtime.
 
 \begin{itemize}
 \item \texttt{GET /swat/tpe/<typeIdentifier>}\\
@@ -1028,9 +1041,15 @@ Returns JavaScript code of the specified type that mixes-in the \texttt{scala.Ap
 Returns result of the specified remote method invocation.  
 \end{itemize}
 
-For all those requests the Swat toolkit already defines complete implementation so the web application just has to forward such requests to Swat classes. An example integration to the Play MVC Framework \cite{Play} can be seen on the listing \ref{lst:PlayIntegration}. You may also notice that the toolkit uses Scala Futures \cite{ScalaFutures} so when an operation blocks on e.g. system operation, the thread may be used to handle another request. As a consequence scalability of the whole application increases.
+An example integration to the Play MVC Framework \cite{Play} can be seen on the listing \ref{lst:PlayIntegration}. You may also notice that the toolkit uses Scala Futures \cite{ScalaFutures} so when an operation blocks on e.g. system operation, the thread may be used to handle another request. As a consequence scalability of the whole application increases.
 
 \begin{lstlisting}[caption={Integration of Swat toolkit to Play Framework.},label={lst:PlayIntegration}	,basicstyle=\scriptsize\ttfamily,]
+import scala.concurrent._
+import ExecutionContext.Implicits.global
+import play.api.mvc._
+import swat.common._
+import swat.common.rpc._
+
 object Swat extends Controller {
     def tpe(typeIdentifier: String) = AsyncAction { r =>
         TypeLoader.getOrAlert(Array(typeIdentifier), Array.empty)
@@ -1053,7 +1072,7 @@ object Swat extends Controller {
 
 \section{Build Process}
 
-Integration with SBT was initially planned as a plugin to SBT. A user of the toolkit would specify that his solution requires the "Swat SBT plugin" which would allow him to define not only standard Scala projects but also "Swat projects". SBT would download the plugin from the internet during startup and the plugin would be responsible for invocation of the Swat compiler during compilation of a "Swat project". 
+Integration with SBT was initially planned as a plugin to SBT. A user of the toolkit would specify that his or her solution requires the "Swat SBT plugin" which would allow him or her to define not only standard Scala projects but also "Swat projects". SBT would download the plugin from the internet during startup and the plugin would be responsible for invocation of the Swat compiler during compilation of a "Swat project". 
 
 The proposed setup would be nice, however it turned out that SBT plugins have to be binary compatible with SBT itself (i.e. use same version of Scala as SBT). The proposed "Swat SBT plugin" would have to use Scala 2.10.1 because it invokes the Swat compiler which uses Scala 2.10.1 itself. On the other hand the latest version of SBT (at time of writing the thesis) uses Scala 2.9 and therefore the plugin would be incompatible with SBT.
 
@@ -1068,7 +1087,7 @@ Most of the libraries in the toolkit are covered with tests with purpose to earl
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Conclusion}
 
-With regard to the planned goals it can be stated the requirements of on the toolkit have been met. The compiler is able to compile Scala programs to JavaScript and has no problems with any kinds of Scala language constructs. Interoperability with JavaScript is covered by quite rich set of addapters and a possibility to use native JavaScript code blocks inside Scala programs. The runtime environment manages to support the compiled code during execution while being consise. The toolkit was used to compile all the core Java and Scala classes necessary for its operation, moreover the futures and promises are fully supported. On the other hand the supported library classes were added in a lazy-manner so there is nothing more. Mainly lack of the Scala collection library (due to its size and complexity) is currently the most limiting factor. Integration to a web application framework is straightforward and distribution of libraries is as simple as it possibly can be.
+With regard to the planned goals it can be stated the requirements of on the toolkit have been met. The compiler is able to compile Scala programs to JavaScript and has no problems with any kinds of Scala language constructs. Interoperability with JavaScript is covered by quite rich set of adapters and a possibility to use native JavaScript code blocks inside Scala programs. The runtime environment manages to support the compiled code during execution while being consise. The toolkit was used to compile all the core Java and Scala classes necessary for its operation, moreover the futures and promises are fully supported. On the other hand the supported library classes were added in a lazy-manner so there are only the core and required ones. Mainly lack of the Scala collection library (due to its size and complexity) is currently the most limiting factor. Integration to a web application framework is straightforward and distribution of libraries is as simple as it possibly can be.
 
 The enhancement goals were also fulfilled. The JSON (de)serializer is usable both on the client side and on the server side. On the top of standard functionality it also allows to serialize object graphs containing reference cycles. The type loader is fully implemetned, RPC infractructure is conceptually solved and usable for remote method invocation, but support for more advanced scenarios involving authorization is not implemted yet.
 
@@ -1090,7 +1109,7 @@ Scalosure started as a fork of S2js, so these two tools are very similar to each
 
 \subsubsection*{js-scala}
 
-The approach js-scala uses is a bit different but it is mentioned here for the sake of completeness. It is a domain specific language that can be embedded into Scala programs. Its compiler plugin translates fragments of the DSL into JavaScript. The main disadvantage is that fragments of code that should be transformed using js-scala have to be rewritten in order to follow rules of the DSL. Existing code cannot be used without modifications which is apparently the reason why Scala Library is unsupported.
+The approach js-scala uses is a bit different but it is mentioned here for the sake of completeness. It is a domain specific language that can be embedded into Scala programs. Its compiler plugin translates fragments of the DSL into JavaScript. The main disadvantage is that existing code that should be transformed using js-scala has to be rewritten in order to follow rules of the DSL. Existing code cannot be used without modifications which is apparently the reason why Scala Library is unsupported. The project is currently rather a theoretical proof of concept than a tool focusing on real world usage.
 
 \subsubsection*{Scala.js}
 
@@ -1100,7 +1119,16 @@ The biggest achievement of this project is that whole Scala Library was compiled
 
 \subsection{Comparison}
 
-It is difficult to exactly quantify abilities of each of the aforementioned tools becuase they are mostly undocumented. It is also not easy to stay unbiased in favor of the Swat toolkit but the table \ref{tbl:Comparison} should summarize level of maturity of each tool by different criteria (Compiler - Scala language construct support; Interoperability - JavaScript interoperability; Libraries - standard library support; Distribution - ease of library distribution and code reuse; Tooling - build, debug, runtime and other tools; Overall - overall impression). One star means minimal or zero suppot, two stars medium support and three stars rich support compared to other other tools or to what is achievable.
+It is difficult to exactly quantify abilities of each of the aforementioned tools becuase they are mostly undocumented. It is also difficult not to stay biased in favor of the Swat toolkit but the table \ref{tbl:Comparison} should summarize level of maturity of each tool by different criteria:
+
+\begin{description}[style=multiline,leftmargin=5cm]
+\item[Compiler] Scala language compiler support: $\star$ - major issues, $\star\star$ almost everything supported, $\star\star\star$ - full support.
+\item[Interoperability] JavaScript interoperability: $\star$ - possible, $\star\star$ adapters and native code, $\star\star\star$ - automatic coversion of adapters defined in different language.
+\item[Libraries] Standard library support: $\star$ nothing or basic classes, $\star\star$ - not everything but important classes supported, $\star\star\star$ - whole library.
+\item[Distribution] Ease of library distribution and code reuse: $\star$ - not addressed (e.g. output to one file), $\star\star$ at least somehow solved, $\star\star\star$ - typefiles and dynamic type loader.
+\item[Tooling] Build, debug, runtime and other tools: $\star$ - missing, $\star\star$ - couple of tools, $\star\star\star$ - rich variety of tools.
+\item[Overall] Subjective overall impression.
+\end{description}
 
 \begin{table}[h]\footnotesize
 	\def\arraystretch{1.5}
@@ -1108,18 +1136,18 @@ It is difficult to exactly quantify abilities of each of the aforementioned tool
 	\begin{tabular}{l || c | c | c | c | c  || r}
 		Tool				& Compiler 						& Interoperability	& Libraries 				& Distribution			& Tooling 					& Overall 					\\
 		\hline						
-	  ScalaGWT		& $\star\star$				&	$\star$						& $\star$						& $\star$						&	$\star$						& $\star\star$			\\
+	  ScalaGWT		& $\star\star$				&	$\star$						& $\star$						& $\star\star$			&	$\star$						& $\star\star$			\\
 		s2js				& $\star$							& $\star$ 					& $\star$ 					&	$\star$						& $\star$						& $\star$			 			\\
-		Scalosure		& $\star$							& $\star$ 					& $\star$ 					& $\star$						& $\star$						& $\star$			  		\\
-		js-scala		& $\star$ 						& $\star\star$ 			& $\star$						& $\star\star$ 			& $\star$ 					& $\star\star$ 			\\
+		Scalosure		& $\star$							& $\star$ 					& $\star$ 					& $\star\star$			& $\star$						& $\star$			  		\\
+		js-scala		& - 									& $\star\star$ 			& $\star$						& $\star$ 					& $\star$ 					& $\star\star$ 			\\
 		Scala.js		& $\star\star\star$ 	& $\star\star\star$	& $\star\star\star$ &	$\star$						& $\star\star$			& $\star\star\star$ \\
-		Swat				& $\star\star\star$ 	& $\star\star$			& $\star\star$			& $\star\star\star$	& $\star\star$			& $\star\star\star$ \\
+		{\bf Swat}	& $\star\star\star$ 	& $\star\star$			& $\star\star$			& $\star\star\star$	& $\star\star$			& $\star\star\star$ \\
 	\end{tabular}
 	\caption{Comparison of Swat with other similar tools.}
 	\label{tbl:Comparison}
 \end{table}
 
-The fact that Scala.js and Swat have three stars in the Overall criterion does not necessarily mean they are ready for production use. It means they are closest to it so they are already suitable for programmers to start experimenting with.
+The fact that Scala.js and Swat have three stars in the Overall criterion does not necessarily mean they are ready for production use. It means they are closest to it so they are already suitable for programmers to start experimenting with. At this moment there is no clear winner between Scala.js and Swat, both have their highlights and downsides so it is matter of who will sort them out faster. Scala.js currently has some support from the Scala community in EPFL so probably it has bigger chances of succeeding.
 
 \section{Future Work}
 
@@ -1129,25 +1157,40 @@ The second more exciting direction is to explore ways how tasks that are not pro
 
 \subsection{Web workers}
 
-JavaScript does not have any direct means of concurrent programming so it is quite challenging to implement an application that is computationally demanding and in the same time allowing the user to interact with it. So there are not much games or sophisticated visualization applications.
+JavaScript does not have any direct means of concurrent programming so it is quite challenging to implement an application that is computationally demanding and in the same time allowing the user to interact with it. So there are not many games or sophisticated visualization applications.
 
-There is however a way how to execute code in parallel with the code that is being executed on a web page - using WebWorkers \cite{WebWorkers}. The code in the standard execution context may create a new WebWorker which is sort of a different process. The standrd context and the WebWorker do not share access to memory so the only way of communication is to send or receive immutable serialized messages. API of the WebWorker library is rather unfriendly so it is not widely used, but applications that critacally need concurrency have to bear with it, because there is no other option.
+There is however a way how to execute code in parallel with the code that is being executed on a web page - using WebWorkers \cite{WebWorkers}. The code in the standard execution context may create a new WebWorker which is sort of a different process. The standrd context and the worker context do not share access to memory so the only way of communication is to send or receive immutable serialized messages. API of the WebWorker library is rather unfriendly so it is not widely used, but applications that critacally need concurrency have to bear with it, because there is no other option.
 
 From broader perspective WebWorkers are very similar concept to Actor Model \cite{Actors} which is implemented in Scala within the Akka Concurrency Library \cite{Akka}. So there is an opportunity to create a class that would provide the Scala Actor API (or its essential subset) while under the hood it would use the unfriendly WebWorker API. Serialization and deserialization of messages is already taken care of thanks to the JSON serializer. 
 
 Even more interesting thing would be to abstract it a bit more so it would be possible on the client side to create a "remote" actor which would actually run on the server. The API of a "remote" actor would be the same as API of a "WebWorker" actor so for a programmer it would be undistinguishable whether the actor runs on a server or inside a WebWorker. It would also allow the web application to have some of its computation needs fulfilled by the server or the other way round.
 
-Speaking of "remote" actors there is another new feature in the JavaScript ecosystem called WebSockets \cite{WebSockets} which allows bidirectional communication between server side and client side. They would also deserve to be given a better API that would hide low level details and make their usage friendlier.
-
-\subsection{Web Sockets}
+There is another new feature in the JavaScript ecosystem called WebSockets \cite{WebSockets} which would be necessary to utilize in case of the "remote" actors. A WebSocket allows to open bidirectional communication channel from the client side to the server side. They would also deserve to be given a better API that would hide low level details and make their usage friendlier.
 
 \subsection{Template Engine}
 
-Problems with JavaScript templating and how it could be solved using string interpolation.
+Another thing that is currently rather inconvenient is templating in JavaScript. One often needs to create fragments of a HTML page programmatically, compose the fragments to bigger components and manipulate with them. The first option is to create the whole fragment purely in JavaScript using DOM, but this approach is for larger parts of a page almost unusable. The second option is to use a template engine where it is possible to define a template with placeholders for data, compile the template to JavaScript, give the compiled template the data and make it render itself. This approach however brings the compilation step which does not pay off when used only for templating.
+
+With Swat it should theoretically be possible to implement a type safe templating engine that would rely on Scala String Interpolation \cite{StringInterpolation}. A template would be a function taking data and producing a HTML Element. Construction of the element and composition of the template from other templates would be work of a new special string interpolator (e.g. \texttt{template}). A simplified example just to give an impression how it could look like is visible on the listing \ref{lst:Templates} where a model class (\texttt{User}) is defined together with a template for it.
+
+\begin{lstlisting}[caption={Templating engine example.},label={lst:Templates}]
+case class User(name: String, frineds: List[User])
+
+object Templates {
+    def user(user: User): Element = template"""
+        <div>
+            <h2>${user.name}</h2>
+            ...
+            <h3>Friends</h3>
+            ${user.friends.map(userTemplate)}
+        </div>
+    """
+}
+\end{lstlisting}
 
 \subsection{Build Process}
 
-Swat as a SBT plugin, resident compilation that would simplify the development process.
+The Build process deserves full integration to the SBT as it was not achievable at the moment of writing the thesis. Interesting improvement would be to employ SBT resident compiler (a compiler that runs all the time, detects changes in the source files and recompiles the modified) so a programmer would not need to explicitly compile anything. He or she would just run the resident compiler and run the application. From that point it would be sufficient to modify particular source file and reload the current page in order to immediately see the result.
 
 
 
