@@ -21,6 +21,10 @@
 \usepackage{color}
 \usepackage{courier}
 
+\usepackage[unicode]{hyperref}
+% \hypersetup{pdftitle=Scala Web Application Toolkit}
+% \hypersetup{pdfauthor=Jan Široký}
+
 \definecolor{lightgray}{rgb}{.95, .95, .95}
 
 \makenomenclature
@@ -69,7 +73,7 @@
 	captionpos=b,
 	frame=single,
 	aboveskip=16pt,
-	abovecaptionskip=8pt,
+	abovecaptionskip=8pt
 }
 
 % Less indented chapter titles.
@@ -152,7 +156,7 @@ Prague 2013
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
 \noindent 
-I would like to thank to my family for continuous support during work on the thesis. I would also like to thank to my supervisor Pavel Ježek for invaluable consultations and advices he provided me with.
+I would like to thank to my family for continuous support during work on the thesis and to my supervisor Pavel Ježek for invaluable consultations and advices he provided me with.
 
 
 
@@ -389,6 +393,7 @@ One of the best summaries of the Scala language is provided by its author himsel
 
 \paragraph{Style} The language is both imperative and functional, but tends and encourages to use rather the functional style. It supports most of the standard control structures known from e.g. Java. Adds some new control structures, the most important is the \texttt{match} statement (a self explaining example using match is on listing \ref{lst:MatchStatement}).
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Match statement example.},label={lst:MatchStatement}]
 list match {
    case Nil => "empty"
@@ -398,9 +403,11 @@ list match {
    case _ => "whatever"
 }
 \end{lstlisting}
+\end{minipage}
 
 Scala also generalizes existing control structures where it is possible: for cycles are abstracted into much more powerful \texttt{for} comprehensions. The for comprehensions are actually a syntax sugar for series of operations \texttt{map}, \texttt{flatMap} and \texttt{withFilter} whose semantics are defined by the target of their invocation, not by the \texttt{for} comprehension itself. Parallel to that can be found in C\# in the form of LINQ \cite{Linq}, which behaves more less the same. An example of one for comprehension that selects older underpaid employees can be seen on listing \ref{lst:ForComprehension}.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={For comprehension example.},label={lst:ForComprehension}]
 for(e <- employees;
         if e.age > 40;
@@ -410,9 +417,11 @@ for(e <- employees;
         if difference < 0		
 ) yield (e.name, c.name, difference)
 \end{lstlisting}
+\end{minipage}
 
 Leitmotif of the Scala language design is a unification of concepts, which appears for example in the \texttt{catch} blocks. Multiple catch blocks for each catched exception type known from standard languages are turned into one that matches against the catched exception. A simple example is provided on the listing \ref{lst:CatchBlock}.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Catch block example.},label={lst:CatchBlock}]
 try {
     throwsException()
@@ -422,12 +431,15 @@ try {
     case e => println(e.getMessage)
 }
 \end{lstlisting}
+\end{minipage}
 
 Scala does not differentiate between expressions and statements, because everything, that has been traditionally viewed as a statement (\texttt{if}-\texttt{else}, \texttt{try}-\texttt{catch}), has a return value. So for example a ternary operator is unnecessary, because if-else can be used instead (listing \ref{lst:IfElse}). There are many more features, for a thorough description refer to the Scala "bible"  \cite{ScalaProgramming}.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={\texttt{If}-\texttt{else} as a ternary operator.},label={lst:IfElse}]
 val result = if (a >= 0) "positive" else "negative"
 \end{lstlisting}
+\end{minipage}
 
 \paragraph{Syntax} As it can be seen on the previous code samples, the syntax resembles Java or C\#, but is much more flexible while trying to reduce unnecessary clutter. It is possible to define methods, whose usage looks like built-in control structures. For example the \texttt{using} syntactical construct known from C\# can be defined in Scala as a library function, whose usage will look exactly the same as in C\#. Leaving out parentheses or semicolons is also allowed in places where they are not necessary. As a consequence, Scala is pretty suitable for design of domain specific languages. 
 
@@ -566,6 +578,7 @@ Inherent restriction of the interoperability is that the solution used should no
 
 \paragraph{Native code blocks} A parallel to the inline assembler blocks in the C language, with difference that the JavaScript code has to be placed in a string in order not to violate the source language syntax. Moreover type of the whole code block expression (e.g. \texttt{js("123 + 456")}) has to be \texttt{scala.Nothing} so it can be used even in places where a value of particular type is expected. When the JavaScript Frontend encounters such a block it outputs only the code stored in the string. Example of such a code block can be seen on the listing \ref{lst:NativeCodeBlock}.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Native code block example.},label={lst:NativeCodeBlock}]
 def repeat(text: String, times: Int): String = js("""
   var a = [];
@@ -575,6 +588,7 @@ def repeat(text: String, times: Int): String = js("""
   return a.join('');
 """)
 \end{lstlisting}
+\end{minipage}
 
 \paragraph{Adapters} For all the JavaScript APIs and objects that should be usable from the source language, so called "adapter" classes could be defined in the source language. They should exactly match the JavaScript definitions in terms of names, fields, methods, parameters etc. and should be marked with an annotation in order to be distinguishable. They do not have to be implemented, but the type signatures should match the specification (see the listing \ref{lst:Adapters} where an adapter for the \texttt{window} object is defined and used). When the compiler encounters such an adapter class, it knows that it is something that is already present in the JavaScript environment and will not produce any JavaScript code corresponding to the adapter definition (the listing \ref{lst:AdapterOutput} presents such a situation).
 
@@ -618,15 +632,18 @@ A heart of the whole Swat toolkit is the JavaScript frontend responsible for tra
 
 The JavaScript frontend can use different approaches to tackle its task. As an example, consider the piece of Scala code containing lazy field declaration and access on listing \ref{lst:ScalaComVsRun} and how it could be compiled to JavaScript.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Lazy field declaration and access.},label={lst:ScalaComVsRun}]
 lazy val foo = reallyLongOperation()
 
 // Causes evaluation of foo.
 val bar = foo 
 \end{lstlisting}
+\end{minipage}
 
 One option is to construct the JavaScript ASTs utilizing only JavaScript language primitives and internal functions, so the resulting code would be executable as it is. Everything is handled during compilation (thus named the "compile time approach") so the produced code uses only native JavaScript constructs and APIs (listing \ref{lst:JsCompileTime}).
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Compile time option outcome.},label={lst:JsCompileTime}]
 var foo_value = undefined;
 var foo = function() {
@@ -638,9 +655,11 @@ var foo = function() {
 
 var bar = foo();
 \end{lstlisting} 
+\end{minipage}
 
 The other way is to move some of the logic to a completely new runtime library written directly in JavaScript, so the outputted JavaScript code would run only if the runtime library is present in the global scope. So in case of the lazy field a new function named \texttt{runtime.lazy} would be defined in the runtime library (listing \ref{lst:RuntimeLazy} shows its implementation).
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Runtime function that lazifies evaluation.},label={lst:RuntimeLazy}]
 runtime.lazy = function(f) {
   var x;
@@ -652,9 +671,11 @@ runtime.lazy = function(f) {
 	};
 };
 \end{lstlisting}
+\end{minipage}
 
 With the library function \texttt{runtime.lazy} it is possible to translate Scala code on listing \ref{lst:ScalaComVsRun} to JavaScript code listed on \ref{lst:JsRunTime}.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Runtime option outcome.},label={lst:JsRunTime}]
 var foo = runtime.lazy(function() {
   return reallyLongOperation();
@@ -662,6 +683,7 @@ var foo = runtime.lazy(function() {
 
 var bar = foo();
 \end{lstlisting}
+\end{minipage}
 
 In order to minimize size and boilerplate code in the produced JavaScript and to increase its readability, the Swat JavaScript fronted sticks to the runtime option with a runtime library and tries to move functionality there if it is both possible and beneficial. In cases when the compile time option nor the runtime option is apparently better than the other, the runtime option is chosen, because modifying the runtime is by far simpler than modifying the compiler.
 
@@ -681,6 +703,7 @@ So in order to run an application on a page, a typefile corresponding to the ent
 
 Descending the AST, the next kind of nodes JavaSript frontend comes accross are type definitions. Packages or namespaces are not an issue because solution for them is trivial as it is illustrated on the listing \ref{lst:JavaScriptPackages}. In order to declare a package it is enough to create an object with the same name as the top level package and recursively nest there objects corresponding to the subpackages.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Packages in JavaScript.},label={lst:JavaScriptPackages}]
 // Declaration of the package "foo.bar.baz".
 var foo = { bar: { baz: {} } };
@@ -688,11 +711,13 @@ var foo = { bar: { baz: {} } };
 // Definition of a package member.
 foo.bar.baz.Animal = /* ... */
 \end{lstlisting}
+\end{minipage}
 
 A type definition (class, trait or singleton object definition) is identified by a name, has an ordered sequence of supertypes, consists of members and has a constructor. A member is either a method definition or a field definition. In case of a singleton object or static constructors, the runtime is responsible for their initialization.
 
 There are many possibilities, how to encode such type definitions in JavaScript, because JavaScript is really flexible. Different JavaScript application frameworks, that introduce the concept of class-based inheritance, do not even agree and encode it slightly differently. As mentioned earlier, the favored encoding would be to produce only necessary information about the type definition. It means that a function (e.g. \texttt{runtime.class}) has to be defined in the runtime library. This function should take three parameters: fully qualified name of the class, class supertypes and the class member definitions. Its responsibility is to create a constructor function for the class and setup inheritance by initializing the prototype chain. 
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Scala \texttt{Dog} class example.},label={lst:ScalaClassEncoding}]
 package animals {
   class Dog extends Animal with FourLegged {
@@ -701,7 +726,9 @@ package animals {
   }
 }
 \end{lstlisting}
+\end{minipage}
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={The \texttt{Dog} class encoded using the \texttt{runtime.class} function},label={lst:JavaScriptClassEncoding}]
 animals.Dog = runtime.class(
   'animals.Dog', // Full name of the class.                              
@@ -712,6 +739,7 @@ animals.Dog = runtime.class(
   }
 );
 \end{lstlisting}
+\end{minipage}
 
 An example of how a Scala class \texttt{Dog} (listing \ref{lst:ScalaClassEncoding}) could be encoded is visible on the listing \ref{lst:JavaScriptClassEncoding}. The \texttt{runtime.class} function in this case returns a contructor function of the \texttt{animals.Dog} so new instances can be created simply by calling \texttt{new animals.Dog()}.
 
@@ -731,6 +759,7 @@ With method definitions, the situation is much more complicated. Depending on th
 
 Because JavaScript does not support multiple variables with the same name in a scope, methods of JavaScript objects cannot be overloaded. The listing \ref{lst:ScalaOverloading} presents a pair of overloaded methods and their invocation.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Scala method overloading example.},label={lst:ScalaOverloading}]
 def foo(x: String) { /* ... */ }
 def foo(x: Int) { /* ... */ }
@@ -739,9 +768,11 @@ def test() {
 	foo(123)
 }
 \end{lstlisting}
+\end{minipage}
 
 Overloaded methods differ by their type singatures, therefore one possible solution is to somehow encode the type signature into the method name (known as name mangling which is a commonly known technique that is used by C++ compilers). Output of a compiler that uses name mangling applied on the sample methods can be seen on the listing \ref{lst:NameMangling}.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Overloading solved by name mangling.},label={lst:NameMangling}]
 foo__java_lang_String = function(x) { /* ... */ };
 foo__scala_Int = function(x) { /* ... */ };
@@ -750,9 +781,11 @@ test = function() {
 	foo__scala_Int(123);
 };
 \end{lstlisting}
+\end{minipage}
 
 The other way is to have one "wrapper" method named the same as all the overloaded methods. The wrapper method would take a type signature as an additional string parameter and based on its value, it would decide which variant to actually invoke. This approach implies that a runtime library function has to be defined. It can be named e.g. \texttt{runtime.overload}, as parameters it would take the overloaded variants with their type signatures and it would construct the "wrapper" function. This technique applied on the sample methods is presented on the listing \ref{lst:WrapperFunction}.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Overloading in JavaScript.},label={lst:WrapperFunction}]
 foo = runtime.overloaded({
 	'java.lang.String': function(x) { /* ... */ },
@@ -763,6 +796,7 @@ test = function() {
 	foo(123, 'scala.Int');
 };
 \end{lstlisting}
+\end{minipage}
 
 The "name encoding" approach has a big advantage in zero runtime overhead. On the other hand, methods with a few parameters of nontrivial types would have really long names, so the resulting code would be rather unreadable. The most important information about a method call in the use site, is the method name and the arguments. With this solution, they would be separated by the type signature encoding.
 
@@ -774,6 +808,7 @@ If performance is the main priority, then the "name encoding" variant is the one
 
 If the source language allows to define method parameter default values, then the best approach is to exploit the JavaScript \texttt{undefined} constant which has no counterpart in most of other programming languages. In the invocation site, if an argument is not provided (i.e. the default value should be used), the JavaScript frontend can use the \texttt{undefined} as the argument. And on the top of the method body, all the arguments have to be checked whether they are the \texttt{undefined}. If so, the default value should be used instead as it is demonstrated on the listing \ref{lst:JavaScriptDefaultParameters}.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Default parameters in JavaScript.},label={lst:JavaScriptDefaultParameters}]
 function(x) {
   if (typeof x === 'undefined') {
@@ -782,6 +817,7 @@ function(x) {
   // ...
 }
 \end{lstlisting}
+\end{minipage}
 
 \subsection{Expressions}
 
@@ -815,6 +851,7 @@ console.log(x); // Prints "bar".
 
 Solution for this problem is a part of common knowledge in the JavaScript community. The block of code that should be executed within a new scope has to be wrapped inside an anonymous functions which is immediately executed (see the listing \ref{lst:JavaScriptBlockScoping} for an example). Invocation of the function forces creation of a new scope, so it behaves the same way as blocks in standard languages.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Emulation of block scope in JavaScript.},label={lst:JavaScriptBlockScoping}]
 var x = "foo";
 (function(){ 
@@ -822,6 +859,7 @@ var x = "foo";
 }());
 console.log(x); // Prints "foo".
 \end{lstlisting}
+\end{minipage}
 
 Another problem related to scoping is meaning of the \texttt{this} keyword. In OO languages it means the current object whereas in JavaScript it references the current scope. An issue arises inside a method body if the current object is being accessed from a nested function. The \texttt{this} keyword inside the nested function references the nested function scope, not the current object. Resolution of this problem is surprisingly simple. It suffices to capture the currrent object to a new variable on the top of each method body (e.g. \texttt{var self = this;}) and to use the captured variable (\texttt{self}) instead of the \texttt{this} keyword.
 
@@ -839,6 +877,7 @@ The choice is biased by the fact that in most cases JavaScript applications do n
 
 Thanks to Scala compiler phases that run before the Swat compiler it is not necessary to worry about advanced control structures like \texttt{match} because they are desugared to code that is "compatible" with JavaScript. The only thing to take care of is that Scala control structures may have a return value. An elegant solution naturally pops up together with the scope handling. Consider an \texttt{if}-\texttt{else} control structure on the listing \ref{lst:IfReturn}.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={A condition with return value.},label={lst:IfReturn}]
 val decision = 
 	if (foo) {
@@ -847,6 +886,7 @@ val decision =
 	  "foo is false"
 	}
 \end{lstlisting}
+\end{minipage}
 
 Transformation to JavaScript will be performed in two steps. The first step on the listing \ref{lst:IfReturnFirst} is just for illustrational purposes. It is not valid JavaScript but shows how scoping would be resolved (both branches wrapped with immediately invoked functions). The second step is to merge the two anonymous functions into one and add the \texttt{return} keywords (listing \ref{lst:IfReturnFinal}).
 
@@ -880,6 +920,7 @@ var decision = (function() {
 
 The last challenging expression kind is an invocation of method defined on a supertype, e.g. \texttt{super.foo()}. Consider the setup on listing \ref{lst:Diamond} - a top level trait, two child traits and two classes that mix in both child traits.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={The \texttt{super} keyword non-static behavior example.},label={lst:Diamond}]
 trait A { 
   def foo = "A" 
@@ -897,6 +938,7 @@ class C2 extends B2 with B1 { def test = super.foo }
 println((new C1).test) // Prints "B2 B1 A".
 println((new C2).test) // Prints "B1 B2 A".
 \end{lstlisting}
+\end{minipage}
 
 Note that the traits are mixed into classes in opposite order to each other. Therefore the linearized supertype sequences of \texttt{C1} and \texttt{C2} are different and the \texttt{test} methods do not return same values. As a consequnce the \texttt{super.foo} used inside the method \texttt{B1.foo} may reference either \texttt{B2.foo} or \texttt{A.foo}. So when the compiler processes the \texttt{B1.foo} method body, the \texttt{super.foo} invocation cannot be dispatched statically.
 
@@ -966,16 +1008,16 @@ The most important part of the \texttt{api} are predefined adapters for native J
 \begin{itemize}
 \item Document Object Model (DOM) Level 3 Core Specification.\\
 Package \texttt{swat.js.dom}.\\
-http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/
+\url{http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/}
 \item Document Object Model (DOM) Level 3 Events Specification.\\
 Package \texttt{swat.js.events}.\\
-http://www.w3.org/TR/DOM-Level-3-Events/
+\url{http://www.w3.org/TR/DOM-Level-3-Events/}
 \item JavaScript Objects, Browser Objects and HTML DOM Element Objects.\\
 Packages \texttt{swat.js}, \texttt{swat.js.applications}, \texttt{swat.js.html}.\\
-http://www.w3schools.com/jsref/default.asp
+\url{http://www.w3schools.com/jsref/default.asp}
 \item Web Workers and Communication.\\
 Packages \texttt{swat.js.workers}, \texttt{swat.js.communication}, \texttt{swat.js.url}.\\
-http://www.w3.org/TR/workers/
+\url{http://www.w3.org/TR/workers/}
 \end{itemize}
 
 First thing to notice is that the adapters do not blindly copy the specifications because the specifications are in some cases redundant and contain duplicities. Usage of Scala which is great for abstraction of common functionality allows to define a new trait (with no counterpart in the specification) for the shared operations. The trait can later be mixed into all adapters that have the specified operations. The \texttt{swat.js.html.elements.InputLike} trait is an example of such approach. It defines interface that is shared among all form input HTML elements and is mixed into \texttt{Input}, \texttt{Select} and \texttt{TextArea} adapters.
@@ -1003,26 +1045,80 @@ An entry point to the frontend is the \texttt{ScalaAstProcessor} class. Its func
 
 The \texttt{TypeDefProcessor} is an abstract class resposible for transformation of a type definition Scala ASTs to JavaScript ASTs. It defines functionality common for all kinds of type definitions and for each kind it has corresponding subclass: \texttt{ClassProcessor} for class definitions, \texttt{TraitProcessor} for trait definitions and \texttt{ObjectProcessor} for singleton object definitions. The subclasses are very simple, most of the functionality is shared and defined in the \texttt{TypeDefProcessor}.
 
-An approach used inside the \texttt{TypeDefProcessor} is very similar to how the \texttt{JsCodeGenerator} generates JavaScript code, the main difference is that the \texttt{TypeDefProcessor} generates JavaScript ASTs. First of all, methods are extracted from the type definition, groupped by their names and processed as it is described in the {\it Analysis}. Processing a method group means that all overloaded variants are processed separately and then encoded to a single JavaScript AST representing the whole method group. The approach with a \texttt{match} against all Scala AST types is used for transformation of a method body. Only important thing is that it has to transform the ASTs according to {\it Analysis}, the rest are more less technical details that are not interesting in the context of the thesis. Finally when all the method groups are processed the type definition can be encoded into a single JavaScript AST containing the members, type name and linearized supertypes.
+The approach used inside the \texttt{TypeDefProcessor} is very similar to how the \texttt{JsCodeGenerator} generates JavaScript code, the main difference is that the \texttt{TypeDefProcessor} generates JavaScript ASTs. First of all, methods are extracted from the type definition, groupped by their names and processed as it is described in the {\it Analysis}. Processing a method group means that all overloaded variants are processed separately and then encoded to a single JavaScript AST representing the whole method group. Finally when all the method groups are processed the type definition can be encoded into a single JavaScript AST containing the members, type name and linearized supertypes.
 
+Transformationon on the expression level (e.g. method bodies, field values) starts with the most important method \texttt{TypeDefProcessor.processTree}. The method can be given any kind of AST and based on its type the \texttt{processTree} delegates control to a more specific method which is responsible for that particular AST. For example when the \texttt{processTree} is given an \texttt{If} tree it delegates control to the \texttt{processIf} method. On top of that there are a few variants of the \texttt{processTree} which invoke it and somehow modify or check the result: 
+
+\begin{description}
+\item[\texttt{processStatementTree}] Makes sure that the processed JavaScript AST is a \texttt{js.Statement}. Otherwise it tries to cenvert it to a statement. Unlike \texttt{processTree} which returns a generic \texttt{js.Ast} it returns a \texttt{js.Statement}.
+\item[\texttt{processExpressionTree}] Makes sure that the processed JavaScript AST is a \texttt{js.Expression} which is also the return type. Used for example when processing a condition of an \texttt{If} AST. The condition always has to be expression so \texttt{processTree} is too generic for that purpose.
+\item[\texttt{processReturnTree}] Makes sure that the processed AST ends with a \texttt{return} statement. E.g. used for transformation of expressions that represent method bodies.
+\end{description}
+
+Rest of the \texttt{TypeDefProcessor} methods are the aforementioned variants tailored for concreate AST types, e.g. \texttt{processLiteral} for primitive literals, \texttt{processIdent} for identifiers, \texttt{processMatch} for match statements and many more. Important thing to remember is that all of the methods follow the chosen approaches defined in the {\it Analysis}. From the implementation perspective they are not taht interesting to further extent.
 
 \section{Runtime}
 
-\subsection{Client}
+\subsection{Client (package \texttt{swat.client})}
 
-Description of everything intereseting in the swat.js.
+The core of client side runtime is implemented directly in JavaScript and can be found in the resources of the project (file \texttt{resource/swat.js}). It is the first thing that has to be declared in order for the compiled code to function. First of all it defines several helper methods (e.g. \texttt{isJsObject}, \texttt{isJsArray}) that are not present in JavaScript yet are useful. Then there are functions used by the Fronted to encode Scala constructs: \texttt{swat.type} encodes classes and traits, \texttt{swat.object} encodes singleton objects, \texttt{swat.method} encodes possibly overloaded methods. The last category of functions is responsible for operations that are in Scala implemented with respect to the underlying platform (usually JRE):
 
-\subsection{Standard Libraries}
-
-Lazy approach, modifying the sources to exclude parts not relevant in the JavaScript environment. The purpose is not to blindly port everything but rather only a portion which is usable in JavaScript.
+\begin{description}
+\item[\texttt{swat.isInstanceOf}] Returns whether an object is of the specified type. Basically verifies that the object is either of the type or any of the object supertypes $<:$ the specified type.
+\item[\texttt{swat.asInstanceOf}] If an object is not of the specified type, throws a \texttt{ClassCastException}
+\item[\texttt{swat.equals}] Implementation of the \texttt{==} relation (in Scala \texttt{==} corresponds to the \texttt{equals} method in mainstream languages, Scala \texttt{eq} corresponds to reference equality \texttt{==} in e.g. Java). It cannot be a method of the \texttt{scala.Any} type because even \texttt{null == null} should return true. For more about equality and its common pitfalls refer to \cite{Equality}.
+\item[\texttt{swat.getClass}] Returns a \texttt{java.lang.Class} of the object, in Swat a \texttt{java.lang.Class} is rather simple, reflection is not currently supported. 
+\item[\texttt{swat.hashCode}] Implementation of the Scala method \texttt{hashCode} (or under alias \texttt{\#\#}). In order to properly work, each instance of any Swat type is given an id, which can be used as a base for its hash code.
+\item[\texttt{swat.toString}] Stringifies any given object.
+\end{description}
 
 \subsection{Type Loader}
 
-How it works on the server side and how on the client side.
+The class \texttt{swat.commmon.TypeLoader} is not complex at all, provides two operations: \texttt{get} for JavaScript code of a specified type (including all its dependencies) and \texttt{getApp} for JavaScript code of an application and its execution (invocation of the application constructor). It works in two phases. In the first phase it creates a dependency graph of all involved types by visiting all dependencies of the specified type, their dependencies and so on. Dependencies can be of two kinds:
+
+\begin{description}
+\item[Declaration] JavaScript code of the dependency has to be declared before code of the type is declared.
+\item[Runtime] Dependency has to be declared but order of the dependency declaration and type declaration does not matter.
+\end{description}
+
+So for example the core runtime \texttt{swat.js} is a declaration dependency of any other type. Then in the second phase the graph is traversed in a topological order given by the "declaration" dependency and outputted to one string. 
+
+There is also a possibility not to include some types to the result. That is useful when there are types already declared on the client side and some other have to be loaded. In this case it is unnecessary to download source code of the already declared types again and redeclare them again.
 
 \subsection{JSON Serializer}
 
-The format that enables us to serialize even graphs of objects with cyclic references. Including type information in order to succesfully deserialize on the server and assign proper prototype on the client.
+Besides serialization of primitive types and arrays, the serializer is also capable of object serialization. But in order to support serialization of object graphs that contain cycles, all objects have to be given unique ids and referenced indirectly using the ids. The listing \ref{lst:Serialization} shows a self explaining example of how an object (with couple of fields that reference other objects) would be serialized into JSON. 
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=JavaScript,caption={A serialized object that references other objects.},label={lst:Serialization},basicstyle=\scriptsize\ttfamily]
+{
+    $value: { $ref: 0 }, // The root object.
+    $objects: [ // Repository of all AnyRef objects.
+        {
+            $id: 0, // Id of the object, which is used while referencing it.
+            $type: "my.package.X", // Type of the object.
+            a: "Foo", // AnyVal.
+            b: { $ref: 1 }, // Reference to an object.
+            c: { $ref: "scala.None", // Reference to a singleton object.
+            d: [ 123, 456, 789 ], // Array of AnyVals.
+            e: [ { $ref: 0 }, { $ref: 1 }, { $ref: 2 } ] // Array of AnyRefs.
+        },
+        {
+            $id: 1,
+            // ...
+        },
+        {
+           $id: 2,
+           // ...
+        }
+    ]
+}
+\end{lstlisting}
+\end{minipage}
+
+Notice the included type information so it is possible to succesfully deserialize it on the server and assign proper prototype on the client. When a singleton object should be serialized then a fully qualified name of it is used as a reference.
+
+Deserializer on the other hand goes through the JSON, creates instances corresponding to every single object in the \texttt{\$objects} array while using \texttt{null}s instead of the references (the referenced instances may not have been created yet). When all instances are created, the references that were initially set to \texttt{null}s can be corrected so they point to valid instances.
 
 \subsection{RPC}
 
@@ -1043,7 +1139,8 @@ Returns result of the specified remote method invocation.
 
 An example integration to the Play MVC Framework \cite{Play} can be seen on the listing \ref{lst:PlayIntegration}. You may also notice that the toolkit uses Scala Futures \cite{ScalaFutures} so when an operation blocks on e.g. system operation, the thread may be used to handle another request. As a consequence scalability of the whole application increases.
 
-\begin{lstlisting}[caption={Integration of Swat toolkit to Play Framework.},label={lst:PlayIntegration}	,basicstyle=\scriptsize\ttfamily,]
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[caption={Integration of Swat toolkit to Play Framework.},label={lst:PlayIntegration},basicstyle=\scriptsize\ttfamily]
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 import play.api.mvc._
@@ -1069,6 +1166,7 @@ object Swat extends Controller {
     }
 }
 \end{lstlisting}
+\end{minipage}
 
 \section{Build Process}
 
@@ -1173,6 +1271,7 @@ Another thing that is currently rather inconvenient is templating in JavaScript.
 
 With Swat it should theoretically be possible to implement a type safe templating engine that would rely on Scala String Interpolation \cite{StringInterpolation}. A template would be a function taking data and producing a HTML Element. Construction of the element and composition of the template from other templates would be work of a new special string interpolator (e.g. \texttt{template}). A simplified example just to give an impression how it could look like is visible on the listing \ref{lst:Templates} where a model class (\texttt{User}) is defined together with a template for it.
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Templating engine example.},label={lst:Templates}]
 case class User(name: String, frineds: List[User])
 
@@ -1187,6 +1286,7 @@ object Templates {
     """
 }
 \end{lstlisting}
+\end{minipage}
 
 \subsection{Build Process}
 
@@ -1207,6 +1307,23 @@ The Build process deserves full integration to the SBT as it was not achievable 
 \addappheadtotoc
 
 \chapter{User Manual}
+
+The up to date version of Swat can be obtained from the Github Repository (https://github.com/siroky/Swat). You can either clone it into local directory using git or download it as a ZIP archive.
+
+From the root directory go to the \texttt{swat} subdirectory and execute either \texttt{sbt.bat} (on Windows) or \texttt{sbt.sh} (on Unix). It should start the SBT with the Swat project loaded in, but it may take couple of minutes because all dependencies of both SBT and Swat have to be downloaded in case they are not already present in the local Ivy cache.
+
+When the "\texttt{[info] Set current project to swat}" appears, enter the \texttt{compile} command and confirm it with enter. It should compile the compiler and all other projects. Then execute the \texttt{swat} command in order to compile the runtime and the applications to JavaScript.
+
+Finally when everything is compiled, it is time to run the server application. Switch to the \texttt{web} project using command \texttt{project web} and execute commmand \texttt{run}. Now you have couple of options. You can either access the sample application in your favorite web browser at \url{http://localhost:9000/} or access the playground application at \url{http://localhost:9000/playground} or visit the runtime test application at \url{http://localhost:9000/tests}.
+
+\subsubsection*{Experimenting}
+
+If you want to experiment with the tool you may either directly use the sample appplication which serves that purpose or change the playground application. The best workflow is to start one SBT and run the \texttt{web} project there. Then start second SBT where you switch to the \texttt{playground} project (command \texttt{project playground}). You may modify sources of the \texttt{playground} any way you want, use the second SBT to compile them into JavaScript (command \texttt{swat}) and observe the outcome by refreshing \url{http://localhost:9000/playground}.
+
+\subsubsection*{Tests}
+
+To run all tests, switch to the top level \texttt{swat} project (command \texttt{project swat}) and execute command \texttt{test}. You should immediately start seeing results of the tests.
+
 
 \chapter{Sample Application}
 

@@ -29,3 +29,4 @@ thesis/*.aux
 thesis/*.bbl
 thesis/*.blg
 thesis/*.toc
+thesis/*.out
