@@ -33,7 +33,7 @@ object RpcDispatcher {
      */
     def invoke(methodIdentifier: String, serializedArguments: String): Future[String] = {
         future {
-            // Performing all the operations inside the future so any exception throw either here or inside the invoked
+            // Performing all the operations inside the future so any exception thrown either here or inside the invoked
             // method can be finally processed in the recover block.
             mirror.synchronized {
                 val (target, method) = processMethodIdentifier(methodIdentifier)

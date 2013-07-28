@@ -24,7 +24,6 @@ swat/.idea/libraries
 *.swat.js
 
 # Thesis
-thesis/*.pdf
 thesis/*.aux
 thesis/*.bbl
 thesis/*.blg
