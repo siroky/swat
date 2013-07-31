@@ -7,10 +7,14 @@ import swat.common.json.JsonSerializer
 import swat.common.reflect.ReflectionCache
 
 /** An exception of the [[swat.common.rpc.RpcDispatcher]]. */
-class RpcException(val message: String, val cause: Option[Cause] = None) extends Exception(message)
+case class RpcException(message: String, cause: Option[Cause] = None) extends Exception(message) {
+    override def toString = cause.map(_.toString).getOrElse(message)
+}
 
 /** Serializable information about an exception. */
-case class Cause(exceptionTypeName: String, message: String, stackTrace: String, cause: Option[Cause] = None)
+case class Cause(exceptionTypeName: String, message: String, stackTrace: String, cause: Option[Cause] = None) {
+    override def toString = message + cause.map("\n" + _.toString).getOrElse("")
+}
 
 /**
  * A dispatcher of remote method calls to the singleton objects. Responsible for both deserialization of the method

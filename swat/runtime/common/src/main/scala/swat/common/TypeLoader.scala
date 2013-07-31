@@ -82,8 +82,8 @@ object TypeLoader {
      */
     def getNeededSources(typeIdentifiers: List[String], excludedTypes: Set[String]): List[TypeSource] = {
         val sources = mutable.ListBuffer.empty[TypeSource]
-        val toProcess = mutable.Set[String](typeIdentifiers: _*)
-        val processed = mutable.Set.empty[String]
+        val toProcess = mutable.Set[String](typeIdentifiers: _*).diff(excludedTypes)
+        val processed = mutable.Set(excludedTypes.toList: _*)
 
         def process(identifier: String) {
             toProcess -= identifier

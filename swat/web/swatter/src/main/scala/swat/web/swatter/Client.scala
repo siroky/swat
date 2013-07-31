@@ -5,7 +5,7 @@ import ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 import swat.js.DefaultScope._
 import swat.adapter
-import swat.common.rpc.RpcException
+import swat.common.rpc.{Cause, RpcException}
 import swat.js.jquery.jQuery
 
 object Client extends App {
@@ -45,10 +45,11 @@ object Client extends App {
             currentCodePackage = result.toOption
             updateControls()
 
-            result match {
-                case Success(codePackage) => javaScriptEditor.setValue(codePackage.compiledCode)
-                case Failure(e: RpcException) => javaScriptEditor.setValue(e.message)
+            val value = result match {
+                case Success(codePackage) => codePackage.compiledCode
+                case Failure(t: Throwable) => t.toString
             }
+            javaScriptEditor.setValue(value)
             javaScriptEditor.selection.clearSelection()
             compilingModal.modal("hide")
         }

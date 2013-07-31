@@ -121,7 +121,7 @@ swat.lazify = function(f) {
 /** Converts the specified function literal f to a FunctionN-like object. */
 swat.func = function(arity, f) {
     f.$arity = arity;
-    // TODO assign $class.
+    f.$class = scala["Function" + arity];
     return f;
 };
 

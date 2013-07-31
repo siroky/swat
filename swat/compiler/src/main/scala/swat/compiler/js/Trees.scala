@@ -50,9 +50,7 @@ sealed abstract class SourceElement extends Ast
 
 sealed abstract class Statement extends SourceElement
 
-case class Block(statements: List[Statement]) extends Statement {
-    require(statements.nonEmpty)
-}
+case class Block(statements: List[Statement]) extends Statement
 
 case class RawCodeBlock(code: String) extends Statement
 

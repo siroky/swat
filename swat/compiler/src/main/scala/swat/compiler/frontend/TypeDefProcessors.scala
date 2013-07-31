@@ -392,6 +392,11 @@ trait TypeDefProcessors {
                 objectAccessor(apply.tpe.typeSymbol)
             }
 
+            // Native JavaScript code.
+            case Select(q, n) if q.hasSymbolWhich(_.fullName == "swat.js.package") && n.toString == "native" => {
+                processJsNative(apply)
+            }
+
             // An application on an adapter.
             case s: Select if s.qualifier.tpe.typeSymbol.isAdapter => processAdapterApply(s, apply.args)
 
@@ -400,6 +405,14 @@ trait TypeDefProcessors {
 
             // Method call.
             case f => processCall(f, apply.args)
+        }
+
+        def processJsNative(apply: Apply) = apply.args.head match {
+            case l: Literal => js.RawCodeExpression(l.value.value.toString)
+            case _ => {
+                error(s"The js.native argument has to be a string literal (not ${apply.args.head}}).")
+                js.UndefinedLiteral
+            }
         }
 
         def processAdapterApply(method: Select, args: List[Tree]) = {
@@ -906,6 +919,7 @@ trait TypeDefProcessors {
             val arity = applyDefDef.vparamss.flatten.length
             val processedApply = processDefDef(applyDefDef, None)
             val ast = swatMethodCall("func", js.NumericLiteral(arity), processedApply)
+            addRuntimeDependency(s"scala.Function$arity")
             ProcessedTypeDef(dependencies.toList, ast)
         }
     }

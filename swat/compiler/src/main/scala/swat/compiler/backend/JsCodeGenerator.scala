@@ -60,7 +60,7 @@ class JsCodeGenerator extends Backend {
             }
             case EmptyStatement => ";"
             case AssignmentStatement(target, expr) => process(target) + " = " + process(expr) + ";"
-            case ExpressionStatement(expr) => process(expr) + ";"
+            case ExpressionStatement(expr) => process(expr).stripSuffix(";") + ";"
             case IfStatement(condition, thenStmts, elseStmts) => {
                 "if (" + process(condition) + ") " + processBlock(thenStmts) +
                 (if (astsAreEmpty(elseStmts)) "" else " else " + processBlock(elseStmts))
@@ -81,6 +81,13 @@ class JsCodeGenerator extends Backend {
             case BreakStatement => "break;"
             case ReturnStatement(value) => value match {
                 case Some(UndefinedLiteral) => ""
+                case Some(RawCodeExpression(code)) => {
+                    if (code.lines.exists(_.trim.startsWith("return"))) {
+                        code
+                    } else {
+                        "return " + code + ";"
+                    }
+                }
                 case _ => "return" + value.map(" " + process(_)).getOrElse("") + ";"
             }
             case WithStatement(environment, body) => "with (" + process(environment) + ") " + processBlock(body)
@@ -120,7 +127,7 @@ class JsCodeGenerator extends Backend {
         expression match {
             case CommaExpression(exprs) => process(exprs).mkString(", ")
             case literal: Literal => processLiteral(literal)
-            case RawCodeExpression(code) => code
+            case RawCodeExpression(code) => code.trim
             case FunctionExpression(name, parameters, body) => {
                 val processedName = name.map(" " + process(_)).getOrElse("")
                 "(function" + processedName + process(parameters).mkString("(", ", ", ") ") +

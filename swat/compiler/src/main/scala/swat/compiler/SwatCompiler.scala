@@ -76,7 +76,9 @@ class SwatCompiler(
 
         val typeOutputs = compiler.swatPlugin.typeOutputs.toList
         if (reporter.errors.nonEmpty) {
-            throw new CompilationException(reporter.errors.mkString("\n"))
+            val (internalErrors, presentableErrors) = reporter.errors.partition(_.contains("during phase: "))
+            val message = (if (presentableErrors.nonEmpty) presentableErrors else internalErrors).mkString("\n")
+            throw new CompilationException(message)
         }
 
         // Produce the output and return the output JavaScript ASTs.
@@ -153,12 +155,12 @@ class SwatCompiler(
             val text = msg.replace("\n", " ")
             val position =
                 if (pos.isDefined) {
-                    s"\nOn line ${pos.line} column ${pos.column}: ${pos.lineContent}"
+                    s" on line ${pos.line} column ${pos.column}"
                 } else {
                     ""
                 }
 
-            messages += s"[$severityDescription] $text $position"
+            messages += s"[$severityDescription$position]: $text"
         }
     }
 }

@@ -1,8 +1,16 @@
 package swat.compiler
 
-class AdapterTests extends CompilerSuite {
+class InteroperationTests extends CompilerSuite {
 
-    test("Packages are properly stripped") {
+    test("Native code blocks are supported") {
+        """
+            swat.js.native {"window.alert('foo');"}
+        """ fragmentShouldCompileTo """
+            window.alert('foo');
+                                    """
+    }
+
+    test("Adapter packages are properly stripped") {
         """
             swat.js.DefaultScope.window
             swat.js.dom.Node
@@ -18,7 +26,7 @@ class AdapterTests extends CompilerSuite {
         """
     }
 
-    test("Accessors are compiled to field access and assignment") {
+    test("Adapter accessors are compiled to field access and assignment") {
         """
             val a = new swat.js.Array()
             a.length
