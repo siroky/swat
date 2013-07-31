@@ -14,11 +14,16 @@ import swat.js.jquery.jQuery
  */
 object Client extends App {
 
+    // The current JavaScript code package obtained from the server. None if the compilation hasn't been executed yet
+    // or if the latest compilation failed.
     var currentCodePackage: Option[CodePackage] = None
 
+    // Name of the test application that should be run.
     val testAppName = "TestApp"
-    val initialCode = """
-import swat.js.DefaultScope._
+
+    // Initial code shown in the Scala editor.
+    val initialCode =
+"""import swat.js.DefaultScope._
 
 // Do not change the application name if you want it to be runnable.
 object """ + testAppName + """ extends App {
@@ -29,7 +34,7 @@ object """ + testAppName + """ extends App {
     def writeToBody(text: String) {
         document.body.appendChild(document.createTextNode(text))
     }
-}")"""
+}"""
 
     // Obtain the components from the web page.
     val scalaEditor = ace.edit("scala-editor")

@@ -52,7 +52,7 @@ trait CompilerSuite extends FunSuite {
 
         protected def compile(): CompilationOutput = {
             try {
-                new SwatCompiler(None, None, None).compile(code)
+                new SwatCompiler(None, None, None, true).compile(code)
             } catch {
                 case ce: CompilationException => {
                     fail(ce.getMessage)

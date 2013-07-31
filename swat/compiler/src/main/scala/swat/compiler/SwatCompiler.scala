@@ -18,7 +18,8 @@ import scala.reflect.internal.util.Position
 class SwatCompiler(
     val classPath: Option[String],
     val classTarget: Option[String],
-    val javaScriptTarget: Option[String]) {
+    val javaScriptTarget: Option[String],
+    val reportOnlyErrors: Boolean = false) {
 
     /**
      * Compiles the specified source code.
@@ -59,7 +60,7 @@ class SwatCompiler(
         settings.deprecation.value = true
         settings.unchecked.value = true
         settings.feature.value = true
-        val reporter = new SilentReporter
+        val reporter = new SilentReporter(reportOnlyErrors)
         val compiler = new SwatGlobal(settings, reporter)
         val run = new compiler.Run()
 
@@ -140,7 +141,7 @@ class SwatCompiler(
      * A reporter that doesn't output anything to standard output. It stores all reported messages into internal
      * structures so they may retrieved later on.
      */
-    private class SilentReporter extends Reporter {
+    private class SilentReporter(val reportOnlyErrors: Boolean) extends Reporter {
 
         val errors = mutable.ListBuffer.empty[String]
         val warnings = mutable.ListBuffer.empty[String]
@@ -160,7 +161,9 @@ class SwatCompiler(
                     ""
                 }
 
-            messages += s"[$severityDescription$position]: $text"
+            if (severity == ERROR || !reportOnlyErrors) {
+                messages += s"[$severityDescription$position]: $text"
+            }
         }
     }
 }
