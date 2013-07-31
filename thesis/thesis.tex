@@ -157,8 +157,7 @@ Prague 2013
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newpage
 \noindent 
-I would like to thank to my family for continuous support during work on the thesis and to my supervisor Pavel Ježek for invaluable consultations and advices he provided me with.
-
+I would like to thank my family for continuous support during my work on the thesis, my supervisor Pavel Ježek for invaluable consultations and advices he provided me with and my friend Jirka Helmich for proofrading of the thesis.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,7 +200,7 @@ Vedoucí diplomové práce:
 Mgr. Pavel Ježek, Ph.D, Katedra distribuovaných a spolehlivých systémů
 
 Abstrakt:
-Práce nejdříve popisuje nevýhody JavaScriptu v kontextu rozsáhlých webových aplikací a představuje jak se tyto problémy obvykle řeší pomocí kompilátoru z jiného vyššího programovacího jazyka do JavaScriptu. Práce dále ukazuje, jaké problémy je nutné řešit v rámci implementace takového kompilátoru a jak překonat další překážky (interoperabilita, distribuce knihoven) vyplývající z toho, že programy nejsou napsány přímo v JavaScriptu, nýbrž ve Scale. Na vy\-vinutém kompilátoru a jednoduchém běhovém prostředí pak dále staví infrastrukturu, která umožňuje vzdálené volání metod (RPC). Tato infrastruktura zahrnuje mimo jiné i dynamické načítaní skriptů ze serveru a (de)serializér grafů objektů. V závěru pak porovnává vyvinutý toolkit s jinými podobnými projekty a představuje několik zajímavých směrů, kterými by se celý projekt dále mohl ubírat.
+Práce nejdříve popisuje nevýhody JavaScriptu v kontextu rozsáhlých webových aplikací a představuje, jak se tyto problémy obvykle řeší pomocí kompilátoru z jiného vyššího programovacího jazyka do JavaScriptu. Práce dále ukazuje, jaké problémy je nutné řešit v rámci implementace takového kompilátoru a jak překonat další překážky (interoperabilita, distribuce knihoven) vyplývající z toho, že programy nejsou napsány přímo v JavaScriptu, nýbrž ve Scale. Na vy\-vinutém kompilátoru a jednoduchém běhovém prostředí pak dále staví infrastrukturu, která umožňuje vzdálené volání metod (RPC). Tato infrastruktura zahrnuje mimo jiné i dynamické načítaní skriptů ze serveru a (de)serializér grafů objektů. V závěru pak porovnává vyvinutý toolkit s jinými podobnými projekty a představuje několik zajímavých směrů, kterými by se celý projekt dále mohl ubírat.
 
 Klíčová slova:
 Scala, JavaScript, RIA, JSON, RPC
@@ -223,7 +222,7 @@ Supervisor:
 Mgr. Pavel Ježek, Ph.D, Department of Distributed and Dependable Systems
 
 Abstract:
-The thesis describes disadvantages of JavaScript in the context of big web applications and presents how they can be eliminated by compilation from a different language to JavaScript. With Scala as the source language the thesis shows what it takes to implement such a compiler and how to solve issues that arise with the compilation process (interoperability, library distribution). On top of the compiler with a simple runtime a remote metod invocation (RPC) infrastructue is built. It also involves a dynamic client side script loader and an object graph (de)serializer. Finally the work compares the implemented toolkit with similar projects and proposes several interesting directions the toolkit can evolve into.
+The thesis describes disadvantages of JavaScript in the context of big web applications and presents how they can be eliminated by compilation from a different language to JavaScript. With Scala as the source language, the thesis shows what it takes to implement such a compiler and how to solve issues that arise with the compilation process (interoperability, library distribution). On top of the compiler with a simple runtime a remote metod invocation (RPC) infrastructue is built. It also involves a dynamic client side script loader and an object graph (de)serializer. Finally the work compares the implemented toolkit to similar projects and proposes several interesting directions the toolkit can evolve into.
 
 Keywords:
 Scala, JavaScript, RIA, JSON, RPC
@@ -245,18 +244,18 @@ Scala, JavaScript, RIA, JSON, RPC
 
 The environment of websites and web applications has been rapidly evolving and going through a lot of changes for the last twenty years. It may even be considered the most dynamic area of software development, currently together with mobile application development. The first websites were just static HTML pages linked together with anchors. But people soon found out it is possible to generate the pages on the server, thus provide a dynamic behavior and mimic standard desktop applications. The obvious drawback is that when a user performs an action the whole page has to be reloaded. 
 
-In order to mitigate the problems of dynamic pages, new browser based technologies started to emerge. The most known are Flash \cite{Flash}, Java Applets \cite{JavaApplets} and JavaScript \cite{JavaScript} \cite{EcmaScript}. The proprietary Flash and Java Applets were designed solely for the purpose of web application development, JavaScript was in the first phases meant as a simple scripting language for manipulation with the page. However with the ability to send HTTP requests (known as AJAX \cite{Ajax}), it turned out that JavaScript may be even used as a platform for web applications. 
+In order to mitigate the problems of dynamic pages, new browser based technologies started to emerge. The most known are Flash \cite{Flash}, Java Applets \cite{JavaApplets} and JavaScript \cite{JavaScript} \cite{EcmaScript}. The proprietary Flash and Java Applets were designed solely for the purpose of web application development, JavaScript was in the first phases meant as a simple scripting language for a manipulation with a web page. However, with the ability to send HTTP requests (known as AJAX \cite{Ajax}), it turned out that JavaScript may be even used as a platform for web applications. 
 
-The current tendency is to move from the proprietary technologies to JavaScript which is widely supported by browsers and devices. With the new HTML5 \cite{Html5} specifications which are being adopted quite quickly by the major browsers, even the advantages of other technologies (e.g. video in Flash) are disappearing. So a growing number of web applications is in the moment designed as a single HTML page with embedded JavaScript that takes care of everything. And the single page is backed by a server API that the client JavaScript communicates with. This architecture is actually quite similar to the desktop applications so design patterns and techniques that are already proven-right from the desktop environment may be utilized. From the architectural point of view the web and desktop application branches are merging.
+The current tendency is to move from the proprietary technologies to JavaScript, which is widely supported by browsers and devices. With the new HTML5 \cite{Html5} specifications, which are being adopted quite quickly by the major browsers, even the advantages of other technologies (e.g. video in Flash) are disappearing. So a growing number of web applications is at the moment designed as a single HTML page with embedded JavaScript that takes care of everything. The single page is backed by a server API that the client JavaScript communicates with. This architecture is actually quite similar to the desktop applications therefore design patterns and techniques that are already proven-right from the desktop environment may be utilized. From the architectural point of view the web and desktop application branches are merging.
 
-During past couple of years, JavaScript has been used so extensively that developers started to reach its limits in modularization and maintainability, mainly while working on big applications. Other programming languages however handle those issues better and because JavaScript is a quite powerful programming language, it is not that difficult to use it as a compilation target for those languages. Even completely new programming languages with the only purpose to improve JavaScript appeared so currently there is more than one hundred of languages that compile to JavaScript \cite{Backends}, both new and mainstream like Java, C\#, C++ etc.
+During the past couple of years, JavaScript has been used so extensively that the developers started to reach its limits in modularization and maintainability, mainly while working on big applications. Other programming languages however handle those issues better and because JavaScript is a quite powerful programming language, it is not that difficult to use it as a compilation target for those languages. Even completely new programming languages with the only purpose to improve JavaScript appeared, so there is currently more than one hundred of languages that compile to JavaScript \cite{Backends}, both new and mainstream like Java, C\#, C++ etc.
 
-This approach is actually similar to what happened in the world of standard programming languages where the bottom level is an assembly language. Other more expressive languages like C or Pascal which compile to assembler emerged as soon as an assembly language was not sufficient enough.
+This approach is actually similar to what happened in the world of standard programming languages where the bottom level is an assembly language. Other more expressive languages like C or Pascal which compile to an assembler emerged as soon as an assembly language was not sufficient enough.
 
 \section{Motivation}
 \label{sec:Motivation}
 
-The vast amount of compilers targeting JavaScript suggests there actually are objective reasons and motivation foe them, which drive their development efforts. And because compilation is a development step that is not present during development of plain JavaScript programs, the motivation has to be strong enough so programmers are willing to bear this additional step. The following sections should summarize the main disadvantages of JavaScript and briefly describe current trends in the area of JavaScript improvements and compilation to it.
+The vast amount of compilers targeting JavaScript suggests there actually are objective reasons and motivation for them, which drive their development efforts. And because compilation is a development step that is not present during development of plain JavaScript programs, the motivation has to be strong enough so programmers are willing to bear this additional step. The following sections should summarize the main disadvantages of JavaScript and briefly describe current trends in the area of JavaScript improvements and compilation into it.
 
 \subsection{JavaScript Disadvantages}
 
@@ -264,33 +263,33 @@ When evaluating a programming language, it is always necessary to specify the co
 
 \subsubsection*{Language} 
 
-The JavaScript itself is a dynamically typed language with prototype-based inheritance. It has no notion of classes, modules, packages or any other such concepts. The whole program consists of bunch of functions and nested objects, which are all accessible from the global scope due to the fact that object is a key-value table without any access modifiers. Also there is not any way how to define an interface and its implementation, so it is impossible to hide complexity of components behind interfaces. All this leads to a drawback that JavaScript programs are difficult to modularize. Advantages of static typing over dynamic typing are nicely summarized by Erik Meijer \cite{Meijer}: 
+The JavaScript itself is a dynamically typed language with prototype-based inheritance. It has no notion of classes, modules, packages or any other similar concepts. The whole program consists of bunch of functions and nested objects, which are all accessible from the global scope due to the fact that object is a key-value table without any access modifiers. Also there is not any way how to define an interface and its implementation, so it is impossible to hide complexity of components behind interfaces. All this leads to a drawback that JavaScript programs are difficult to modularize. Advantages of static typing over dynamic typing are nicely summarized by Erik Meijer \cite{Meijer}: 
 
 \begin{quote}
 "...earlier detection of programming mistakes (e.g. preventing adding an integer to a boolean), better documentation in the form of type signatures (e.g. incorporating number and types of arguments when resolving names), more opportunities for compiler optimizations (e.g. replacing virtual calls by direct calls when the exact type of the receiver is known statically), increased run-time efficiency (e.g. not all values need to carry a dynamic type), and a better design time developer experience (e.g. knowing the type of the receiver, the IDE can present a drop-down menu of all applicable members)."
 \end{quote}
 
-Even though inheritance is present in JavaScript, it is very different from the class-based inheritance most of the programmers are used to so it takes some time to fully understand it and take advantage of it. The JavaScript community realizes some of the disadvantages and tries to remedy them on the language level using sometimes peculiar constructs (for example hiding variables and functions by declaring them as local inside body of an anonymous function which is immediately executed). But there is no standardized or widely adopted way so those efforts stay in the position of suggested conventions.
+Even though inheritance is present in JavaScript, it is very different from the class-based inheritance most of the programmers are used to. So it takes some time to fully understand it and take advantage of it. The JavaScript community realizes some of the disadvantages and tries to remedy them on the language level using sometimes peculiar constructs (for example hiding variables and functions by declaring them as local inside body of an anonymous function which is immediately executed). But there is no standardized or widely adopted way so those efforts stay in the position of suggested conventions.
 
 \subsubsection*{Distribution} 
 
-The most common way of library distribution is one big JavaScript file containing everything. Therefore when a fraction of a library is used, the whole library has to be loaded into the page. And dependencies among the libraries are described in the documentation, thus absence of a dependency causes run-time error claiming that a function or an object is undefined. This leads to an environment where the libraries are more likely monolithic and do not share the common functionality even if they could. Similar problem arises when a single application is subdivided into multiple source files. Then all the files have to be declared in the page using script elements in their dependency order. There already exist loaders that handle packaging (most commonly used RequireJS \cite{RequireJs}, HeadJS \cite{HeadJs}) but all share the common disadvantage that the organization of source files into modules and dependencies among them has to be explicitly declared.
+The most common way of library distribution is one big JavaScript file containing everything. Therefore when a fraction of a library is used, the whole library has to be loaded into the page. Dependencies among the libraries are described in the documentation, thus absence of a dependency causes run-time error claiming that a function or an object is not defined. This leads to an environment where the libraries are more likely monolithic and do not share the common functionality even if they could. Similar problem arises when a single application is subdivided into multiple source files. Then all the files have to be declared in the page using script elements in their dependency order. There already exist loaders that handle packaging (most commonly used RequireJS \cite{RequireJs}, HeadJS \cite{HeadJs}) but all share the common disadvantage that the organization of source files into modules and dependencies among them has to be explicitly declared.
 
 \subsubsection*{Development Process} 
 
-As a consequence of the dynamic typing and the fact that field values and therefore method implementations are resolved at run-time, some of the processes that can be performed automatically by an IDE or an external tool are not as powerful as in statically typed languages or are even unusable. Because code analyzers and optimizers have much less information about the programs and cannot easily reason about them, their power is weaker. There is however couple of such tools, e.g. code quality analyzers JSLint \cite{JsLint} and JSHint \cite{JsHint} and code optimizer Google Closure Compiler \cite{GoogleClosure}). Automatic refactoring cannot be utilized at all, so in real life it boils down to the unreliable operation "replace in files". Intellisense in IDEs is currently at least partially usable however still far behind statically typed languages. Hand in hand with intellisense comes the source documentation in form of documentation comments, because when it does not pop up in the IDE, programmers are less motivated to write it.
+As a consequence of the dynamic typing and the fact that field values and therefore method implementations are resolved at run-time, some of the processes that can be performed automatically by an IDE or an external tool are not as powerful as in statically typed languages or are even unusable. Because code analyzers and optimizers have much less information about the programs and cannot easily reason about them, their power is weaker. There is however couple of such tools, e.g. code quality analyzers JSLint \cite{JsLint} and JSHint \cite{JsHint} and code optimizer Google Closure Compiler \cite{GoogleClosure}). Automatic refactoring cannot be utilized at all, so in real life it boils down to the unreliable operation {\it "replace in files"}. Intellisense in IDEs is currently at least partially usable however still far behind statically typed languages. Hand in hand with intellisense comes the source documentation in a form of documentation comments, because when it does not pop up in the IDE, programmers are less motivated to write it.
 
 \subsection{Improving JavaScript}
 
 When examining current directions of JavaScript improvement, most of them have couple of things in common. They use source languages with static (or at least optionally static) type systems in order to solve the issues related to development process. Moreover they introduce the concept of packages (or modules, namespaces) for better modularization of programs. All of them switch the prototype-based inheritance for class-based inheritance and together with classes, majority of them also introduces interfaces (or traits, mix-ins) and access modifiers.
 
-So using such a source language that is compilable to JavaScript fixes the aforementioned issues. The problems related to distribution of programs and libraries are mostly handled at the run-time, so it does not affect the source language.
+Using such a source language that is compilable to JavaScript fixes the aforementioned issues. The problems related to the distribution of programs and libraries are mostly handled at the run-time, so it does not affect the source language.
 
 Ideally the source language should be much more expressive than JavaScript, not only small superset in terms of language features, so the compilation step really pays off. Similarly to the step from an assembly language to C, the C language is not just another assembler with some new instructions, but it offers new paradigms, control structures and language constructs that are completely foreign to an assembler.
 
 \subsubsection*{New Languages} 
 
-One branch of the improvement process leads to design of new programming languages solely with the purpose to extend JavaScript. The most well-known examples are Dart \cite{Dart}, CoffeeScript \cite{CoffeeScript} and TypeScript \cite{TypeScript}. Their advantage is that they are designed with the knowledge that programs would be compiled to JavaScript so for example primitive types do not deviate from JavaScript primitive types. And some of the languages allow optional typing which is good for interoperability with existing libraries. Another benefit is that from the syntax point of view they are mostly quite similar to JavaScript so the learning curve is flat for established web application developers. 
+One branch of the improvement process leads to a design of new programming languages solely with the purpose to extend JavaScript. The most well-known examples are Dart \cite{Dart}, CoffeeScript \cite{CoffeeScript} and TypeScript \cite{TypeScript}. Their advantage is that they are designed with the knowledge that programs would be compiled to JavaScript so for example primitive types do not deviate from JavaScript primitive types. And some of the languages allow optional typing, which is good for interoperability with existing libraries. Another benefit is that from the syntax point of view they are mostly quite similar to JavaScript so the learning curve is flat for established web application developers. 
 
 On the other hand, the fact they are brand new implies that for the whole application, one has to be familiar with three programming languages at a time. One for server side, the new language for client side and JavaScript for debugging. Currently both the compilers and browsers start to support source maps which enable debugging in the source language instead of JavaScript, but the need of JavaScript knowledge will be still present. 
 
@@ -298,27 +297,27 @@ Type systems of those languages are primitive compared to Haskell, Scala or even
 
 \subsubsection*{Existing Languages} 
 
-The more appealing idea is to use existing proven language and add the JavaScript backend to its compiler. And if the language is well-suited for web applications or APIs, then even better because the two ultimate aims could be accomplished: having the whole application written in one language and code-sharing and reuse between server-side and client-side. These goals are so attractive, that the project Node.js \cite{NodeJs} tackles them from the other side by enabling usage of JavaScript on the servers.
+The more appealing idea is to use existing proven language and add the JavaScript backend to its compiler. And if the language is well-suited for web applications or APIs, then even better because the two ultimate aims could be accomplished: having the whole application written in one language and code-sharing and reuse between server-side and client-side. These goals are so attractive that the project Node.js \cite{NodeJs} tackles them from the other side by enabling usage of JavaScript on the servers.
 
-Having both sides of the application written in one language even allows implementation of middleware infrastructures, that would support for example remote method invocation known as RPC \cite{Rpc}. That is unthinkable in the plain JavaScript world.
+Having both sides of the application written in one language even allows implementation of middleware infrastructures that would support for example remote method invocation known as RPC \cite{Rpc}. That is unthinkable in the plain JavaScript world.
 
 Drawback is that the languages differ from JavaScript a lot, interoperability with it is more inconvenient and in some cases they are less expressive than JavaScript (e.g. lack of closures in Java). The most famous representatives of this branch are GWT (Google Web Toolkit \cite{Gwt}) for Java and SharpKit \cite{SharpKit} for C\#, but almost all established languages have their JavaScript compilers.
 
 \subsection{Why Scala}
 
-During development of one web application in Scala whose big part should run in the web browser, it was decided that it would be nice to implement that part using something like GWT, just for Scala. However no such tool turned out to be both usable, maintained and not abandoned. That lead to an origin of the project to implement such a tool for Scala. Later it emerged that it would be more likely a set of tools, therefore the name of the project and also title of this thesis converged to "Scala Web Application Toolkit", shortly "Swat".
+During the development of one web application in Scala whose big part should run in the web browser, it was decided that it would be nice to implement that part using something like GWT, just for Scala. However no such tool turned out to be both usable, maintained and not abandoned. That lead to an origin of the project to implement such a tool for Scala. Later it emerged that it would be more likely a set of tools, therefore the name of the project and also title of this thesis converged to "Scala Web Application Toolkit", shortly "Swat".
 
-Scala is relatively new yet already established programming language. Among the family of modern programming languages that run on top of Java Virtual Machine (i.e. Scala, Groovy, Clojure, Kotlin) it is the most popular one according to TIOBE index \cite{Tiobe} as of writing this thesis, currently gaining a lot of momentum and being already adopted by commercial companies like Twitter or LinkedIn. Moreover it is backed by strong academic community so the language with all the concepts and paradigms are well thought through. All these facts determined that it would be good idea to start the project because there is a lot of possible potential.
+Scala is relatively new yet already established programming language. Among the family of modern programming languages that run on top of Java Virtual Machine (i.e. Scala, Groovy, Clojure, Kotlin) it is the most popular one according to TIOBE index \cite{Tiobe} as of writing this thesis, currently gaining a lot of momentum and being already adopted by commercial companies like Twitter or LinkedIn. Moreover, it is backed by strong academic community so the language with all the concepts and paradigms are well thought through. All these facts determined that it would be good idea to start the project because there is a lot of possible potential.
 
 \section{Project Aim}
 
-It may be already apparent from the motivation, but the main aim of the project is to create a Scala to JavaScript compiler. From the topmost level point of view it should take Scala code on the input and produce JavaScript code on the output. The generated code should be somehow embedded or loaded into a web page so when the page is displayed, it runs and on the algorithmic level does the same thing as if the original Scala code was executed on the JVM. Moreover it should be possible to access both native JavaScript APIs (e.g. DOM \cite{Dom}, browser-related APIs) and other already existing JavaScript libraries (e.g. jQuery \cite{Jquery}) from the Scala code in order to manipulate with the web page or with the browser.
+It may be already apparent from the motivation, but the main aim of the project is to create a Scala to JavaScript compiler. From the topmost level point of view it should take Scala code on the input and produce JavaScript code on the output. The generated code should be somehow embedded or loaded into a web page so when the page is displayed, it runs and on the algorithmic level does the same thing as if the original Scala code was executed on the JVM. Moreover, it should be possible to access both native JavaScript APIs (e.g. DOM \cite{Dom}, browser-related APIs) and other already existing JavaScript libraries (e.g. jQuery \cite{Jquery}) from the Scala code in order to manipulate with the web page or with the browser.
 
 With the described setup, it should be possible to take advantage of the fact that both client and server are written in one language and implement simple RPC mechanism. The obvious implication is that objects would have to be sent through HTTP protocol in both directions and therefore serialized to some common format. To accomplish that, a client side (de)serializer and a server side (de)serializer has to be implemented.
 
-To make the development simple and user-friendly, the tool should be integrated into the SBT (Scala Build Tool \cite{Sbt}) which is currently the most used and to some extent an industry standard in the Scala ecosystem. Moreover it should be relatively straightforward to integrate the Swat infrastructure into any web application framework. For the purpose of an example, the web application framework Play \cite{Play} will be used as a reference. SBT and Play are supported by the Typesafe \cite{Typesafe} which is a company founded by the authors of Scala so both projects are highly maintained with big communities around them.
+To make the development simple and user-friendly, the tool should be integrated into the SBT (Scala Build Tool \cite{Sbt}) which is currently the most used and to some extent an industry standard in the Scala ecosystem. Moreover, it should be relatively straightforward to integrate the Swat infrastructure into any web application framework. For the purpose of an example, the web application framework Play \cite{Play} will be used as a reference. SBT and Play are supported by the Typesafe \cite{Typesafe} which is a company founded by the authors of Scala so both projects are highly maintained with big communities around them.
 
-Finally a sample application that demonstrates usage of the toolkit should be created. Because the whole toolkit is quite complex piece of software whose size spans out of the scope of this thesis, it is presupposed that not all aspects of it would be fully completed. However the most challenging and difficult parts should be finished. The areas that are not so interesting from the architectural or design point of view would be given lower priority. So the sample application will be rather small.
+Finally, a sample application that demonstrates usage of the toolkit should be created. Because the whole toolkit is quite a complex piece of software whose size spans out of the scope of this thesis, it is presupposed that not all aspects of it would be fully completed. However, the most challenging and difficult parts should be finished. The areas that are not so interesting from the architectural or design point of view would be given lower priority. So the sample application will be rather small.
 
 \subsection{Goals}
 
@@ -351,7 +350,7 @@ Both Scala and JavaScript are not mainstream languages in the sense of chosen pa
 
 \section{JavaScript}
 
-JavaScript \cite{JavaScript} originated as an in-browser scripting language, more recently it expanded to other areas like game-development, desktop applications and server applications. It was designed by Brendan Eich for Netscape, but when it became adopted by other companies, Netscape submitted the language specification to Ecma international which subsequently formalized it in the ECMAScript language standard \cite{EcmaScript}. Regarding syntax and control structures, it was mostly influenced by C and Java but from the design point of view, the main principles are taken from Self \cite{Self}.
+JavaScript \cite{JavaScript} originated as an in-browser scripting language, more recently it expanded to other areas like game-development, desktop applications and server applications. It was designed by Brendan Eich for Netscape, but when it became adopted by other companies, Netscape submitted the language specification to Ecma international \cite{Ecma} which subsequently formalized it in the ECMAScript language standard \cite{EcmaScript}. Regarding syntax and control structures, it was mostly influenced by C and Java but from the design point of view, the main principles are taken from Self \cite{Self}.
 
 \paragraph{Style} The language is imperative and to some extent functional. It supports standard control structures (e.g. \texttt{if}-\texttt{then}-\texttt{else}, \texttt{while}), makes distinction between expressions and statements, the functions are first-class citizens (i.e. objects themselves that can be manipulated with). One big difference is scoping. Unlike most of the standard languages which have block scoping, JavaScript has lexical scoping. So for example a variable declared inside \texttt{else} branch of an \texttt{if} statement is visible everywhere in the function body.
 
@@ -392,7 +391,7 @@ One of the best summaries of the Scala language is provided by its author himsel
 "Scala fuses object-oriented and functional programming in a statically typed language. Conceptually, it builds on a Java-like core, even though its syntax differs. To this foundation, several extensions are added. From the object-oriented tradition comes a uniform object model, where every value is an object and every operation is a method invocation. From the functional tradition come the ideas that functions are First-class values, and that some objects can be decomposed using pattern matching. Both traditions are merged in the conception of a novel type system, where classes can be nested, classes can be aggregated using mixin composition, and where types are class members which can be either concrete or abstract."
 \end{quote}
 
-\paragraph{Style} The language is both imperative and functional but tends and encourages to use rather the functional style. It supports most of the standard control structures known from e.g. Java. Adds some new control structures, the most important is the \texttt{match} statement (a self explaining example using match is on listing \ref{lst:MatchStatement}).
+\paragraph{Style} The language is both imperative and functional but tends and encourages to use rather the functional style. It supports most of the standard control structures known from e.g. Java. Adds some new control structures, the most important is the \texttt{match} statement (a self explaining example using match is in Listing \ref{lst:MatchStatement}).
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Match statement example.},label={lst:MatchStatement}]
@@ -406,7 +405,7 @@ list match {
 \end{lstlisting}
 \end{minipage}
 
-Scala also generalizes existing control structures where it is possible: for cycles are abstracted into much more powerful \texttt{for} comprehensions. The \texttt{for} comprehensions are actually a syntax sugar for series of operations \texttt{map}, \texttt{flatMap} and \texttt{withFilter} whose semantics are defined by the target of their invocation, not by the \texttt{for} comprehension itself. Parallel to that can be found in C\# in the form of LINQ \cite{Linq} which behaves more less the same. An example of one \texttt{for} comprehension that selects older underpaid employees can be seen on listing \ref{lst:ForComprehension}.
+Scala also generalizes existing control structures where it is possible: \texttt{for} cycles are abstracted into much more powerful \texttt{for} comprehensions. The \texttt{for} comprehensions are actually a syntax sugar for series of operations \texttt{map}, \texttt{flatMap} and \texttt{withFilter} whose semantics are defined by the target of their invocation, not by the \texttt{for} comprehension itself. Parallel to that can be found in C\# in the form of LINQ \cite{Linq} which behaves more less the same. An example of one \texttt{for} comprehension that selects older underpaid employees can be seen on listing \ref{lst:ForComprehension}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={For comprehension example.},label={lst:ForComprehension}]
@@ -420,7 +419,7 @@ for(e <- employees;
 \end{lstlisting}
 \end{minipage}
 
-Leitmotif of the Scala language design is unification of concepts which appears for example in the \texttt{catch} blocks. Multiple catch blocks for each catched exception type known from standard languages are turned into one that matches against the catched exception. A simple example is provided on the listing \ref{lst:CatchBlock}.
+Leitmotif of the Scala language design is unification of concepts which appears for example in the \texttt{catch} blocks. Multiple catch blocks for each catched exception type known from standard languages are turned into one that matches against the catched exception. A simple example is provided in Listing \ref{lst:CatchBlock}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Catch block example.},label={lst:CatchBlock}]
@@ -444,7 +443,7 @@ val result = if (a >= 0) "positive" else "negative"
 
 \paragraph{Syntax} As it can be seen on the previous code samples, the syntax resembles Java or C\#, but is much more flexible while trying to reduce unnecessary clutter. It is possible to define methods whose usage looks like built-in control structures. For example the \texttt{using} syntactical construct known from C\# can be defined in Scala as a library function whose usage will look exactly the same as in C\#. Leaving out parentheses or semicolons is also allowed in places where they are not necessary. As a consequence Scala is pretty suitable for design of domain specific languages (DSLs). 
 
-\paragraph{Type System} Unlike Java with distinct primitive and reference types, where the primitive types do not belong into the inheritance hierarchy, all Scala types inherit from the common ancestor \texttt{scala.Any}. The whole hierarchy is depicted on \ref{ScalaTypeSystem}, the types that are passed by value are descendants of the \texttt{scala.AnyVal}, reference types inherit from the \texttt{scala.AnyRef}. The \texttt{scala.AnyRef} stands for the standard object of the underlying platform, which does not necessarily need to be Java Virtual Machine but also .NET Common Language Runtime. The only non-standard value type is the \texttt{scala.Unit} which represents the product of no types, i.e. the 0-tuple. It has one instance written as empty parentheses - \texttt{()}. The \texttt{scala.Unit} is for example used as a return type of functions that are in other languages defined as \texttt{void}.
+\paragraph{Type System} Unlike Java with distinct primitive and reference types, where the primitive types do not belong into the inheritance hierarchy, all Scala types inherit from the common ancestor \texttt{scala.Any}. The whole hierarchy is depicted in Figure \ref{ScalaTypeSystem}, the types that are passed by value are descendants of the \texttt{scala.AnyVal}, reference types inherit from the \texttt{scala.AnyRef}. The \texttt{scala.AnyRef} stands for the standard object of the underlying platform, which does not necessarily need to be Java Virtual Machine but also .NET Common Language Runtime. The only non-standard value type is the \texttt{scala.Unit} which represents the product of no types, i.e. the 0-tuple. It has one instance written as empty parentheses~-~\texttt{()}. The \texttt{scala.Unit} is for example used as a return type of functions that are in other languages defined as \texttt{void}.
 
 \begin{figure}[ht]
   \centering
@@ -469,7 +468,7 @@ The types may take other types as parameters (known as generic types), the type 
 \item Tuples and algebraic data types.
 \end{itemize}
 
-\paragraph{Object Oriented Programming} On the other hand Scala is a pure OO language, meaning that every value is an object. A data type may be declared either as a class, a trait or a singleton object. Classes are quite similar to Java classes, but on top of class inheritance they may mix-in any amount of traits. Traits are basically enhanced Java interfaces with possibility to also define implementation. From the Scala perspective the only difference between traits and classes is that traits cannot have parametrized constructors.
+\paragraph{Object Oriented Programming} On the other hand Scala is a pure OO language, meaning that every value is an object. A data type may be declared either as a class, a trait or a singleton object. Classes are quite similar to Java classes, but on top of class inheritance they may mix in any amount of traits. Traits are basically enhanced Java interfaces with a possibility to also define the implementation. From the Scala perspective the only difference between traits and classes is that traits cannot have parametrized constructors.
 
 The \texttt{static} fields and methods known from mainstream languages are not supported because it is difficult to abstract over them. To fill the gap, singleton objects behave like classes whose only instance is created during the class-loading process. They serve the purpose of static classes but may also inherit or mix-in other types and possibly override something (this is not achievable in languages that use the \texttt{static} modifier).
 
@@ -517,7 +516,7 @@ This chapter proposes how some of the defined goals can be fulfilled, while prov
 
 \section{Setup}
 
-Compiler architecture has converged throughout years to a data flow consisting of canonical components. The source code is consumed by a scanner that performs lexical analysis and produces a stream of lexical tokens. A parser takes the token stream on the input, performs syntactical analysis and builds up the ASTs. The ASTs are then processed by a semantical analyzer which validates them, assigns types to symbols and possibly transforms the ASTs. These three components are marked as the frontend components. When the abstract syntax trees leave the frontend, they go to a backend, which is responsible for generation of the target language/assembly/byte code. The backend usually consists of several subcomponents that firstly produce some intermediate code, optimize it and then generate the machine specific code. Such a data flow can be seen in the figure \ref{Compiler}.
+Compiler architecture has converged throughout years to a data flow consisting of canonical components. The source code is consumed by a scanner that performs lexical analysis and produces a stream of lexical tokens. A parser takes the token stream on the input, performs syntactical analysis and builds up the ASTs. The ASTs are then processed by a semantical analyzer which validates them, assigns types to symbols and possibly transforms the ASTs. These three components are marked as the frontend components. When the abstract syntax trees leave the frontend, they go to a backend, which is responsible for generation of the target language/assembly/byte code. The backend usually consists of several subcomponents that firstly produce some intermediate code, optimize it and then generate the machine specific code. Such a data flow can be seen in Figure \ref{Compiler}.
 
 \begin{figure}[ht]
   \centering
@@ -526,9 +525,9 @@ Compiler architecture has converged throughout years to a data flow consisting o
 	\label{Compiler}
 \end{figure}
 
-In order to transform programs to JavaScript, one needs to work with them programmatically. ASTs exactly serve this purpose and because standard compilers (e.g. javac, csc, scalac) already handle the transformation from source code to ASTs, reusing that functionality is definitely the way to go.
+In order to transform programs to JavaScript, one needs to work with them programmatically. ASTs exactly serve this purpose and because standard compilers (e.g. javac, csc, scalac) already handle the transformation from source code to ASTs, reusing that functionality is definitely the best way to go.
 
-As it can be seen in the diagram of the whole setup (figure \ref{CompilerPlugging}), the compiler to JavaScript itself follows the canonical structure, therefore it consists of a frontend and a backend. The JavaScript Frontend in ideal case consumes ASTs obtained from the source language compiler and produces corresponding JavaScript ASTs. When the JavaScript frontend is done, the execution proceeds to the JavaScript Backend. It generates JavaScript code corresponding to the ASTs and may optimize the output either by itself or by an external tool (e.g. Google Closure compiler \cite{GoogleClosure} which is the most popular JavaScript optimization tool).
+As it can be seen in the diagram of the whole setup (Figure \ref{CompilerPlugging}), the compiler to JavaScript itself follows the canonical structure, therefore it consists of a frontend and a backend. The JavaScript Frontend in ideal case consumes ASTs obtained from the source language compiler and produces corresponding JavaScript ASTs. When the JavaScript frontend is done, the execution proceeds to the JavaScript Backend. It generates JavaScript code corresponding to the ASTs and may optimize the output either by itself or by an external tool (e.g. Google Closure compiler \cite{GoogleClosure} which is one of the most popular JavaScript optimization tool).
 
 \begin{figure}[ht]
   \centering
@@ -537,22 +536,22 @@ As it can be seen in the diagram of the whole setup (figure \ref{CompilerPluggin
 	\label{CompilerPlugging}
 \end{figure}
 
-Another advantage of the proposed setup is that compilation to bytecode and compilation to JavaScript can be performed during one run of the composed compiler. So the lexical analysis, syntactical analysis and possibly type checking runs only once and their outcome is used both by the standard compiler and the compiler to JavaScript. And it is common knowledge that these three operations take the most of the compilation time. 
+Another advantage of the proposed setup is that compilation to bytecode and compilation to JavaScript can be performed during one run of the composed compiler. So the lexical analysis, syntactical analysis and possibly type checking runs only once and their outcome is used both by the standard compiler and the compiler to JavaScript. And it is a common knowledge that these three operations take the most of the compilation time. 
 
 One may also ask why the compilation to bytecode is necessary after all. The first reason is that data structures intended for the client side could be reused on the server side and the other way round. Or at least functionality that is common for the server and the client can be abstracted out in order to avoid duplication. The main reason however is that a program may depend on a library (possibly compiled to JavaScript). If the library did not contain classfiles then the program itself would not be compilable (it would not pass the type checking phase of semantic analysis).
 
 \subsection{Utilizing the Source Language Compiler}
 
-The standard compiler architecture offers a few places where the ASTs can be obtained. As depicted on the figure \ref{Compiler}, it is either before the semantic analysis is executed (option A) or after execution of the semantic analysis (option C). If the compiler components are subdivided into phases, it may be even possible to access syntax trees during execution of the semantic analysis (option B). That mostly depends on architecture of the source language compiler, whether it allows such an interception.
+The standard compiler architecture offers a few places where the ASTs can be obtained. As depicted in Figure \ref{Compiler}, it is either before the semantic analysis is executed (option A) or after execution of the semantic analysis (option C). If the compiler components are subdivided into phases, it may be even possible to access syntax trees during execution of the semantic analysis (option B). That mostly depends on architecture of the source language compiler, whether it allows such an interception.
 
 \begin{figure}[ht]
   \centering
 	\includegraphics[width=\linewidth,height=\textheight,keepaspectratio]{img/CompilerComplete.pdf}
-	\caption{Plugging JavaScript compiler into source language compiler.}
+	\caption{Plugging JavaScript compiler into the source language compiler.}
 	\label{CompilerComplete}
 \end{figure}
 
-Choice between options A, B and C determines abilities of the JavaScript frontend. The ASTs may just mirror the source code with no added information (option A), they may be completely analyzed and possibly transformed to some extent (option C), or the ASTs may be in an interim state between A and C (option B). Drawback of the option A is that the ASTs may represent language constructs that are not directly expressible in JavaScript. An issue with the option C is that some of the trees may be transformed to constructs that are really low-level and close to bytecode, even though the original trees would be directly expressible in JavaScript before the transformation.
+The choice between options A, B and C determines abilities of the JavaScript frontend. The ASTs may just mirror the source code with no added information (option A), they may be completely analyzed and possibly transformed to some extent (option C), or the ASTs may be in an interim state between A and C (option B). Drawback of the option A is that the ASTs may represent language constructs that are not directly expressible in JavaScript. An issue with the option C is that some of the trees may be transformed to constructs that are really low-level and close to bytecode, even though the original trees would be directly expressible in JavaScript before the transformation.
 
 The Scala compiler is subdivided into phases so the most crucial decision is finding the spot where the compiler to JavaScript should be plugged in. Scala compiler phases have fixed order and dependencies and it is almost impossible to leave out a phase from the sequence. So the decision is where to cut the sequence into two parts.
 
@@ -562,22 +561,22 @@ One of the aims was to produce JavaScript code that would resemble Scala as much
 
 \subsection{Debugging}
 
-The chosen plugging place implies that the resulting code sometimes would not resemble the source Scala code which means that debugging of the program directly in JavaScript in a web browser would be tricky. This way of debugging is not ideal even if the outputted JavaScript code looked almost the same as the source it was compiled from. Similar problem appears in the plain JavaScript world where code that went through minification (e.g. whitespace removal, name shortening) is difficult to debug.
+The chosen plugging position implies that the resulting code sometimes would not resemble the source Scala code which means that debugging of the program directly in JavaScript in a web browser would be tricky. This way of debugging is not ideal even if the outputted JavaScript code looked almost the same as the source it was compiled from. Similar problem appears in the plain JavaScript world where code that went through minification (e.g. whitespace removal, name shortening) is difficult to debug.
 
-JavaScript ecosystem and web browsers offer a solution in form of source maps \cite{SourceMaps} that establish mapping between the executed JavaScript code (minified or compiled) and the original code (not minified or even possibly not JavaScript) and allow a user to debug the original code. Source maps are still a state of the art functionality not supported by all browsers and establishing such a mapping can be a quite complex task. So the implementation of it is out of the scope of the thesis.
+JavaScript ecosystem and web browsers offer a solution in form of source maps \cite{SourceMaps} that establish mapping between the executed JavaScript code (minified or compiled) and the original code (not minified or even possibly not JavaScript) and allow a user to debug the original code. Source maps are still a state of the art functionality not supported by all browsers and establishing such a mapping can be quite a complex task. Therefore implementation of it is out of the scope of the thesis.
 
 \section{Interoperability with JavaScript}
 
 One of the crucial requirements of a compiler targeting JavaScript is enabling the programs written in a source language to interoperate with the JavaScript environment. There are two main reasons:
 
 \begin{itemize} 
-\item Programs do not run in a vacuum and the only possibility how they can manifest themselves is via interaction with the hosting environment. It is feasible to make interoperability with the environment type safe, because the JavaSrcipt and  browser APIs are defined mostly in W3C \cite{W3c} specifications with types included. It is JavaScript where the type information is lost. 
+\item Programs do not run in a vacuum and the only possibility how they can manifest themselves is via interaction with the hosting environment. It is feasible to make them interoperate with the environment in a type safe manner, since the JavaSrcipt and browser APIs are defined mostly in W3C \cite{W3c} specifications which contain type information. It is JavaScript where the type information is lost. 
 \item Sometimes it makes sense to descend to the JavaScript level and write a piece of code directly in it, for example for performance reasons. 
 \end{itemize}
 
-Inherent restriction of the interoperability is that the solution used should not violate syntax of the source language. There are several ways how to accomplish the proposed requirements, the following three solutions represent different ways of doing it and are more less orthogonal to each other: 
+Inherent restriction of the interoperability is that the solution used should not violate the syntax of the source language. There are several ways how to accomplish the proposed requirements, the following three solutions represent different ways of doing it and are more less orthogonal to each other: 
 
-\paragraph{Native code blocks} A parallel to the inline assembler blocks in the C language with difference that the JavaScript code has to be placed in a string in order not to violate the source language syntax. Moreover type of the whole code block expression (e.g. \texttt{js("123 + 456")}) has to be \texttt{scala.Nothing} so it can be used even in places where a value of particular type is expected. When the JavaScript Frontend encounters such a block it outputs only the code stored in the string. Example of such a code block can be seen on the listing \ref{lst:NativeCodeBlock}.
+\paragraph{Native code blocks} A parallel to the inline assembler blocks in the C language with difference that the JavaScript code has to be placed in a string in order not to violate the source language syntax. Moreover type of the whole code block expression (e.g. \texttt{js("123 + 456")}) has to be \texttt{scala.Nothing} so it can be used even in places where a value of particular type is expected. When the JavaScript Frontend encounters such a block it outputs only the code stored in the string. Example of such a code block can be seen in Listing \ref{lst:NativeCodeBlock}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Native code block example.},label={lst:NativeCodeBlock}]
@@ -591,7 +590,7 @@ def repeat(text: String, times: Int): String = js("""
 \end{lstlisting}
 \end{minipage}
 
-\paragraph{Adapters} For all the JavaScript APIs and objects that should be usable from the source language, so called "adapter" classes could be defined in the source language. They should exactly match the JavaScript definitions in terms of names, fields, methods, parameters etc. and should be marked with an annotation in order to be distinguishable. They do not have to be implemented, but the type signatures should match the specification (see the listing \ref{lst:Adapters} where an adapter for the \texttt{window} object is defined and used). When the compiler encounters such an adapter class, it knows that it is something that is already present in the JavaScript environment and will not produce any JavaScript code corresponding to the adapter definition (the listing \ref{lst:AdapterOutput} presents such a situation).
+\paragraph{Adapters} For all the JavaScript APIs and objects that should be usable from the source language, so called "adapter" classes could be defined in the source language. They should exactly match the JavaScript definitions in terms of names, fields, methods, parameters etc. And they should be marked with an annotation in order to be distinguishable. They do not have to be implemented, but the type signatures should match the specification (see  Listing \ref{lst:Adapters} where an adapter for the \texttt{window} object is defined and used). When the compiler encounters such an adapter class, it knows that it is something that is already present in the JavaScript environment and will not produce any JavaScript code corresponding to the adapter definition (Listing \ref{lst:AdapterOutput} presents such a situation).
 
 \begin{center}
 \begin{minipage}{.48\textwidth}
@@ -619,17 +618,17 @@ var test = function() {
 \end{minipage}
 \end{center}
 
-\paragraph{Dynamic} This option is relevant only to source languages that support the concept of a dynamic class. In Scala, an object named \texttt{global} representing the JavaScript global scope (\texttt{object global extends Dynamic}) would be defined. The object  would mix-in the \texttt{scala.Dynamic} \cite{ScalaDynamic} trait, so any field can be selected or any method can be invoked on that particular object. For example \texttt{global.window} would be turned by the Scala compiler before the typing phase into \texttt{global.selectDynamic("window")}. Such a selection can later be transformed by the JavaScript Frontend into \texttt{window}.
+\paragraph{Dynamic} This option is relevant only to source languages that support the concept of a dynamic class. In Scala, an object named \texttt{global} representing the JavaScript global scope (\texttt{object global extends Dynamic}) would be defined. The object  would mix-in the \texttt{scala.Dynamic} \cite{ScalaDynamic} trait, so an arbitrary field can be selected or any method can be invoked on that particular object. For example \texttt{global.window} would be turned by the Scala compiler before the typing phase into \texttt{global.selectDynamic("window")}. Such a selection can later be transformed by the JavaScript Frontend into \texttt{window}.
 
-As it was mentioned in the motivation, static typing is an advantage in the context of large applications, so the option {\it Adapters} is the preferred one. Unlike the two other it preserves type safety. The tradeoff is that it is incomparably more time-consuming for a developer to define all the adapters compared to the other options where nothing has to be declared. For exceptional purposes (performance optimization) the {\it Native code blocks}, which are more flexible than {\it Dynamic} could be used.
+As it was mentioned in the motivation in Chapter \ref{sec:Motivation}, static typing is an advantage in the context of large applications, therefore choosing {\it Adapters} is preferrable. Unlike the two other it preserves type safety. The trade-off is that it is incomparably more time-consuming for a developer to define all the adapters compared to the other options where nothing has to be declared. For exceptional purposes (performance optimization) the {\it Native code blocks}, which are more flexible than {\it Dynamic} could be used.
 
 \section{Frontend}
 
-A heart of the whole compiler is the JavaScript frontend responsible for transformation of source language ASTs to JavaScript ASTs. It starts given the whole program in the form of a syntax tree, traverses the AST and produces a JavaScript AST. According to the current subtree whose root the fronted is visiting, it should produce JavaScript counterpart for that subtree. The following sections describe options the fronted has and elaborate on how particular tree types should be represented in JavaScript. It is natural to start with the top-level node that encapsulates everything else and traverse down the tree through class definitions, their member definitions to the simplest expressions on the leaf level of the tree.
+A heart of the whole compiler is the JavaScript frontend responsible for transformation of source language ASTs to JavaScript ASTs. It starts given the whole program in a form of a syntax tree, traverses the AST and produces a JavaScript AST. According to the current subtree whose root the fronted is visiting, it should produce a JavaScript counterpart for that subtree. The following sections describe options the fronted has and elaborate on how particular tree types should be represented in JavaScript. It is natural to start with the top-level node that encapsulates everything else and traverse down the tree through class definitions, their member definitions to the simplest expressions on the leaf level of the tree.
 
 \subsection{Compile Time vs. Runtime Approach}
 
-The JavaScript frontend can use different approaches to tackle its task. As an example, consider a piece of Scala code containing lazy field declaration and access on listing \ref{lst:ScalaComVsRun} and how it could be compiled to JavaScript.
+The JavaScript frontend can use different approaches to tackle its task. As an example, consider a piece of Scala code containing lazy field declaration and access in Listing \ref{lst:ScalaComVsRun} and how it could be compiled to JavaScript.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Lazy field declaration and access.},label={lst:ScalaComVsRun}]
@@ -640,7 +639,7 @@ val bar = foo
 \end{lstlisting}
 \end{minipage}
 
-One option is to construct the JavaScript ASTs utilizing only JavaScript language primitives and internal functions so the resulting code would be executable as it is. Everything is handled during compilation (thus named the "compile time approach") so the produced code uses only native JavaScript constructs and APIs (listing \ref{lst:JsCompileTime}).
+One option is to construct JavaScript ASTs utilizing only JavaScript language primitives and internal functions so the resulting code would be executable as it is. Everything is handled during the compilation (thus named the "compile time approach") so the produced code uses only native JavaScript constructs and APIs (listing \ref{lst:JsCompileTime}).
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Compile time option outcome.},label={lst:JsCompileTime}]
@@ -656,7 +655,7 @@ var bar = foo();
 \end{lstlisting} 
 \end{minipage}
 
-The other way is to move some of the logic to a completely new runtime library written directly in JavaScript so the outputted JavaScript code would run only if the runtime library is present in the global scope. In case of the lazy field a new function named \texttt{runtime.lazy} would be defined in the runtime library (listing \ref{lst:RuntimeLazy} shows its implementation).
+The other way is to move some of the logic to a completely new runtime library written directly in JavaScript so the outputted JavaScript code would run only if the runtime library is present in the global scope. In case of the lazy field a new function named \texttt{runtime.lazy} would be defined in the runtime library (Listing \ref{lst:RuntimeLazy} shows its implementation).
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Runtime function that lazifies evaluation.},label={lst:RuntimeLazy}]
@@ -672,7 +671,7 @@ runtime.lazy = function(f) {
 \end{lstlisting}
 \end{minipage}
 
-With the library function \texttt{runtime.lazy} it is possible to translate Scala code on listing \ref{lst:ScalaComVsRun} to JavaScript code listed on \ref{lst:JsRunTime}.
+With the library function \texttt{runtime.lazy} it is possible to translate Scala code in Listing \ref{lst:ScalaComVsRun} to JavaScript code listed in \ref{lst:JsRunTime}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Runtime option outcome.},label={lst:JsRunTime}]
@@ -688,19 +687,19 @@ In order to minimize size and boilerplate code in the produced JavaScript and to
 
 \subsection{Scope of a Compilation Unit}
 
-The top level tree type represents a compilation unit (one source file) and it contains possibly nested definitions of packages. The package definitions are usually non-empty, they encapsulate type definitions (definitions of classes, singleton objects and traits). Important decision on this level is how the compiler output should be structured. Should it be a single file containing everything in the compiled program/library? Should it be a set of files that correspond to the compilation units? Or should the compilation unit output be splitted into mutliple files? In the web environment such questions have to be answered because size of files downloaded to the client really matters (particulary on mobile devices).
+The top level tree type represents a compilation unit (one source file) and it contains possibly nested definitions of packages. The package definitions are usually non-empty, they encapsulate type definitions (definitions of classes, singleton objects and traits). An important decision on this level is how the compiler output should be structured. Should it be a single file containing everything in the compiled program/library? Should it be a set of files that correspond to the compilation units? Or should the compilation unit output be splitted into mutliple files? In the web environment such questions have to be answered because size of files downloaded to the client really matters (particulary on mobile devices).
 
 It is a crucial decision because the compiler to JavaScript should be besides other things used to compile the Scala standard library \cite{ScalaLibrary} (which is an implicit dependency of all Scala programs). And the Scala library contains thousands of classes so having the library packed in a single file with size exceeding megabytes is not acceptable in any real world scenario.
 
-An entry point to a Scala application is a singleton object that mixes-in the \texttt{scala.App} trait (analogue to a class with \texttt{static void main} method in other languages). Not all web applications are in the form of a single page, it is quite common that there are multiple pages with completely different functionality. The application therefore has multiple entry points. There is a shared portion of the codebase but different entry points have different implementation that is not shared, so it a is a waste of resources to download everything in the context of a single page.
+An entry point to a Scala application is a singleton object that mixes in the \texttt{scala.App} trait (an analogue to a class with \texttt{static void main} method in other languages). Not all of web applications are in the form of a single page, it is quite common that there are multiple pages with completely different functionality. The application therefore has multiple entry points. There is a shared portion of the codebase but different entry points have different implementation that is not shared, so it a is a waste of resources to download everything in the context of a single page.
 
 An inspiration for a solution can be found right inside the standard Scala compiler. It splits the compilation unit into class definitions and produces separate classfiles (\texttt{*.class}) for each class definition. For a compiler targetting JavaScript, the splitting opens up a possibility, to track and store dependencies of each type definition together with its outputted JavaScript typefile (analogue to a Java classfile). A dependency is either an instantiated class, an accessed singleton object, a used type or a supertype of the type definition. With this information, the JavaScript typefiles form an oriented dependency graph. It would also be possible to track dependencies among outputs of compilation units, however it would not be any advantage over dependencies among type definitions.
 
-So in order to run an application on a page, a typefile corresponding to the entry point has to be loaded with all its transitive dependencies. Utilizing the dependency graph ensures that only the types that are actually used are downloaded to the client. The same applies for external libraries. If an application uses just a fraction of an external library, then the downloaded JavaScript file still stays relatively small.
+In order to run an application on a page, a typefile corresponding to the entry point has to be loaded with all its transitive dependencies. Utilizing the dependency graph ensures that only the types that are actually used are downloaded to the client. The same applies for external libraries. If an application uses just a fraction of an external library, then the downloaded JavaScript file still stays relatively small.
 
 \subsection{Type Definitions}
 
-Descending an AST, the next kind of nodes JavaSript frontend comes accross are type definitions. Packages or namespaces are not an issue because solution for them is trivial as it is illustrated on the listing \ref{lst:JavaScriptPackages}. In order to declare a package it is enough to create an object with the same name as the top level package and recursively nest there objects corresponding to the subpackages.
+Descending an AST, the next kind of nodes JavaSript frontend comes accross are type definitions. Packages or namespaces are not an issue because solution for them is trivial as it is illustrated in Listing \ref{lst:JavaScriptPackages}. In order to declare a package it is enough to create an object with the same name as the top level package and recursively nest there objects corresponding to the subpackages.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Packages in JavaScript.},label={lst:JavaScriptPackages}]
@@ -712,11 +711,11 @@ foo.bar.baz.Animal = /* ... */
 \end{lstlisting}
 \end{minipage}
 
-A type definition (class, trait or singleton object definition) is identified by a name, has an ordered sequence of supertypes, consists of members and has a constructor. A member is either a method definition or a field definition. In case of a singleton object or static constructors, the runtime is responsible for their initialization.
+A type definition (a class, a trait or a singleton object definition) is identified by a name, has an ordered sequence of supertypes, consists of members and has a constructor. A member is either a method definition or a field definition. In the case of a singleton object or static constructors, the runtime is responsible for their initialization.
 
 There are many possibilities, how to encode such type definitions in JavaScript, because JavaScript is really flexible. Different JavaScript application frameworks, that introduce the concept of class-based inheritance, do not even agree and encode it slightly differently. As mentioned earlier, the favored encoding would be to produce only necessary information about the type definition. It means that a function (e.g. \texttt{runtime.class}) has to be defined in the runtime library. This function should take three parameters: fully qualified name of the class, class supertypes and the class member definitions. Its responsibility is to create a constructor function for the class and setup inheritance by initializing the prototype chain. 
 
-An example of how a Scala class \texttt{Dog} (listing \ref{lst:ScalaClassEncoding}) could be encoded is visible on the listing \ref{lst:JavaScriptClassEncoding}. The \texttt{runtime.class} function in this case returns a contructor function of the \texttt{animals.Dog} so new instances can be created simply by calling \texttt{new animals.Dog()}.
+An example of how a Scala class \texttt{Dog} (Listing \ref{lst:ScalaClassEncoding}) could be encoded is visible in Listing \ref{lst:JavaScriptClassEncoding}. The \texttt{runtime.class} function in this case returns a contructor function of the \texttt{animals.Dog} so new instances can be created simply by calling \texttt{new animals.Dog()}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Scala \texttt{Dog} class example.},label={lst:ScalaClassEncoding}]
@@ -746,17 +745,17 @@ One issue that has to be taken special care of is an initialization of singleton
 
 \subsection{Scope of a Type}
 
-A type has two kinds of members: field definitions and method definitions. Fields of JavaScript objects do not have to be declared in advance, they come into existnce when they are assigned. Therefore the JavaScript frontend can safely ignore the fields that are only declared but not initialzied. The assignment part (e.g. \texttt{foo = 123}) of fields that are both declared and initialized together (e.g. \texttt{val foo = 123}) has to be moved into a new synthesized field initialization function. The field initializer invocation has to be put in the beginning of each constructor so when a constructor body is being executed, the fields are already initialized.
+A type has two kinds of members: field definitions and method definitions. Fields of JavaScript objects do not have to be declared in advance, they come into existence when they are assigned. Therefore the JavaScript frontend can safely ignore the fields that are only declared but not initialzied. The assignment part (e.g. \texttt{foo = 123}) of fields that are both declared and initialized together (e.g. \texttt{val foo = 123}) has to be moved into a new synthesized field initialization function. The field initializer invocation has to be put in the beginning of each constructor so when a constructor body is being executed, the fields are already initialized.
 
 In Scala there is notion of a default constructor. If a class has multiple constructors, the overloaded constructors have to, as their first statement, call either another overloaded constructor or the default constructor. But the invocation chain always has to end up in the default constructor. Otherwise the Scala compiler reports an error. As a consequence there is no need for the synthetic field initializer, the field initialization can be placed on the top of the default constructor body.
 
-Scala also supports lazy fields that are initialized when firstly accessed. The same approach as with the singleton object initializers can be utilized which gives an opportunity to define a runtime function \texttt{runtime.lazy} (implementation can be seen on the listing \ref{lst:RuntimeLazy}) usable for both cases.
+Scala also supports lazy fields that are initialized when firstly accessed. The same approach as with the singleton object initializers can be utilized which gives an opportunity to define a runtime function \texttt{runtime.lazy} (implementation can be seen in Listing \ref{lst:RuntimeLazy}) usable for both cases.
 
 The situation is much more complicated with method definitions. Depending on the source language, a method can be overloaded and it can have parameters with defualt values or a variadic parameter. Some of the features may already be handled by the source language compiler, namely the variadic parameters (but even if not, their processing is not a big challenge).
 
 \subsubsection*{Method overloading}
 
-Because JavaScript does not support multiple variables with the same name in a scope, methods of JavaScript objects cannot be overloaded. The listing \ref{lst:ScalaOverloading} presents a pair of overloaded methods and their invocation.
+Because JavaScript does not support multiple variables with the same name in a scope, methods of JavaScript objects cannot be overloaded. Listing \ref{lst:ScalaOverloading} presents a pair of overloaded methods and their invocation.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Scala method overloading example.},label={lst:ScalaOverloading}]
@@ -769,7 +768,7 @@ def test() {
 \end{lstlisting}
 \end{minipage}
 
-Overloaded methods differ by their type singatures, therefore one possible solution is to somehow encode the type signature into the method name (known as name mangling which is a commonly known technique that is used by C++ compilers). Output of a compiler that uses name mangling applied on the sample methods can be seen on the listing \ref{lst:NameMangling}.
+Overloaded methods differ by their type singatures, therefore one possible solution is to somehow encode the type signature into the method name (known as name mangling which is a commonly known technique that is used by C++ compilers). Output of a compiler that uses name mangling applied on the sample methods can be seen on in Listing \ref{lst:NameMangling}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Overloading solved by name mangling.},label={lst:NameMangling}]
@@ -782,7 +781,7 @@ test = function() {
 \end{lstlisting}
 \end{minipage}
 
-The other way is to have one "wrapper" method named the same as all the overloaded methods. The wrapper method would take a type signature as an additional string parameter and based on its value, it would decide which variant to actually invoke. This approach implies that a runtime library function has to be defined. It can be named e.g. \texttt{runtime.overload}, as parameters it would take the overloaded variants with their type signatures and it would construct the "wrapper" function. This technique applied on the sample methods is presented on the listing \ref{lst:WrapperFunction}.
+The other way is to have one "wrapper" method named the same as all the overloaded methods. The wrapper method would take a type signature as an additional string parameter and based on its value, it would decide which variant to actually invoke. This approach implies that a runtime library function has to be defined. It can be named e.g. \texttt{runtime.overload}, as parameters it would take the overloaded variants with their type signatures and it would construct the "wrapper" function. This technique applied on the sample methods is presented in Listing \ref{lst:WrapperFunction}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Overloading in JavaScript.},label={lst:WrapperFunction}]
@@ -805,7 +804,7 @@ If performance is the main priority, then the "name encoding" variant is the one
 
 \subsubsection*{Default Parameter Values}
 
-If the source language allows to define method parameter default values, then the best approach is to exploit the JavaScript \texttt{undefined} constant which has no counterpart in most of other programming languages. In the invocation site if an argument is not provided (i.e. the default value should be used) the JavaScript frontend can use the \texttt{undefined} as the argument. And on the top of the method body, all the arguments have to be checked whether they are the \texttt{undefined}. If so, the default value should be used instead as it is demonstrated on the listing \ref{lst:JavaScriptDefaultParameters}.
+If the source language allows to define method parameter default values, then the best approach is to exploit the JavaScript \texttt{undefined} constant which has no counterpart in most of other programming languages. In the invocation site if an argument is not provided (i.e. the default value should be used) the JavaScript frontend can use the \texttt{undefined} as the argument. And on the top of the method body, all the arguments have to be checked whether they are the \texttt{undefined}. If so, the default value should be used instead as it is demonstrated in Listing \ref{lst:JavaScriptDefaultParameters}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Default parameters in JavaScript.},label={lst:JavaScriptDefaultParameters}]
@@ -824,7 +823,7 @@ The last category of ASTs are expressions. An expression is basically anything t
 
 \subsubsection*{Scoping}
 
-The first issue that has to be resolved is different scoping in JavaScript. Scala and most of the other standard languages use block scoping where a variable is availible only in the block it is declared in. JavaScript on the contrary uses lexical function-level scoping so a variable is available in a function body where it was declared in. The difference in scoping is illustrated on listings \ref{lst:ScalaScoping} and \ref{lst:JavaScriptScoping}.
+The first issue that has to be resolved is different scoping in JavaScript. Scala and most of the other standard languages use block scoping where a variable is availible only in the block it is declared in. JavaScript on the contrary uses lexical function-level scoping therefore a variable is available in a function body where it was declared in. The difference in scoping is illustrated in Listings \ref{lst:ScalaScoping} and \ref{lst:JavaScriptScoping}.
 
 \begin{center}
 \begin{minipage}{.48\textwidth}
@@ -848,7 +847,7 @@ console.log(x); // Prints "bar".
 \end{minipage}
 \end{center}
 
-Solution for this problem is a part of common knowledge in the JavaScript community. The block of code that should be executed with a new scope has to be wrapped inside an anonymous function which is immediately executed (see the listing \ref{lst:JavaScriptBlockScoping} for an example). Invocation of the function forces creation of a new scope so it behaves the same way as blocks in standard languages.
+A solution for this problem is a part of common knowledge in the JavaScript community. The code block that should be executed with a new scope has to be wrapped inside an anonymous function which is immediately executed (see Listing \ref{lst:JavaScriptBlockScoping} for an example). Invocation of the function forces creation of a new scope so it behaves the same way as blocks in standard languages.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={Emulation of block scope in JavaScript.},label={lst:JavaScriptBlockScoping}]
@@ -860,7 +859,7 @@ console.log(x); // Prints "foo".
 \end{lstlisting}
 \end{minipage}
 
-Another problem related to scoping is meaning of the \texttt{this} keyword. In OO languages it means the current object whereas in JavaScript it references the current scope. An issue arises inside a method body if the current object is being accessed from a nested function. The \texttt{this} keyword inside the nested function references the nested function scope, not the current object. Resolution of this problem is surprisingly simple. It suffices to capture the currrent object to a new variable on the top of each method body (e.g. \texttt{var self = this;}) and to use the captured variable (\texttt{self}) instead of the \texttt{this} keyword.
+Another problem related to scoping is meaning of the \texttt{this} keyword. In OO languages it means the current object whereas in JavaScript it references the current scope. An issue arises inside a method body if the current object is being accessed from a nested function. The \texttt{this} keyword inside the nested function references the nested function scope, not the current object. Resolution of this problem is surprisingly simple. It suffices to capture the current object to a new variable on the top of each method body (e.g. \texttt{var self = this;}) and to use the captured variable (\texttt{self}) instead of the \texttt{this} keyword.
 
 \subsubsection*{Primitive Types}
 
@@ -868,9 +867,9 @@ Due to the fact that JavaScript primitive types differ from primitive types of m
 
 One possibility is to use the existing JavaScript primitive types which would mean that a \texttt{scala.Char} would be represented as a single-character \texttt{String} in JavaScript and all numeric values (of types \texttt{scala.Int}, \texttt{scala.Double} etc.) would be represented as JavaScript \texttt{Number}s. An advantage is that there is no runtime overhead, that the resulting code is well readable and that interoperability with JavaScript is problem-free. From the drawback point of view there is no way how to determine whether \texttt{2.0} represents a \texttt{scala.Integer} or a \texttt{scala.Double}. Moreover overflows do not behave as expected because most of the numeric types have wider ranges than in the source language.
 
-The other way is to create a wrapper class for each type. The class would contain the value represented same way as it is described in the previous paragraph. And on top of that it will define all operations (e.g. \texttt{plus}, \texttt{minus}, \texttt{times}, etc.) so that overflows and ranges would work exactly the same as in the source language. A benefit is that no information is lost when compiled and executed in JavaScript. A disadvantage is that there is some runtime overhead and that the produced code is little more literal (e.g. \texttt{1 + 1} would compile to \texttt{new scala.Int(1).add(new scala.Int(1))}). In addition the wrapped values would have to be unwrapped on the boundaries between compiled JavaScript code and native JavaScript code. 
+The other way is to create a wrapper class for each type. The class would contain the value represented same way as it is described in the previous paragraph. On top of that it will define all operations (e.g. \texttt{plus}, \texttt{minus}, \texttt{times}, etc.) so that overflows and ranges would work exactly the same as in the source language. A benefit is that no information is lost when compiled and executed in JavaScript. A disadvantage is that there is some runtime overhead and that the produced code is little more literal (e.g. \texttt{1 + 1} would compile to \texttt{new scala.Int(1).add(new scala.Int(1))}). In addition the wrapped values would have to be unwrapped on the boundaries between compiled JavaScript code and native JavaScript code. 
 
-The choice is biased by the fact that in most cases JavaScript applications do not not perform any computationally complex operations where bit arithmetic is involved. They however interoperate a lot with the environment and external libraries. With that in mind it is apparent that the first option (without wrappers) has been chosen, even though the "wrapper" approach is definitely cleaner. A compromise could be a parameter of the compiler that would switch between the two aforementioned approaches.
+The choice is biased by the fact that in most cases JavaScript applications do not not perform any computationally complex operations where bit arithmetic is involved. They however interoperate a lot with the environment and external libraries. While keeping that in mind it is apparent that the first option (without wrappers) has been chosen, even though the "wrapper" approach is definitely cleaner. A compromise could be a parameter of the compiler that would switch between the two aforementioned approaches.
 
 \subsubsection*{Control Structures}
 
@@ -887,7 +886,7 @@ val decision =
 \end{lstlisting}
 \end{minipage}
 
-Transformation to JavaScript will be performed in two steps. The first step on the listing \ref{lst:IfReturnFirst} is just for illustrational purposes. It is not valid JavaScript but shows how scoping would be resolved (both branches wrapped with immediately invoked functions). The second step is to merge the two anonymous functions into one and add the \texttt{return} keywords (listing \ref{lst:IfReturnFinal}).
+Transformation to JavaScript will be performed in two steps. The first step in Listing \ref{lst:IfReturnFirst} is just for illustrational purposes. It is not a valid JavaScript code but it shows how scoping would be resolved (both branches wrapped with immediately invoked functions). The second step is to merge the two anonymous functions into one and add the \texttt{return} keywords (Listing \ref{lst:IfReturnFinal}).
 
 \begin{center}
 \begin{minipage}{.48\textwidth}
@@ -917,7 +916,7 @@ var decision = (function() {
 
 \subsubsection*{The \texttt{super} Keyword}
 
-The last challenging expression kind is an invocation of method defined on a supertype, e.g. \texttt{super.foo()}. Consider the setup on listing \ref{lst:Diamond} - a top level trait, two child traits and two classes that mix in both child traits.
+The last challenging expression kind is an invocation of method defined on a supertype, e.g. \texttt{super.foo()}. Consider the setup in Listing \ref{lst:Diamond} - a top level trait, two child traits and two classes that mix in both child traits.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={The \texttt{super} keyword non-static behavior example.},label={lst:Diamond}]
@@ -941,23 +940,23 @@ println((new C2).test) // Prints "B1 B2 A".
 
 Note that the traits are mixed into classes in opposite order to each other. Therefore the linearized supertype sequences of \texttt{C1} and \texttt{C2} are different and the \texttt{test} methods do not return same values. As a consequnce the \texttt{super.foo} used inside the method \texttt{B1.foo} may reference either \texttt{B2.foo} or \texttt{A.foo}. So when the compiler processes the \texttt{B1.foo} method body, the \texttt{super.foo} invocation cannot be dispatched statically.
 
-As it started to become a custom, runtime comes to the rescue. A method \texttt{runtime.super} has to be defined. It would take a method name, method arguments and most importantly the declaration site type. So the \texttt{super.foo} inside \texttt{B1.foo} would be compiled into \texttt{runtime.super("foo", [], B1)}. When the \texttt{runtime.super} method is invoked it basically starts at the object (e.g. \texttt{new C1}) and climbs up the prototype chain (e.g. \texttt{C1}, \texttt{B2}, \texttt{B1}, \texttt{A}) until it gets to the declaration site type (\texttt{B1}). Then the first method defined above the declaration site type with the specified name is invoked (e.g. \texttt{A.foo}).
+As it started to become a custom, runtime comes to the rescue. A method \texttt{runtime.super} has to be defined. It would take a method name, method arguments and most importantly the declaration site type. The \texttt{super.foo} inside \texttt{B1.foo} would be compiled into \texttt{runtime.super("foo", [], B1)}. When the \texttt{runtime.super} method is invoked it basically starts at the object (e.g. \texttt{new C1}) and climbs up the prototype chain (e.g. \texttt{C1}, \texttt{B2}, \texttt{B1}, \texttt{A}) until it gets to the declaration site type (\texttt{B1}). Then the first method defined above the declaration site type with the specified name is invoked (e.g. \texttt{A.foo}).
 
 \section{Standard Libraries}
 
-Most of programs in any language depend on a standard library which is offered together with the source language. In some cases the standard library is a required dependency that cannot be left out even if the program did not explicitly use anything from it. So in order to execute compiled programs there also have to be JavaScript counterpart for the standard library. If the source code of the standard librariy is publicly available then the best approach is to use the compiler to JavaScript and compile the library with it. If the sources are not publicly available then the only option is to reimplement it either directly in JavaScript or in the source language and then compile it. Applications in Scala implicitly rely on the Scala Library \cite{ScalaLibrary} and a small subset of the Java Class Library. Solution in this case would be to compile the opensource Scala Library classes directly to JavaScript. The Java Class Library subset would have to be reimplemented in Scala and then compiled.
+Most of programs in any language depend on a standard library which is offered together with the source language. In some cases the standard library is a required dependency that cannot be left out even if the program did not explicitly use anything from it. So in order to execute compiled programs there also have to be a JavaScript counterpart for the standard library. If the source code of the standard library is publicly available then the best approach is to use the compiler to JavaScript and compile the library with it. If the sources are not publicly available then the only option is to reimplement it either directly in JavaScript or in the source language and then compile it. Applications in Scala implicitly rely on the Scala Library \cite{ScalaLibrary} and a small subset of the Java Class Library. Solution in this case would be to compile the opensource Scala Library classes directly to JavaScript. The Java Class Library subset would have to be reimplemented in Scala and then compiled.
 
 One approach is to take the whole library and compile it as it is. The main downside is that a lot of classes that are not usable in the context of web browsers would be included. For example everything related to threading. Scala collections define the \texttt{par} method which returns parallelizable version of the collection. So the parallel versions are direct dependencies of the sequential versions and consequently would have to be downloaded whenever a standard sequential version is used.
 
-The better approach is to start with a small subset of the library classes that would be compiled to JavaScript (i.e. supported classes). And before a class would be added to the subset (i.e. become supported) one would have to check its dependencies and possibly tweak its source code in order to exclude everything unnecessary. In case of the collections it would mean that the \texttt{par} method would be removed which would break the dependency on the parallelizable version.
+The better approach is to start with a small subset of the library classes that would be compiled to JavaScript (i.e. supported classes). Before a class would be added to the subset (i.e. become supported) one would have to check its dependencies and possibly tweak its source code in order to exclude everything unnecessary. In a case of the collections it would mean that the \texttt{par} method would be removed, which would break the dependency on the parallelizable version.
  
 \section{Library Distribution}
 
-A way how to simply distribute libraries is one of the main goals of the toolkit. A motivation behind it is thoroughly described in the section \ref{sec:Motivation}. The solution however, to further extent, depends on the source language platform and distribution means there. In the Scala ecosystem, programs and libraries are distributed exactly the same way as in the Java environment - in the form of \texttt{*.jar} files (Java Archives). Such an archive usually contains class files, metadata associated with them and additional resources.
+A way how to simply distribute libraries is one of the main goals of the toolkit. A motivation behind it is thoroughly described in Section \ref{sec:Motivation}. The solution however, to further extent, depends on the source language platform and distribution means there. In the Scala ecosystem, programs and libraries are distributed exactly the same way as in the Java environment - in the form of \texttt{*.jar} files (Java Archives). Such an archive usually contains class files, metadata associated with them and additional resources.
 
-Integrating distribution of the compiled JavaScript with the existing methods of Scala program distribution is without a doubt the ideal approach, because the existing infrastructure (build tools, dependency management tools) could be utilized. The proposed solution is, to trivially output all the generated JavaScript files into the resources directory of the very same module. So during standard compilation which produces classfiles, the compiler to JavaScript is executed in order to produce the JavaScript typefiles. The typefiles are stored into the resources of the module within the same directory structure that is used in the \texttt{target} directory for classfiles. Finally, when the module is packaged into a \texttt{*.jar}, both the classfiles and typefiles are included. And that is exactly what the user of the library needs. The classfiles for standard compilation and execution of pragrams that use the library, the typefiles for client side programs that are compiled to JavaScript and rely on the library.
+Integrating distribution of the compiled JavaScript with the existing methods of Scala program distribution is without a doubt the ideal approach, because the existing infrastructure (build tools, dependency management tools) could be utilized. The proposed solution is, to trivially output all the generated JavaScript files into the resources directory of the very same module. During the standard compilation, which produces classfiles, the compiler to JavaScript is executed in order to produce the JavaScript typefiles. The typefiles are stored into the resources of the module within the same directory structure that is used in the \texttt{target} directory for classfiles. Finally, when the module is packaged into a \texttt{*.jar}, both the classfiles and typefiles are included. And that is exactly what the user of the library needs. The classfiles for standard compilation and execution of pragrams that use the library, the typefiles for client side programs that are compiled to JavaScript and rely on the library.
 
-Such a distribution method implicitly raises a new requirement on a JavaScript type loader which should be able to extract typefiles from resources of a module based on fully qualified names of types that are stored in the typefiles. Because a typefile may have other typefiles as its dependenecies, the typeloader explores the dependency graph and yields the required typefile together with all its transitive dependencies. So the requested typefile can be immediately executed in a page in a browser.
+Such a distribution method implicitly raises a new requirement on a JavaScript type loader which should be able to extract typefiles from the resources. Based on a fully qualified name of a type it should obtain the corresponding typefile. Because a typefile may have other typefiles as its dependenecies, the typeloader should explore the dependency graph and yield the required file together with all its transitive dependencies. Therefore the requested type could be immediately declared and used in a web page.
 
 
 
@@ -966,17 +965,17 @@ Such a distribution method implicitly raises a new requirement on a JavaScript t
 
 \section{Environment}
 
-Nature of the Swat toolkit and how it should be used by other programmers implies that it has to be tightly cooperating both with the standard Scala compiler and the build tool SBT. The compiler to JavaScript works with internal data structures and interfaces defined by the Scala compiler, however those may change even from minor version to minor version. No backward compatibility of those internal structures is guaranteed. So as of writing the thesis the most current version of Scala (Scala 2.10.1) has been chosen to be the only supported version. 
+The nature of the Swat toolkit and how it should be used by other programmers implies that it has to be tightly cooperating both with the standard Scala compiler and the build tool SBT. The compiler to JavaScript works with internal data structures and interfaces defined by the Scala compiler, however those may change even between two minor versions. No backward compatibility of those internal structures is guaranteed. As of writing the thesis the most current version of Scala (Scala 2.10.1) has been chosen to be the only supported version. 
 
-Build process and execution of the toolkit is handled by SBT which means that the only requirement on the host system is to have the Java Runtime Environment in version 1.6 or higher installed. All dependencies of the Swat (e.g. Scala compiler, Scala library) are obtained by SBT from the internet. SBT is distributed together with the toolkit with motiviation to make the usage as simple as possible - just downloading the toolkit and running the included SBT. The whole toolkit is divided into multiple projects, everything is defined in a SBT configuration file (\texttt{project/SwatBuild.scala}). SBT is not tightly connected with any particular IDE, but it is possible to generate IDE specific project files for the most used ones (IntelliJ Idea, Eclipse) based on the SBT configuration file.
+Build process and execution of the toolkit is handled by SBT, which means that the only requirement on the host system is to have the Java Runtime Environment in version 1.6 or higher installed. All dependencies of the Swat (e.g. Scala compiler, Scala library) are obtained by SBT from the internet. SBT is distributed together with the toolkit in order to make the usage as simple as possible - just downloading the toolkit and running the included SBT. The whole toolkit is divided into multiple projects; everything is defined in a SBT configuration file (\texttt{project/SwatBuild.scala}). SBT is not tightly connected with any particular IDE, but it is possible to generate IDE specific project files for the most used ones (IntelliJ Idea, Eclipse) based on the SBT configuration file.
 
 \section{Toolkit Overview}
 
-The two core projects are the \texttt{api} and \texttt{compiler}. They are the only dependencies required to be able to compile Scala programs to JavaScript. The \texttt{api} contains adapter classes and Swat specific annotations that are meant to be used by the programs compiled to JavaScript. The \texttt{compiler} performs the compilation step and incorporates most of the logic that was described in the section \ref{sec:Analysis}.
+The two core projects are the \texttt{api} and \texttt{compiler}. They are the only dependencies required to be able to compile Scala programs to JavaScript. The \texttt{api} contains adapter classes and Swat specific annotations that are meant to be used by the programs compiled to JavaScript. The \texttt{compiler} performs the compilation step and incorporates most of the logic that was described in Section \ref{sec:Analysis}.
 
-All the projects that enable execution of the compiled programs are placed in the \texttt{runtime} directory and are compiled using the Swat compiler itself. They also contain sources directly in JavaScript which are not affected by the Swat compiler. As it is depicted on the figure \ref{RuntimeCompilation} the \texttt{runtime} projects depend on the \texttt{api} (in order to interoperate with JavaScript environment), get compiled by Swat compiler and packaged to Java Archives (consisting of Java classfiles and JavaScript typefiles).
+All the projects that enable execution of the compiled programs are placed in the \texttt{runtime} directory and are compiled using the Swat compiler itself. They also contain sources directly in JavaScript which are not affected by the Swat compiler. As it is depicted in Figure \ref{RuntimeCompilation} the \texttt{runtime} projects depend on the \texttt{api} (in order to interoperate with JavaScript environment), get compiled by Swat compiler and packaged to Java Archives (consisting of Java classfiles and JavaScript typefiles).
 
-The \texttt{runtime/java} is a reimplementation of core Java classes in Scala so it is possible to compile them using Swat compiler. The \texttt{runtime/scala} is carefully selected subset of Scala Library classes that is supported by the Swat toolkit. The existing sources of Scala Library are used and modified with respect to fact that the classes will be executed as JavaScript so for example everything related to threading can is excluded.
+The \texttt{runtime/java} is a reimplementation of core Java classes in Scala so it is possible to compile them using Swat compiler. The \texttt{runtime/scala} is a carefully selected subset of Scala Library classes that is supported by the Swat toolkit. The existing sources of Scala Library are used and modified with respect to fact that the classes will be executed as JavaScript so for example everything related to threading can be excluded.
 
 \begin{figure}[ht]
   \centering
@@ -985,11 +984,11 @@ The \texttt{runtime/java} is a reimplementation of core Java classes in Scala so
 	\label{RuntimeCompilation}
 \end{figure}
 
-The \texttt{runtime/client} is the runtime library that was mentioned multiple times in {\it Analysis} (section \ref{sec:Analysis}). It is partially implemented in Scala and partially directly in JavaScript. Finally the \texttt{runtime/common} contains the enhancements like type loader or RPC infrastructure. Part of it runs only on the server, part of it is compiled to JavaScript and used both on the server and on the client.
+The \texttt{runtime/client} is the runtime library that was mentioned multiple times in {\it Analysis} (section \ref{sec:Analysis}). It is partially implemented in Scala and partially directly in JavaScript. Finally the \texttt{runtime/common} contains the enhancements like the type loader or the RPC infrastructure. A part of it runs only on the server, part of it is compiled to JavaScript and used both on the server and on the client.
 
-There are four additional projects that either test or demonstrate capabilities of the toolkit. The \texttt{web} in the root is a server side web application in the Play Framework \cite{Play}. It serves three web pages where each page contains one client side application written in Scala and compiled to JavaScript using the Swat compiler. The \texttt{web/tests} is an application that executes tests of the Swat Runtime (there is no other simple way how to test the runtime directly). The \texttt{web/swatter} is a sample application that presents some of the toolkit features. Finally the \texttt{web/playground} is an empty application meant to be used for experiments.
+There are four additional projects that either test or demonstrate capabilities of the toolkit. The \texttt{web} in the root is a server side web application based on the Play Framework \cite{Play}. It serves three web pages where each page contains one client-side application written in Scala and compiled to JavaScript using the Swat compiler. The \texttt{web/tests} is an application that executes tests of the Swat Runtime (there is no other simple and direct way of the runtime testing process). The \texttt{web/swatter} is a sample application that presents some of the toolkit features. Last but not least, the \texttt{web/playground} is an empty application meant to be used for experiments.
 
-An application that should be compiled to JavaScript depends during compilation on the \texttt{api} (in order to use adapters), \texttt{runtime/client} (so it can use e.g. serializer) and \texttt{runtime/common} (for access to type loader etc.). It also implicitly depends (as all Scala applications) on the Standard Scala Library and Java Class Library. It does not depend on the versions \texttt{runtime/java} and \texttt{runtime/scala} adjusted for Swat. Consequently all types defined in the application could be used even on the server side because they do not depend on the adjusted versions of standard libraries. Purpose of the adjusted versions is to store typefiles of standard Java and Scala library classes. The compilation process is depicted on the figure \ref{AppCompilation}.
+An application that should be compiled into JavaScript depends during compilation on the \texttt{api} (in order to use adapters), \texttt{runtime/client} (so it can use e.g. serializer) and \texttt{runtime/common} (for access to type loader etc.). It also implicitly depends (as all Scala applications) on the Standard Scala Library and Java Class Library. It does not depend on the versions \texttt{runtime/java} and \texttt{runtime/scala} adjusted for Swat. Consequently all types defined in the application could be used even on the server side because they do not depend on the adjusted versions of standard libraries. The purpose of the adjusted versions is to store typefiles of standard Java and Scala library classes. The compilation process is depicted in Figure \ref{AppCompilation}.
 
 \begin{figure}[ht]
   \centering
@@ -1002,7 +1001,7 @@ An application that should be compiled to JavaScript depends during compilation 
 
 The \texttt{api} library is completely visible to users of the toolkit and contains means for interoperability with JavaScript environment and a few annotations that somehow affect the compilation process. The annotations are currently only two, the \texttt{swat.ingored} makes the Swat compiler completely ingore the annotated type, the \texttt{swat.adapter} informs the compiler that the annotated type is an adapter for a JavaScript object.
 
-The most important part of the \texttt{api} are predefined adapters for native JavaScript APIs. It is not meant to cover all possible JavaScript APIs, mostly the adapters are added/extended when needed during development of an application. There are couple of predefined adapters that should more less cover the following JavaScript APIs:
+The most important parts of the \texttt{api} are predefined adapters for native JavaScript APIs. It is not meant to cover all possible JavaScript APIs, mostly the adapters are added/extended when needed during development of an application or a library. There are couple of predefined adapters that should more less cover the following JavaScript APIs:
 
 \begin{itemize}
 \item Document Object Model (DOM) Level 3 Core Specification.\\
@@ -1019,13 +1018,13 @@ Packages \texttt{swat.js.workers}, \texttt{swat.js.communication}, \texttt{swat.
 \url{http://www.w3.org/TR/workers/}
 \end{itemize}
 
-First thing to notice is that the adapters do not blindly copy the specifications because the specifications are in some cases redundant and contain duplicities. Usage of Scala which is great for abstraction of common functionality allows to define a new trait (with no counterpart in the specification) for the shared operations. The trait can later be mixed into all adapters that have the specified operations. The \texttt{swat.js.html.elements.InputLike} trait is an example of such approach. It defines interface that is shared among all form input HTML elements and is mixed into \texttt{Input}, \texttt{Select} and \texttt{TextArea} adapters.
+The first thing to notice is that the adapters do not blindly copy the specifications because the specifications are in some cases redundant and contain duplicities. Usage of Scala, which is great for abstraction of common functionality, allows to define a new trait (with no counterpart in the specification) for the shared operations. The trait can later be mixed into all adapters that have the specified operations. The \texttt{swat.js.html.elements.InputLike} trait is an example of such an approach. It defines an interface that is shared among all form input HTML elements and is mixed into \texttt{Input}, \texttt{Select} and \texttt{TextArea} adapters.
 
 The second interesting part is how the global scope is established. The global scope richness depends on a context in which JavaScript code is executed. If a script is being executed in the standard context (applies to all scripts inside a page) then it may access the \texttt{window} object or manipulate with the page. On the other hand if a script is being executed inside a web worker (analogue to a parallel process) then it is forbidden to access the \texttt{window}. So the object \texttt{swat.js.CommonScope} defines API that is availible in all execution contexts, \texttt{swat.js.DefaultScope} defines what is availible inside the default execution context and \texttt{swat.js.SharedWorkerScope} what is accessible in a web worker. The preferred way is to use the \texttt{swat.js.CommonScope} which ensures that the code would work in all execution contexts. A more specific global scope should be used only when it is really necessary.
 
 \section{Compiler (package \texttt{swat.compiler})}
 
-The Swat compiler is implemented as a plugin (\texttt{SwatCompilerPlugin}) to the Scala compiler so it follows the Scala compiler plugin design guidelines \cite{CompilerPlugins}. The plugin adds one phase to the standard set of compiler phases. When the phase is executed during compilation it does not modify the input Scala ASTs at all and delegates control to the JavaScript frontend (class \texttt{ScalaAstProcessor}) as it can be seen on the figure \ref{SwatCompiler}. Additionaly there is also the \texttt{SwatCompiler} class which wraps the whole plugged Scala compiler, adds a programmer friendly interface thus it is possible to perform the compilation to JavaScript programmatically.
+The Swat compiler is implemented as a plugin (\texttt{SwatCompilerPlugin}) to the Scala compiler so it follows the Scala compiler plugin design guidelines \cite{CompilerPlugins}. The plugin adds one phase to the standard set of compiler phases. When the phase is executed during the compilation it does not modify the input Scala ASTs at all and delegates control to the JavaScript frontend (class \texttt{ScalaAstProcessor}) as it can be seen in Figure \ref{SwatCompiler}. Additionaly, there is also the \texttt{SwatCompiler} class which wraps the whole plugged Scala compiler, adds a programmer-friendly interface thus it is possible to perform the compilation to JavaScript programmatically.
 
 \begin{figure}[ht]
   \centering
@@ -1034,40 +1033,40 @@ The Swat compiler is implemented as a plugin (\texttt{SwatCompilerPlugin}) to th
 	\label{SwatCompiler}
 \end{figure}
 
-There are three main subpackages: \texttt{js}, \texttt{frontend} and \texttt{backend}. The \texttt{js} package contains definitions of JavaScript ASTs and other syntax related constructs (e.g. keywords). The classes that represent syntax trees mirror the specification of JavaScript syntax \cite{EcmaScript} so any imaginable JavaScript program could be represented with these classes. In addition the \texttt{TreeBuilder} is a factory for some commonly used ASTs.
+There are three main subpackages: \texttt{js}, \texttt{frontend} and \texttt{backend}. The \texttt{js} package contains definitions of JavaScript ASTs and other syntax related constructs (e.g. keywords). The classes that represent syntax trees mirror the specification of JavaScript syntax \cite{EcmaScript} so any imaginable JavaScript program could be represented with these classes. In addition, the \texttt{TreeBuilder} is a factory for some commonly used ASTs.
 
-The \texttt{backend} package allows to generate JavaScript code from the ASTs. There is only one important class - \texttt{JsCodeGenerator}. From the top level point of view, it is just one big \texttt{match} expression against all types of ASTs where each \texttt{case} is responsible for one type. In most cases it works recursively because an AST is often composed of other ASTs. Therefore the encapsulated ASTs are processed first and then the resulting code fragments are somehow combined together. It also takes care of indentation and white spaces of the outputted code to make it readable.
+The \texttt{backend} package allows to generate JavaScript code from the ASTs. There is only one important class - \texttt{JsCodeGenerator}. From the top level point of view, it is just one big \texttt{match} expression against all types of ASTs where each \texttt{case} is responsible for one type. In most cases it works recursively because an AST is often composed of other ASTs. Therefore the encapsulated ASTs are processed first and then the resulting code fragments are somehow combined together. It also takes care of the indentation and white spaces of the outputted code to make it readable.
 
 \subsection{Frontend (package \texttt{swat.compiler.frontend})}
 
-An entry point to the frontend is the \texttt{ScalaAstProcessor} class. Its functionality is pretty straightforward as it just traverses body of a \texttt{CompilationUnit} in order to find all type definitions. Then for each type definition it creates a new \texttt{TypeDefProcessor} and lets it process the type definition.
+An entry point to the frontend is the \texttt{ScalaAstProcessor} class. Its functionality is pretty straightforward as it just traverses a body of a \texttt{CompilationUnit} in order to find all type definitions. Then for each type definition it creates a new \texttt{TypeDefProcessor} and lets it process the type definition.
 
-The \texttt{TypeDefProcessor} is an abstract class resposible for transformation of a type definition Scala AST to a JavaScript AST. It defines functionality common for all kinds of type definitions and for each kind it has corresponding subclass: \texttt{ClassProcessor} for class definitions, \texttt{TraitProcessor} for trait definitions and \texttt{ObjectProcessor} for singleton object definitions. The subclasses are very simple, most of the functionality is shared and defined in the \texttt{TypeDefProcessor}.
+The \texttt{TypeDefProcessor} is an abstract class responsible for a transformation of a type definition Scala AST to a JavaScript AST. It defines a functionality common for all kinds of type definitions and for each kind it has a corresponding subclass: \texttt{ClassProcessor} for class definitions, \texttt{TraitProcessor} for trait definitions and \texttt{ObjectProcessor} for singleton object definitions. The subclasses are very simple, most of the functionality is shared and defined in the \texttt{TypeDefProcessor}.
 
-The approach used inside the \texttt{TypeDefProcessor} is very similar to how the \texttt{JsCodeGenerator} generates JavaScript code, the main difference is that the \texttt{TypeDefProcessor} generates JavaScript ASTs. First of all, methods are extracted from the type definition, groupped by their names and processed as it is described in the {\it Analysis}. Processing a method group means that all overloaded variants are processed separately and then encoded to a single JavaScript AST representing the whole method group. Finally when all the method groups are processed the type definition can be encoded into a single JavaScript AST containing the members, type name and linearized supertypes.
+The approach used inside the \texttt{TypeDefProcessor} is very similar to how the \texttt{JsCodeGenerator} generates JavaScript code, the main difference is that the \texttt{TypeDefProcessor} generates JavaScript ASTs. First of all, methods are extracted from the type definition, groupped by their names and processed as it is described in the {\it Analysis}. Processing a method group means that all overloaded variants are processed separately and then encoded to a single JavaScript AST representing the whole method group. Finally when all the method groups are processed, the type definition can be encoded into a single JavaScript AST containing the members, type name and linearized supertypes.
 
-Transformationon on the expression level (e.g. method bodies, field values) starts with the most important method \texttt{TypeDefProcessor.processTree}. The method can be given any kind of AST and based on its type the \texttt{processTree} delegates control to a more specific method which is responsible for that particular AST. For example when the \texttt{processTree} is given an \texttt{If} tree it delegates control to the \texttt{processIf} method. On top of that there are a few variants of the \texttt{processTree} which invoke it and somehow modify or check the result: 
+The transformation on the expression level (e.g. method bodies, field values) starts with the most important method \texttt{TypeDefProcessor.processTree}. The method can be given any kind of AST and based on its type the \texttt{processTree} delegates the control to a more specific method, which is responsible for that particular AST. For example when the \texttt{processTree} is given an \texttt{If} tree it delegates the control to the \texttt{processIf} method. On top of that there are several variants of the \texttt{processTree}, which invoke it and somehow modify or check the result: 
 
 \begin{description}
-\item[\texttt{processStatementTree}] Makes sure that the processed JavaScript AST is a \texttt{js.Statement}. Otherwise it tries to cenvert it to a statement. Unlike the \texttt{processTree} method which returns a generic \texttt{js.Ast} it returns a \texttt{js.Statement}.
-\item[\texttt{processExpressionTree}] Makes sure that the processed JavaScript AST is a \texttt{js.Expression} which is also the return type. Used for example when processing a condition of an \texttt{If} AST. The condition always has to be an expression so \texttt{processTree} is too generic for that purpose.
+\item[\texttt{processStatementTree}] Makes sure that the processed JavaScript AST is a \texttt{js.Statement}. Otherwise, it tries to convert it to a statement. Unlike the \texttt{processTree} method, which returns a generic \texttt{js.Ast} it returns a \texttt{js.Statement}.
+\item[\texttt{processExpressionTree}] Makes sure that the processed JavaScript AST is a \texttt{js.Expression}, which is also the return type. Used for example when processing a condition of an \texttt{If} AST. The condition always has to be an expression so \texttt{processTree} is too generic for that purpose.
 \item[\texttt{processReturnTree}] Makes sure that the processed AST ends with a \texttt{return} statement. E.g. used for transformation of expressions that represent method bodies.
 \end{description}
 
-Rest of the \texttt{TypeDefProcessor} methods are the aforementioned variants tailored for concrete AST types, e.g. \texttt{processLiteral} for primitive literals, \texttt{processIdent} for identifiers, \texttt{processMatch} for match statements and many more. Important thing to remember is that all of the methods follow the chosen approaches defined in the {\it Analysis}. From the implementation perspective they are not taht interesting to further extent.
+The rest of the \texttt{TypeDefProcessor} methods are the aforementioned variants tailored for concrete AST types, e.g. \texttt{processLiteral} for primitive literals, \texttt{processIdent} for identifiers, \texttt{processMatch} for match statements and many more. An important thing to remember is that all of the methods follow the chosen approaches defined in the {\it Analysis}. From the implementation perspective they are not that interesting to further extent.
 
 \section{Runtime}
 
 \subsection{Client (package \texttt{swat.client})}
 
-A core of the client side runtime is implemented directly in JavaScript and can be found in the resources of the project (file \texttt{resource/swat.js}). It is the first thing that has to be declared in order for the compiled code to function. First of all it defines several helper methods (e.g. \texttt{isJsObject}, \texttt{isJsArray}) that are not present in JavaScript yet are useful. Then there are functions used by the JavaScript Fronted to encode Scala constructs: \texttt{swat.type} encodes classes and traits, \texttt{swat.object} encodes singleton objects, \texttt{swat.method} encodes possibly overloaded methods. The last category of functions is responsible for operations that are in Scala implemented with respect to the underlying platform (usually JVM):
+A core of the client-side runtime is implemented directly in JavaScript and can be found in the resources of the project (file \texttt{resource/swat.js}). It is the first thing that has to be declared in order for the compiled code to function. First of all, it defines several helper methods (e.g. \texttt{isJsObject}, \texttt{isJsArray}) that are not present in JavaScript yet are useful. Then there are functions used by the JavaScript Fronted to encode Scala constructs: \texttt{swat.type} encodes classes and traits, \texttt{swat.object} encodes singleton objects, \texttt{swat.method} encodes possibly overloaded methods. The last category of functions is responsible for operations that are implemented in Scala with respect to the underlying platform (usually JVM):
 
 \begin{description}
 \item[\texttt{swat.isInstanceOf}] Returns whether an object is of the specified type. Basically verifies that the object is either of the type or any of the object supertypes $<:$ the specified type.
 \item[\texttt{swat.asInstanceOf}] Uses the \texttt{isInstaceOf} to check whether an object is of the specified type. Throws a \texttt{ClassCastException} if it is not.
 \item[\texttt{swat.equals}] Implementation of the \texttt{==} relation (in Scala \texttt{==} corresponds to the \texttt{equals} method in mainstream languages, Scala \texttt{eq} corresponds to reference equality \texttt{==} in e.g. Java). It cannot be a method of the \texttt{scala.Any} type because even \texttt{null == null} should return true. For more about equality and its common pitfalls refer to \cite{Equality}.
-\item[\texttt{swat.getClass}] Returns a \texttt{java.lang.Class} of the invocation target. In Swat the \texttt{java.lang.Class} is rather simple, reflection is not currently supported. 
-\item[\texttt{swat.hashCode}] Implementation of the Scala method \texttt{hashCode} (or under alias \texttt{\#\#}). In order to properly work, each instance of any Swat type is given an id, which can be used as a base for its hash code.
+\item[\texttt{swat.getClass}] Returns a \texttt{java.lang.Class} of the invocation target. In Swat the \texttt{java.lang.Class} is rather simple, the reflection is not currently supported. 
+\item[\texttt{swat.hashCode}] An implementation of the Scala method \texttt{hashCode} (or under alias \texttt{\#\#}). In order to work properly, each instance of any Swat type is given an identifier, which can be used as a base for its hash code.
 \item[\texttt{swat.toString}] Stringifies any given object.
 \end{description}
 
@@ -1080,13 +1079,13 @@ The class \texttt{swat.commmon.TypeLoader} is not complex at all, it provides tw
 \item[Runtime] Dependency has to be declared, however order of the dependency declaration and type declaration does not matter.
 \end{description}
 
-So for example the core runtime \texttt{swat.js} is a declaration dependency of any other type. Then in the second phase the graph is traversed in a topological order given by the "declaration" dependency and outputted to one string. 
+For example the core runtime \texttt{swat.js} is a declaration dependency of any other type. Then in the second phase the graph is traversed in a topological order given by the "declaration" dependency and outputted to one string. 
 
-There is also a possibility not to include some types to the result. That is useful when there are types already declared on the client side and some other have to be loaded. In this case it is unnecessary to download source code of the already declared types again and redeclare them again.
+There is also a possibility not to include some types to the result. That is useful when there are types already declared on the client-side and some other have to be loaded. In this case it is unnecessary to download the source code of already declared types again and redeclare them again.
 
 \subsection{JSON Serializer}
 
-Besides serialization of primitive types and arrays, the serializer is also capable of object serialization. In order to support serialization of object graphs that contain cycles, all objects have to be given unique serialization ids and referenced indirectly using the ids. The listing \ref{lst:Serialization} shows a self explaining example of how an object (with couple of fields that reference other objects) would be serialized into JSON. 
+Besides serialization of primitive types and arrays, the serializer is also capable of object serialization. In order to support serialization of object graphs that contain cycles, all objects have to be given unique serialization ids and referenced indirectly using the ids. Listing \ref{lst:Serialization} shows a self explaining example of how an object (with couple of fields that reference other objects) would be serialized into JSON. 
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[language=JavaScript,caption={A serialized object that references other objects.},label={lst:Serialization},basicstyle=\scriptsize\ttfamily]
@@ -1115,13 +1114,13 @@ Besides serialization of primitive types and arrays, the serializer is also capa
 \end{lstlisting}
 \end{minipage}
 
-Notice the included type information so it is possible to succesfully deserialize it on the server and assign proper prototype on the client. When a singleton object should be serialized then a fully qualified name of it is used as the reference.
+Notice the included type information so it is possible to succesfully deserialize it on the server and assign proper prototype on the client. When a singleton object should be serialized then a fully qualified name of it is used as a reference.
 
-Deserializer on the other hand goes through the JSON, creates instances corresponding to every single object in the \texttt{\$objects} array while using \texttt{null}s instead of the references (the referenced instances may not have been created yet). When all instances are created, the references that were initially set to \texttt{null}s can be corrected so they point to valid instances.
+The deserializer on the other hand goes through the JSON, creates instances corresponding to every single object in the \texttt{\$objects} array while using \texttt{null}s instead of the references (the referenced instances may not have been created yet). When all instances are created, the references that were initially set to \texttt{null}s can be corrected so they point to valid instances.
 
 \subsection{RPC}
 
-Remote method invocation is a concept that allows to communicate between two physical machines by invocation of a method. The programmer does not need to take care of the communication, serialization of the exchanged data etc. Everything is handled by the underlying infrastructure. In the context of web applications, the client application can directly communicate with one other application - the server application. First of all the target of invocation has to be defined. Consider a singleton object (\texttt{foo}) with one method (\texttt{echo}) on the listing \ref{lst:RemoteObject}.
+The remote method invocation is a concept that allows to communicate between two physical machines by invocation of a method. The programmer does not need to take care of the communication, serialization of the exchanged data etc. Everything is handled by the underlying infrastructure. In the context of web applications, the client application can directly communicate with one other application - the server application. First of all, the target of invocation has to be defined. Consider a singleton object (\texttt{foo}) with one method (\texttt{echo}) in Listing \ref{lst:RemoteObject}.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={A remote object.},label={lst:RemoteObject}]
@@ -1133,7 +1132,7 @@ Remote method invocation is a concept that allows to communicate between two phy
 \end{lstlisting}
 \end{minipage}
 
-When the \texttt{echo} method is invoked from within the client application then the call should be somehow delegated to RPC infrastructure which dispatches it to the server. Support from the Scala to JavaScript compiler is needed in order to achieve that. Whenever the compiler comes accross invocation of a method on an object that is annotated with the \texttt{@remote} annotation it delegates the call to the runtime. An example of such invocation can be seen on listing \ref{lst:InvokeRemoteScala} and how it gets compiled to JavaScript on listing \ref{lst:InvokeRemoteJavaScript}.
+When the \texttt{echo} method is invoked from within the client application then the call should be somehow delegated to RPC infrastructure which dispatches it to the server. A support from the Scala to JavaScript compiler is needed in order to achieve that. Whenever the compiler comes accross a method invocation on an object that is annotated with the \texttt{@remote} annotation it delegates the call to the runtime. An example of such invocation can be seen in Listing \ref{lst:InvokeRemoteScala} and how it gets compiled to JavaScript in Listing \ref{lst:InvokeRemoteJavaScript}.
 
 \begin{center}
 \begin{minipage}{.48\textwidth}
@@ -1159,7 +1158,7 @@ var test = function() {
 \end{minipage}
 \end{center}
 
-The sequence of steps that follows invocation of the \texttt{swat.invokeRemote} is depicted on the figure \ref{Rpc}.
+The sequence of steps that follows invocation of the \texttt{swat.invokeRemote} is depicted in Figure \ref{Rpc}.
 
 \begin{figure}[ht]
   \centering
@@ -1179,15 +1178,15 @@ The sequence of steps that follows invocation of the \texttt{swat.invokeRemote} 
 \item The return value is serialized and returned to the client as a string.
 \item On the client, the \texttt{swat.client.rpc.RpcProxy} goes through the result and finds all types that are present in the result.
 \item The \texttt{swat.common.TypeLoader} is asked for typefiles of types that are present in the result but not declared on the client yet.
-\item Source code of the missing types is declared so there is nothing preventing deserialization of the result.
+\item The source code of the missing types is declared so there is nothing preventing deserialization of the result.
 \item The result is deserialized and returned.
 \end{enumerate}
 
-One more thing to notice is that the communication between the client \texttt{RpcProxy} and server \texttt{TypeLoader} is realized as a remote method invocation too. Return type of the \texttt{TypeLoader.get} is however always present on the client so it does not lead to a cycle.
+One more thing to notice is that the communication between the client \texttt{RpcProxy} and server \texttt{TypeLoader} is realized as a remote method invocation too. A return type of the \texttt{TypeLoader.get} is however always present on the client so it does not lead to a cycle.
 
 \section{Integration with a Web Framework}
 
-In order for the client application to be fully functional the server side has to respond to a few requests that are generated by the Swat infrastructure on the client side. The toolkit was designed with focus on simple integration to existing web application frameworks so it is just necessary to forward the following three HTTP requests to the Swat server runtime.
+In order for the client application to be fully functional, the server side has to respond to a few requests that are generated by the Swat infrastructure on the client side. The toolkit was designed with a focus on a simple integration to existing web application frameworks so it is just necessary to forward the following three HTTP requests to the Swat server runtime.
 
 \begin{itemize}
 \item \texttt{GET /swat/tpe/<typeIdentifier>}\\
@@ -1198,7 +1197,7 @@ Returns JavaScript code of the specified type that mixes-in the \texttt{scala.Ap
 Returns result of the specified remote method invocation.  
 \end{itemize}
 
-An example integration to the Play MVC Framework \cite{Play} can be seen on the listing \ref{lst:PlayIntegration}. You may also notice that the toolkit uses Scala Futures \cite{ScalaFutures} so when an operation blocks on e.g. system operation, the thread may be used to handle another request. As a consequence scalability of the whole application increases.
+An examplary integration to the Play MVC Framework \cite{Play} can be seen in Listing \ref{lst:PlayIntegration}. You may also notice that the toolkit uses Scala Futures \cite{ScalaFutures} so when an operation blocks on e.g. system operation, the thread may be used to handle another request. As a consequence scalability of the whole application increases.
 
 \begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={Integration of Swat toolkit to Play Framework.},label={lst:PlayIntegration},basicstyle=\scriptsize\ttfamily]
@@ -1231,36 +1230,36 @@ object Swat extends Controller {
 
 \section{Build Process}
 
-Integration with SBT was initially planned as a plugin to SBT. A user of the toolkit would specify that his or her solution requires the "Swat SBT plugin" which would allow him or her to define not only standard Scala projects but also "Swat projects". SBT would download the plugin from the internet during startup and the plugin would be responsible for invocation of the Swat compiler during compilation of a "Swat project". 
+The integration with SBT was initially planned as a plugin to SBT. A user of the toolkit would specify that his or her solution requires the "Swat SBT plugin", which would allow him or her to define not only standard Scala projects but also "Swat projects". SBT would download the plugin from the internet during the startup and the plugin would be responsible for invocation of the Swat compiler during compilation of a "Swat project". 
 
 The proposed setup would be nice, however it turned out that SBT plugins have to be binary compatible with SBT itself (i.e. use same version of Scala as SBT). The proposed "Swat SBT plugin" would have to use Scala 2.10.1 because it invokes the Swat compiler which uses Scala 2.10.1 itself. On the other hand the latest version of SBT (at time of writing the thesis) uses Scala 2.9 and therefore the plugin would be incompatible with SBT.
 
-It has been solved by a new SBT action: besides standard compilation action \texttt{compile} a new action \texttt{swat} is introduced. The \texttt{swat} action invokes the Swat compiler explicitly, but it is not that user friendly and compilation to JavaScript is not done in one step together with standard compilation. As soon as SBT comes out with Scala 2.10.1 build, the proposed plugin should be implemented and replace the temporary hack.
+It has been solved by a new SBT action: besides the standard compilation action \texttt{compile} a new action \texttt{swat} is introduced. The \texttt{swat} action invokes the Swat compiler explicitly, but it is not that user-friendly and the compilation to JavaScript is not done in one step together with the standard compilation. As soon as SBT comes out with Scala 2.10.1 build, the proposed plugin should be implemented and the temporary hack replaced.
 
 \section{Tests}
 
-Most of the libraries in the toolkit are covered with tests with purpose to early detect bugs that can later be introduced. Especially the \texttt{compiler} tests are useful, because a simple modification that seems correct may actually break compilation of an AST when it is used in a different context. To run the tests start the SBT and execute the \texttt{test} action (i.e. write "test" and confirm it with enter).
+The most of the libraries in the toolkit are covered with tests with a purpose to early detect bugs that can be introduced to the compiler later. Especially the \texttt{compiler} tests are useful, because a simple modification that seems correct may actually break the compilation of an AST when it is used in a different context. To run the tests start the SBT and execute the \texttt{test} action (i.e. write "test" and confirm it with enter).
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Conclusion}
 
-With regard to the planned goals it can be stated the requirements on the toolkit have been met. The compiler is able to compile Scala programs to JavaScript and has no problems with any kinds of Scala language constructs. Interoperability with JavaScript is covered by quite rich set of adapters and a possibility to use native JavaScript code blocks inside Scala programs. The runtime environment manages to support the compiled code during execution while being consise. The toolkit was used to compile all the core Java and Scala classes necessary for its operation, moreover the futures and promises are fully supported. On the other hand the supported library classes were added in a lazy-manner so there are only the core classes and other required classes. Mainly lack of the Scala collection library (due to its size and complexity) is currently the most limiting factor. Integration to a web application framework is straightforward and distribution of libraries is as simple as it possibly could be.
+With regards to the planned goals it can be stated the requirements on the toolkit have been met. The compiler is able to compile Scala programs to JavaScript and has no problems with any kinds of Scala language constructs. The interoperability with JavaScript is covered by quite a rich set of adapters and the possibility to use the native JavaScript code blocks inside the Scala programs. The runtime environment manages to support the compiled code during the execution while being consise. The toolkit was used to compile all the core Java and Scala classes necessary for its operation, moreover the futures and promises are fully supported. On the other hand, the supported library classes were added in a lazy-manner so there are only the core classes and other required classes. Mainly the lack of the Scala collection library (due to its size and complexity) is currently the most limiting factor. The integration to a web application framework is straightforward and the distribution of the libraries is as simple as it could possibly be.
 
-The enhancement goals were also fulfilled. The JSON (de)serializer is usable both on the client side and on the server side. On top of the standard functionality it also allows to serialize object graphs containing reference cycles. The type loader is fully implemetned, RPC infractructure is conceptually solved and usable for remote method invocation, but support for more advanced scenarios involving authorization is not implemted yet.
+The enhancement goals were also fulfilled. The JSON (de)serializer is usable both on the client-side and on the server-side. On top of the standard functionality it also allows to serialize object graphs containing reference cycles. The type loader is fully implemetned, RPC infractructure is conceptually solved and usable for a remote method invocation, but the support for more advanced scenarios involving authorization is not implemented yet.
 
-To sum it up, all the "big" challenges have been solved, some of them even to a near-production or production extent. On the other hand the repetitive tasks that are not that interesting from the theoretical point of view were given lower priority, so the adapters and Scala library support have to be worked on.
+To sum up, all the "big" challenges have been solved, some of them even to a near-production or production extent. On the other hand, the repetitive tasks that are not that interesting from the theoretical point of view, were given a lower priority, so the adapters and Scala library support have to be worked on.
 
 \section{Similar Tools}
 
-When the project started there have already been a few tools with the same or similar goal - to compile Scala to JavaScript. Namely ScalaGWT \cite{ScalaGwt}, s2js \cite{S2js}, Scalosure \cite{Scalosure} and js-scala  \cite{JsScala}. But it soon turned out that for a real web application they are not very usable. People in the Scala academic community also realized it so a new project Scala.js \cite{ScalaJs} started during the work on the thesis.
+When the project started there have already been a few tools with the same or similar goal - to compile Scala to JavaScript. Namely ScalaGWT \cite{ScalaGwt}, s2js \cite{S2js}, Scalosure \cite{Scalosure} and js-scala  \cite{JsScala}. But it soon turned out that for a real web application they are not very usable. Members of the Scala academic community were also aware of that fact, therefore a new project Scala.js \cite{ScalaJs} was started during the work on the thesis.
 
 \subsubsection*{ScalaGWT}
 
-The ScalaGWT is a new backend for the Scala compiler. The interesting thing is that in the first step it transforms Scala ASTs into Jribble language which is a new language described as a "looser" Java. The second step is to transform Jribble into Java. Finally the resulting Java program is processed by the Google Web Toolkit \cite{Gwt} which transforms it into JavaScript. Motivation for the middle step (i.e. Jribble) is to open possibilities for other languages to be transformed into JavaScript. And it is simpler to have Jribble as the target language instead of Java.
+The ScalaGWT is a new backend for the Scala compiler. The interesting thing is that in the first step it transforms Scala ASTs into Jribble \cite{Jribble}, language, which is a new language described as a "looser" Java. The second step is to transform Jribble into Java. Finally, the resulting Java program is processed by the Google Web Toolkit \cite{Gwt}, which transforms it into JavaScript. A motivation for the middle step (i.e. Jribble) is to open possibilities for other languages to be transformed into JavaScript. And it is simpler to have Jribble as the target language instead of Java.
 
-Drawbacks are that the project is abandoned for more than two years, is not well integrated with Scala tools and frameworks and is rather in a prototype phase (the Scala library is not well supported). The author works primarily on the standard Scala compiler so ScalaGWT is a side-project for him.
+The drawbacks are that the project is abandoned for more than two years, is not well-integrated with Scala tools and frameworks and is rather in a prototype phase (the Scala library is not well supported). The author works primarily on the standard Scala compiler so ScalaGWT is a side-project for him.
 
 \subsubsection*{S2js and Scalosure}
 
@@ -1268,17 +1267,17 @@ Scalosure started as a fork of s2js, so these two tools are very similar to each
 
 \subsubsection*{js-scala}
 
-The approach js-scala uses is a bit different but it is mentioned here for the sake of completeness. It is a domain specific language that can be embedded into Scala programs. Its compiler plugin translates fragments of the DSL into JavaScript. The main disadvantage is that existing code that should be transformed using js-scala has to be rewritten in order to follow rules of the DSL. Existing code cannot be used without modifications which is apparently the reason why Scala Library is unsupported. The project is currently rather a theoretical proof of concept than a tool focusing on real world usage.
+The approach js-scala uses is a bit different but it is mentioned here for the sake of the completeness. It is a domain specific language that can be embedded into Scala programs. Its compiler plugin translates fragments of the DSL into JavaScript. The main disadvantage is that the existing code that should be transformed using js-scala has to be rewritten in order to follow rules of the DSL. The existing code cannot be used without modifications which is apparently the reason why Scala Library is unsupported. The project is currently rather a theoretical proof of concept than a tool focusing on a real world usage.
 
 \subsubsection*{Scala.js}
 
-The project originated in January 2013 and is developed in EPFL (École Polytechnique Fédérale de Lausanne) which is a heart of the Scala community. Therefore it has big support from people that are directly involved in Scala language, compiler or Library. The compilation process works practically the same way as in Swat, only difference is that Scala.js compiler plugin runs after all the standard phases are executed.
+The project originated in January 2013 and is developed in EPFL (École Polytechnique Fédérale de Lausanne), which is a heart of the Scala community. Therefore it has big support from people that are directly involved in Scala language, compiler or Library. The compilation process works practically the same way as in Swat, the only difference is that the Scala.js compiler plugin runs after all the standard phases are executed.
 
-The biggest achievement of this project is that whole Scala Library was compiled to JavaScript and proven to be usable. The support of source maps is in progress and it has a tool for import of TypeScript adapter definitions to Scala. A downside is that the concept similar to Swat typefiles is not utilized so the compiled library has couple of megabytes after minification and compression.
+The biggest achievement of this project is that the whole Scala Library was compiled to JavaScript and proven to be usable. The support of source maps is in progress and it has a tool for import of TypeScript adapter definitions to Scala. A downside is that the concept similar to Swat typefiles is not utilized so the compiled library has couple of megabytes after minification and compression.
 
 \subsection{Comparison}
 
-It is difficult to exactly quantify abilities of each of the aforementioned tools becuase they are mostly undocumented. It is also difficult not to stay biased in favor of the Swat toolkit but the table \ref{tbl:Comparison} tries to objectively summarize level of maturity of each tool by different criteria:
+It is difficult to exactly quantify abilities of each of the aforementioned tools, becuase they are mostly undocumented. It is also difficult not to stay biased in favor of the Swat toolkit but Table \ref{tbl:Comparison} tries to objectively summarize the level of maturity of each tool by different criteria:
 
 \begin{description}[style=multiline,leftmargin=5cm]
 \item[Compiler] Scala language compiler support: $\star$ - major issues, $\star\star$ almost everything supported, $\star\star\star$ - full support.
@@ -1306,34 +1305,34 @@ It is difficult to exactly quantify abilities of each of the aforementioned tool
 	\label{tbl:Comparison}
 \end{table}
 
-The fact that Scala.js and Swat have three stars in the Overall criterion does not necessarily mean they are ready for production use. It means they are closest to it so they are already suitable for programmers to start experimenting with. At this moment there is no clear winner between Scala.js and Swat, both have their highlights and downsides so it is matter of who will sort them out faster. Scala.js currently has some support from the Scala community in EPFL so probably it has bigger chances of succeeding.
+The fact that Scala.js and Swat have three stars in the Overall criterion does not necessarily mean they are ready for a production use. It means they are closest to it so they are already suitable for programmers to start experimenting with. At this moment there is no clear winner between Scala.js and Swat, both have their highlights and downsides so it is matter of who will sort them out faster. Scala.js currently has some support from the Scala community in EPFL so probably it has bigger chances of succeeding.
 
 \section{Future Work}
 
-As it is already apparent from the conclusion, one of the main future goals would be to continually add and extend support of Scala Library classes. Namely the collection library which is for its richness widely used by Scala programmers. The adapters can be continually added in the same fashion as the Scala Library support. Or it is possible to reuse existing adapters defined in a different language (e.g. like Scala.js does with Typescript adapters).
+As it is already apparent from the conclusion, one of the main future goals would be to continually add and extend support of Scala Library classes. Namely the collection library, which is for its richness widely used by Scala programmers. The adapters can be continually added in the same fashion as the Scala Library support. Or it is possible to reuse existing adapters defined in a different language (e.g. like Scala.js does with Typescript adapters).
 
-The second more exciting direction is to explore ways how tasks that are not programmer friedly in JavaScript could be simplified utilizing Scala. The grounds in form of the Swat toolkit have been laid so the really interesting applications can now be implemented or at least tried.
+The second more exciting direction is to explore ways how tasks that are not programmer-friendly in JavaScript could be simplified utilizing Scala. The grounds in form of the Swat toolkit have been laid so the really interesting applications can now be implemented or at least tried.
 
 \subsection{Web workers}
 
 JavaScript does not have any direct means of concurrent programming so it is quite challenging to implement an application that is computationally demanding and in the same time allowing the user to interact with it. A proof of this statement is that there are not many games or sophisticated visualization applications implemetned fully in JavaScript.
 
-There is however a way how to execute code in parallel with the code that is being executed on a web page - by using WebWorkers \cite{WebWorkers}. The code in the standard execution context may create a new WebWorker which is sort of a different process. The standrd context and the worker context do not share access to memory so the only way of communication is to send or receive immutable serialized messages. API of the WebWorker library is rather unfriendly so it is not widely used, but applications that critacally need concurrency have to bear with it, because there is no other option.
+There is however a way how to execute code in parallel with the code that is being executed on a web page - by using WebWorkers \cite{WebWorkers}. The code in the standard execution context may create a new WebWorker which is sort of a different process. The standrd context and the worker context do not share access to memory so the only way of communication is to send or receive immutable serialized messages. The WebWorker library API is rather unfriendly so it is not widely used but applications that critacally need the concurrency have to bear with it, because there is no other option.
 
-From broader perspective WebWorkers are very similar concept to Actor Model \cite{Actors} which is implemented in Scala within the Akka Concurrency Library \cite{Akka}. So there is an opportunity to create a class that would provide the Scala Actor API (or its essential subset) while under the hood it would use the unfriendly WebWorker API. Serialization and deserialization of messages is already taken care of thanks to the JSON serializer. 
+From a broader perspective WebWorkers are very similar concept to Actor Model \cite{Actors} which is implemented in Scala within the Akka Concurrency Library \cite{Akka}. There is an opportunity to create a class that would provide the Scala Actor API (or its essential subset) while under the hood it would use the unfriendly WebWorker API. A serialization and a deserialization of messages is already taken care of thanks to the JSON serializer. 
 
-Even more interesting thing would be to abstract it a bit more so it would be possible on the client side to create a "remote" actor which would actually run on the server. The API of a "remote" actor would be the same as API of a "WebWorker" actor so for a programmer it would be undistinguishable whether the actor runs on a server or inside a WebWorker. It would also allow the web application to have some of its computation needs fulfilled by the server or the other way round.
+Even a more interesting thing would be to abstract it a bit more so it would be possible on the client-side to create a "remote" actor, which would actually run on the server. The API of a "remote" actor would be the same as API of a "WebWorker" actor so for a programmer it would be undistinguishable whether the actor runs on a server or inside a WebWorker. It would also allow the web application to have some of its computation needs fulfilled by the server or the other way round.
 
-There is another new feature in the JavaScript ecosystem called WebSockets \cite{WebSockets} which would be necessary to utilize in case of the "remote" actors. A WebSocket allows to open bidirectional communication channel from the client side to the server side. They would also deserve to be given a better API that would hide low level details and make their usage friendlier.
+There is another new feature in the JavaScript ecosystem called WebSockets \cite{WebSockets}, which would be necessary to utilize in case of the "remote" actors. A WebSocket allows to open bidirectional communication channel from the client side to the server side. They would also deserve to be given a better API that would hide low level details and make their usage friendlier.
 
 \subsection{Template Engine}
 
 Another thing that is currently rather inconvenient is templating in JavaScript. One often needs to create fragments of a HTML page programmatically, compose the fragments to bigger components and manipulate with them. The first option is to create the whole fragment purely in JavaScript using DOM, but this approach is for larger parts of a page almost unusable. The second option is to use a template engine where it is possible to define a template with placeholders for data, compile the template to JavaScript, give the compiled template the data and make it render itself. This approach however brings the compilation step which does not pay off when used only for templating.
 
-With Swat it should theoretically be possible to implement a type safe templating engine that would rely on Scala String Interpolation \cite{StringInterpolation}. A template would be a function taking data and producing a HTML Element. Construction of the element and composition of the template from other templates would be work of a new special string interpolator (e.g. \texttt{template}). A simplified example just to give an impression how it could look like is visible on the listing \ref{lst:Templates} where a model class (\texttt{User}) is defined together with a template for it.
+With Swat it should theoretically be possible to implement a type safe templating engine that would rely on Scala String Interpolation \cite{StringInterpolation}. A template would be a function taking data and producing an HTML Element. A construction of the element and composition of the template from other templates would be a work of a new special string interpolator (e.g. \texttt{template}). A simplified example just to give an impression how it could look like is presented on Listing \ref{lst:Templates} where a model class (\texttt{User}) is defined together with a template for it.
 
 \begin{minipage}{\linewidth}
-\begin{lstlisting}[caption={Templating engine example.},label={lst:Templates}]
+\begin{lstlisting}[caption={An example of templating engine.},label={lst:Templates}]
 case class User(name: String, frineds: List[User])
 
 object Templates {
@@ -1351,7 +1350,7 @@ object Templates {
 
 \subsection{Build Process}
 
-The Build process deserves full integration to the SBT as it was not achievable at the moment of writing the thesis. Interesting improvement would be to employ SBT resident compiler (a compiler that runs all the time, detects changes in the source files and recompiles the modified) so a programmer would not need to explicitly compile anything. He or she would just run the resident compiler and run the application. From that point it would be sufficient to modify particular source file and reload the current page in order to immediately see the result.
+The Build process deserves the full integration to the SBT as it was not achievable at the moment of writing the thesis. An interesting improvement would be to employ the SBT resident compiler (a compiler that runs all the time, detects changes in the source files and recompiles the modified ones) so a programmer would not need to explicitly compile anything. He or she would just run the resident compiler and run the application. From that point it would be sufficient to modify a particular source file and reload the current page in order to immediately see the result.
 
 
 
@@ -1420,7 +1419,7 @@ When the compilation finishes the result is shown in the JavaScript editor (figu
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Content of attached CD}
 
-The attached CD contains the most current snapshot of the Github Repository available. There are two directories. The \texttt{thesis} contains text of the thesis in PDF, source of the thesis in TeX and all related resources. The \texttt{swat} contains source code of the Swat toolkit, the SBT and generated project files for IntelliJ Idea.
+The attached CD contains the most current snapshot of the Github Repository available. There are two directories. The \texttt{thesis} contains the text of the thesis in PDF, the source of the thesis in TeX and all related resources. The \texttt{swat} contains the source code of the Swat toolkit, the SBT and generated project files for IntelliJ Idea.
 
 
 
