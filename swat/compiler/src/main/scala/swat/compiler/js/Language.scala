@@ -7,5 +7,6 @@ object Language {
         "for", "function", "goto", "if", "implements", "import", "in", "instanceof", "int", "interface", "long",
         "native", "new", "null", "package", "private", "public", "return", "short", "static", "super", "switch",
         "synchronized", "this", "throw", "throws", "transient", "true", "try", "typeof", "var", "void", "volatile",
-        "while", "with")
+        "while", "with"
+    )
 }

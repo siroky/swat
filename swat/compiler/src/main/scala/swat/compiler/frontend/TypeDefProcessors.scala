@@ -26,9 +26,7 @@ trait TypeDefProcessors {
      */
     case class Dependency(tpe: Either[String, Type], isHard: Boolean)
 
-    /**
-     * Factory for TypeDefProcessors.
-     */
+    /** A factory for TypeDefProcessors. */
     object TypeDefProcessor {
         def apply(classDef: ClassDef): TypeDefProcessor = {
             val symbol = classDef.symbol
@@ -46,6 +44,10 @@ trait TypeDefProcessors {
         }
     }
 
+    /**
+     * A class responsible for transformation of a type definition Scala AST to its JavaScript counterpart. Has a
+     * subcalss for each kind of a type definition (class, trait object).
+     */
     class TypeDefProcessor(val classDef: ClassDef) {
 
         val dependencies = mutable.ListBuffer[Dependency]()
@@ -70,6 +72,10 @@ trait TypeDefProcessors {
         def addRuntimeDependency(tpe: Type) { addDependency(Right(tpe), false) }
         def addRuntimeDependency(tpe: String) { addDependency(Left(tpe), false) }
 
+        /**
+         * Performs the transformation and returns a JavaScript AST corresponding to the class together with all its
+         * dependencies.
+         */
         def process: ProcessedTypeDef = {
             // Process the single constructor group and method groups
             val (constructorGroup, methodGroups) = extractDefDefGroups(classDef)
@@ -197,6 +203,10 @@ trait TypeDefProcessors {
             memberChain(qualifier, fieldsIdent, localJsIdentifier(symbol.name))
         }
 
+        /**
+         * The most important transformation method, capable of transformation of any expression-level AST. Based on
+         * the AST type it delegates the control to a more specific method.
+         */
         def processTree(tree: Tree): js.Ast = tree match {
             case EmptyTree => js.UndefinedLiteral
             case b: Block => processBlock(b)
@@ -225,6 +235,10 @@ trait TypeDefProcessors {
             }
         }
 
+        /**
+         * Processes the specified AST and makes sure that the returned JavaScript AST is a statement. When it is an
+         * expression, it wraps it with the [[swat.compiler.js.ExpressionStatement]] class.
+         */
         def processStatementTree(tree: Tree): js.Statement = processTree(tree) match {
             case s: js.Statement => s
             case e: js.Expression => astToStatement(e)
@@ -234,6 +248,10 @@ trait TypeDefProcessors {
             }
         }
 
+        /**
+         * Processes the specified AST and makes sure that the returned JavaScript AST is an expression. Otherwise
+         * an error is reported.
+         */
         def processExpressionTree(tree: Tree): js.Expression = processTree(tree) match {
             case e: js.Expression => e
             case _ => {
@@ -263,6 +281,10 @@ trait TypeDefProcessors {
 
         def processExpressionTrees(trees: List[Tree]): List[js.Expression] = trees.map(processExpressionTree)
 
+        /**
+         * Processes the specified block. Takes care of scoping, throws away empty blocks and makes sure something is
+         * not scoped twice.
+         */
         def processBlock(block: Block): js.Ast = block match {
             case Block(List(c: ClassDef), _) if c.symbol.isAnonymousTotalFunction => processLocalClassDef(c)
             case b => b.toMatchBlock match {
@@ -479,15 +501,15 @@ trait TypeDefProcessors {
             }
 
             // Overloaded constructor call.
-            case s @ Select(qualifier, name) if s.symbol.isConstructor => {
-                val methodName = js.StringLiteral(localIdentifier(name))
+            case s @ Select(q, n) if s.symbol.isConstructor => {
+                val methodName = js.StringLiteral(localIdentifier(n))
                 val arguments = js.ArrayLiteral(processMethodArgs(s.symbol, args))
                 swatMethodCall("invokeThis", List(selfIdent, methodName, arguments, thisTypeString): _*)
             }
 
             // Method call.
-            case s @ Select(qualifier, name) => {
-                val methodAccessor = memberChain(processExpressionTree(qualifier), localJsIdentifier(name))
+            case s @ Select(q, n) => {
+                val methodAccessor = memberChain(processExpressionTree(q), localJsIdentifier(n))
                 val processedArgs = processMethodArgs(s.symbol, args)
                 js.CallExpression(methodAccessor, processedArgs)
             }
@@ -504,7 +526,7 @@ trait TypeDefProcessors {
         }
 
         def createTypeHint(types: List[Type], alwaysNonEmpty: Boolean = false): Option[js.StringLiteral] = {
-            types.map(typeIdentifier _) match {
+            types.map(typeIdentifier) match {
                 case Nil if !alwaysNonEmpty => None
                 case identifiers => Some(js.StringLiteral(identifiers.mkString(", ")))
             }

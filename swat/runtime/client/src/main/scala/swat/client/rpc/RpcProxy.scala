@@ -6,6 +6,7 @@ import swat.js.applications.{ActiveXObject, XMLHttpRequest}
 import swat.client.swat
 import _root_.swat.client.json.JsonSerializer
 import _root_.swat.common.rpc.RpcException
+import _root_.swat.js
 
 /** An object responsible for forwarding of remote method calls to the server. */
 object RpcProxy {
@@ -19,7 +20,7 @@ object RpcProxy {
         val promise = Promise[Any]()
         val result = promise.future
         val request =
-            if (swat.isDefined(swat.access("XMLHttpRequest"))) {
+            if (swat.isDefined(js.native("XMLHttpRequest"))) {
                 new XMLHttpRequest()
             } else {
                 new ActiveXObject("Msxml2.XMLHTTP")
@@ -29,7 +30,7 @@ object RpcProxy {
             if (request.readyState == 4 && request.status != 0) {
                 // The request is done and the status isn't invalid. After the processing of the response is done,
                 // complete the result promise.
-                processResponse(request.responseText, request.status).onComplete(promise.complete(_))
+                processResponse(request.responseText, request.status).onComplete(promise.complete)
             }
         }
         request.open("POST", swat.controllerUrl + "/rpc/" + methodIdentifier, async = true)

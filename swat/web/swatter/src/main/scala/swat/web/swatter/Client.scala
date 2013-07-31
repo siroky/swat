@@ -5,40 +5,49 @@ import ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 import swat.js.DefaultScope._
 import swat.adapter
-import swat.common.rpc.{Cause, RpcException}
 import swat.js.jquery.jQuery
 
+/**
+ * An example application that utilizes the Swat compiler. When the compile button is clicked, it invokes the
+ * [[swat.web.swatter.Server.compile]] method over RPC with the code in the Scala code editor as a parameter.
+ * If the compilation succeeds the output is shown in the JavaScript editor. Otherwise the errors are shown there.
+ */
 object Client extends App {
 
-    val testAppName = "TestApp"
     var currentCodePackage: Option[CodePackage] = None
 
+    val testAppName = "TestApp"
+    val initialCode = """
+import swat.js.DefaultScope._
+
+// Do not change the application name if you want it to be runnable.
+object """ + testAppName + """ extends App {
+    writeToBody("Going to greet.")
+    window.alert("Hello World from Swat.")
+    writeToBody("Greeted.")
+
+    def writeToBody(text: String) {
+        document.body.appendChild(document.createTextNode(text))
+    }
+}")"""
+
+    // Obtain the components from the web page.
     val scalaEditor = ace.edit("scala-editor")
     val javaScriptEditor = ace.edit("javascript-editor")
     val compileButton = document.getElementById("compile-button")
     val runButton = document.getElementById("run-button")
     val compilingModal = jQuery("#compiling-modal")
 
+    // Initialize the editors.
     scalaEditor.setTheme("ace/theme/github")
     scalaEditor.getSession.setMode("ace/mode/scala")
     javaScriptEditor.setTheme("ace/theme/github")
     javaScriptEditor.getSession.setMode("ace/mode/javascript")
-    scalaEditor.setValue(
-        "import swat.js.DefaultScope._\n" +
-        "\n" +
-        "// Do not change the application name if you want it to be runnable.\n" +
-        "object " + testAppName + " extends App {\n" +
-        "    writeToBody(\"Going to greet.\")\n" +
-        "    window.alert(\"Hello World from Swat.\")\n" +
-        "    writeToBody(\"Greeted.\")\n" +
-        "\n" +
-        "    def writeToBody(text: String) {\n" +
-        "        document.body.appendChild(document.createTextNode(text))\n" +
-        "    }\n" +
-        "}")
+    scalaEditor.setValue(initialCode)
     scalaEditor.selection.clearSelection()
     updateControls()
 
+    // Compile button click handler.
     compileButton.onclick = e => {
         compilingModal.modal("show")
         Server.compile(scalaEditor.getValue).onComplete { result =>
@@ -55,11 +64,13 @@ object Client extends App {
         }
     }
 
+    // Run button click handler.
     runButton.onclick = e => {
         val codeWindow = window.open("", "_blank")
         codeWindow.eval(currentCodePackage.get.runnableCode + "\n" + testAppName + "$();")
     }
 
+    // Updates the components according to the current state of compilation.
     private def updateControls() {
         if (currentCodePackage.isEmpty) {
             runButton.setAttribute("disabled", "")

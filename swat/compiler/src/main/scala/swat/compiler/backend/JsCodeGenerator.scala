@@ -2,10 +2,16 @@ package swat.compiler.backend
 
 import swat.compiler.js._
 
-class JsCodeGenerator extends Backend {
+/**
+ * A backend of the Swat compiler. Responsible for generation of JavaScript code according to the input ASTs. Performs
+ * a few trivial optimizations, the outputted code is pretty-printed.
+ */
+class JsCodeGenerator {
 
+    /** Returns JavaScript code corresponding to the specified AST. */
     def astToCode(ast: Ast): String = process(ast)(Indent("    "))
 
+    /** Returns whether the specified AST is empty (i.e. doesn't represent anything relevant). */
     private def astIsEmpty(ast: Ast): Boolean = ast match {
         case EmptyStatement => true
         case ExpressionStatement(UndefinedLiteral) => true
@@ -15,6 +21,7 @@ class JsCodeGenerator extends Backend {
 
     private def astsAreEmpty(asts: List[Ast]): Boolean = asts.forall(astIsEmpty)
 
+    /** The internal entry point of the generation process, can process any of the ASTs. */
     private def process(ast: Ast)(implicit indent: Indent): String = {
         if (astIsEmpty(ast)) {
             ""
@@ -39,6 +46,7 @@ class JsCodeGenerator extends Backend {
         (liveAsts ++ deadAsts.headOption.toList).map(process)
     }
 
+    /** Processes a [[swat.compiler.js.Statement]] and any of its subclasses. */
     private def processStatement(statement: Statement)(implicit indent: Indent): String = {
         indent + (statement match {
             case Block(stmts) => processBlock(stmts, enclosed = false)
@@ -112,6 +120,7 @@ class JsCodeGenerator extends Backend {
         }) + "\n"
     }
 
+    /** Processes the [[swat.compiler.js.Block]]. */
     private def processBlock(stmts: List[Statement], enclosed: Boolean = true)(implicit indent: Indent): String = {
         if (stmts.isEmpty) {
             if (enclosed) "{ }" else ""
@@ -123,6 +132,7 @@ class JsCodeGenerator extends Backend {
         }
     }
 
+    /** Processes a [[swat.compiler.js.Expression]] and any of its subclasses. */
     private def processExpression(expression: Expression)(implicit indent: Indent): String = {
         expression match {
             case CommaExpression(exprs) => process(exprs).mkString(", ")
@@ -150,6 +160,7 @@ class JsCodeGenerator extends Backend {
         }
     }
 
+    /** Processes a [[swat.compiler.js.Literal]] and any of its subclasses. */
     private def processLiteral(literal: Literal)(implicit indent: Indent): String = {
         literal match {
             case NullLiteral => "null"
@@ -165,6 +176,7 @@ class JsCodeGenerator extends Backend {
         }
     }
 
+    /** Escapes a string so that it can be used inside a string literal in JavaScript. */
     private def escapeString(value: String) = {
         val replacementMap = Map(
             '\\' -> """\\""",
@@ -178,6 +190,11 @@ class JsCodeGenerator extends Backend {
 
         value.map(replacementMap.withDefault(c => c)).mkString
     }
+}
+
+case class Indent(step: String, value: String = "") {
+    def increased = Indent(step, value + step)
+    override def toString = value
 }
 
 

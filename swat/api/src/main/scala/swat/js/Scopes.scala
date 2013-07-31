@@ -4,26 +4,6 @@ import swat.js.applications.{Console, Window, Json}
 import swat.js.html.Document
 import swat.js.workers.{SharedWorkerGlobalScope, DedicatedWorkerGlobalScope}
 
-trait Scope {
-    val JSON: Json = ???
-
-    val Infinity: Any = ???
-    val NaN: Any = ???
-    val undefined: Any = ???
-
-    def decodeURI(uri: String): String = ???
-    def decodeURIComponent(uri: String): String = ???
-    def encodeURI(uri: String): String = ???
-    def encodeURIComponent(uri: String): String = ???
-    def escape(s: String): String = ???
-    def eval(js: String): Any = ???
-    def isFinite(value: Any): Boolean = ???
-    def isNaN(value: Any): Boolean = ???
-    def parseFloat(value: Any): Double = ???
-    def parseInt(value: Any): Int = ???
-    def unescape(s: String): String = ???
-}
-
 /**
  * A scope object that may be used anywhere. Contains only field and methods that can be accessed in all possible
  * JavaScript scopes (normal script scope, dedicated worker scope, shared worker scope). Therefore any class may rely
@@ -57,3 +37,5 @@ object DedicatedWorkerScope extends DedicatedWorkerGlobalScope
  *       widest range of execution contexts.
  */
 object SharedWorkerScope extends SharedWorkerGlobalScope
+
+

@@ -4,7 +4,6 @@ import swat.remote
 import scala.concurrent._
 import ExecutionContext.Implicits.global
 import swat.compiler.SwatCompiler
-import swat.compiler.backend.JsCodeGenerator
 import swat.common.{TypeSource, TypeLoader}
 
 /**
@@ -15,7 +14,7 @@ import swat.common.{TypeSource, TypeLoader}
 case class CodePackage(compiledCode: String, runnableCode: String)
 
 /**
- * The remote object whose methods are invokable directly from the client.
+ * A remote object whose methods are invokable directly from the [[swat.web.swatter.Client]].
  */
 @remote object Server {
 

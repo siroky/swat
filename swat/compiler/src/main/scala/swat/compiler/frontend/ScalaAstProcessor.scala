@@ -30,6 +30,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with TypeDefProces
      */
     val adapterPackages = Set("swat.js")
 
+    /** Processes a body of a compilation unit. Entry point of the Swat frontend. */
     def processUnitBody(body: Tree): List[TypeOutput] = body match {
         case p: PackageDef => {
             extractTypeDefs(p).map { typeDef =>
@@ -48,12 +49,14 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with TypeDefProces
         case _ => Nil
     }
 
+    /** Returns all type definitions inside the specified AST. */
     def extractTypeDefs(tree: Tree): List[ClassDef] = tree match {
         case p: PackageDef => p.stats.flatMap(extractTypeDefs)
         case c: ClassDef if c.symbol.isCompiled => c :: c.impl.body.flatMap(extractTypeDefs)
         case _ => Nil
     }
 
+    /** Processes a type definition. */
     def processTypeDef(classDef: ClassDef): ProcessedTypeDef = {
         TypeDefProcessor(classDef).process
     }
@@ -96,9 +99,11 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with TypeDefProces
         }
     }
 
-    def swatMethodCall(methodName: String, args: js.Expression*): js.Expression =
+    def swatMethodCall(methodName: String, args: js.Expression*): js.Expression = {
         methodCall(localJsIdentifier("swat"), localJsIdentifier(methodName), args: _*)
+    }
 
+    /** Returns an identifier corresponding to the specified local variable. */
     def localIdentifier(name: String): String = {
         val cleanName = name.replace(" ", "").replace("<", "$").replace(">", "$")
         (if (js.Language.keywords(cleanName)) "$" else "") + cleanName
@@ -113,6 +118,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with TypeDefProces
         js.Identifier(prefix + "$" + counter)
     }
 
+    /** Returns an identifier corresponding to the specified package. */
     def packageIdentifier(packageSymbol: Symbol): String = {
         val name = packageSymbol.fullName
         if (adapterPackages(name)) {
@@ -125,6 +131,7 @@ trait ScalaAstProcessor extends js.TreeBuilder with RichTrees with TypeDefProces
     }
     def packageJsIdentifier(packageSymbol: Symbol) = js.Identifier(packageIdentifier(packageSymbol))
 
+    /** Returns an identifier corresponding to the specified symbol. */
     def typeIdentifier(symbol: Symbol): String = {
         val identifier =
             if (symbol == NoSymbol) {
