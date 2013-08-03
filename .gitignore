@@ -10,8 +10,8 @@ project/boot/
 project/plugins/project/
 
 # IntelliJ Idea files.
-swat/.idea/*
-swat/.idea_modules/*
+src/.idea/*
+src/.idea_modules/*
 
 # Eclipse files.
 .cache
@@ -20,8 +20,8 @@ swat/.idea_modules/*
 *.swat.js
 
 # Thesis
-thesis/*.aux
-thesis/*.bbl
-thesis/*.blg
-thesis/*.toc
-thesis/*.out
+doc/thesis/*.aux
+doc/thesis/*.bbl
+doc/thesis/*.blg
+doc/thesis/*.toc
+doc/thesis/*.out

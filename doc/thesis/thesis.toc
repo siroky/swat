@@ -1,0 +1,63 @@
+\select@language {english}
+\contentsline {chapter}{\numberline {1}Introduction}{3}{chapter.1}
+\contentsline {section}{\numberline {1.1}Motivation}{4}{section.1.1}
+\contentsline {subsection}{\numberline {1.1.1}JavaScript Disadvantages}{4}{subsection.1.1.1}
+\contentsline {subsection}{\numberline {1.1.2}Improving JavaScript}{5}{subsection.1.1.2}
+\contentsline {subsection}{\numberline {1.1.3}Why Scala}{7}{subsection.1.1.3}
+\contentsline {section}{\numberline {1.2}Project Aim}{7}{section.1.2}
+\contentsline {subsection}{\numberline {1.2.1}Goals}{8}{subsection.1.2.1}
+\contentsline {chapter}{\numberline {2}Background}{10}{chapter.2}
+\contentsline {section}{\numberline {2.1}JavaScript}{10}{section.2.1}
+\contentsline {paragraph}{Style}{10}{section*.7}
+\contentsline {paragraph}{Type System}{10}{section*.8}
+\contentsline {paragraph}{Inheritance}{10}{section*.9}
+\contentsline {paragraph}{Environment}{12}{section*.10}
+\contentsline {section}{\numberline {2.2}Scala}{12}{section.2.2}
+\contentsline {paragraph}{Style}{12}{section*.11}
+\contentsline {paragraph}{Syntax}{14}{section*.12}
+\contentsline {paragraph}{Type System}{14}{section*.13}
+\contentsline {paragraph}{Functional Programming}{15}{section*.14}
+\contentsline {paragraph}{Object Oriented Programming}{15}{section*.15}
+\contentsline {section}{\numberline {2.3}Scala Compiler}{16}{section.2.3}
+\contentsline {chapter}{\numberline {3}Analysis}{18}{chapter.3}
+\contentsline {section}{\numberline {3.1}Setup}{18}{section.3.1}
+\contentsline {subsection}{\numberline {3.1.1}Utilizing the Source Language Compiler}{19}{subsection.3.1.1}
+\contentsline {subsection}{\numberline {3.1.2}Debugging}{20}{subsection.3.1.2}
+\contentsline {section}{\numberline {3.2}Interoperability with JavaScript}{21}{section.3.2}
+\contentsline {paragraph}{Native code blocks}{21}{section*.16}
+\contentsline {paragraph}{Adapters}{21}{section*.17}
+\contentsline {paragraph}{Dynamic}{22}{section*.18}
+\contentsline {section}{\numberline {3.3}Frontend}{22}{section.3.3}
+\contentsline {subsection}{\numberline {3.3.1}Compile Time vs. Runtime Approach}{23}{subsection.3.3.1}
+\contentsline {subsection}{\numberline {3.3.2}Scope of a Compilation Unit}{24}{subsection.3.3.2}
+\contentsline {subsection}{\numberline {3.3.3}Type Definitions}{25}{subsection.3.3.3}
+\contentsline {subsection}{\numberline {3.3.4}Scope of a Type}{26}{subsection.3.3.4}
+\contentsline {subsection}{\numberline {3.3.5}Expressions}{29}{subsection.3.3.5}
+\contentsline {section}{\numberline {3.4}Standard Libraries}{32}{section.3.4}
+\contentsline {section}{\numberline {3.5}Library Distribution}{33}{section.3.5}
+\contentsline {chapter}{\numberline {4}Implementation}{34}{chapter.4}
+\contentsline {section}{\numberline {4.1}Environment}{34}{section.4.1}
+\contentsline {section}{\numberline {4.2}Toolkit Overview}{34}{section.4.2}
+\contentsline {section}{\numberline {4.3}API (package \texttt {swat.api})}{35}{section.4.3}
+\contentsline {section}{\numberline {4.4}Compiler (package \texttt {swat.compiler})}{37}{section.4.4}
+\contentsline {subsection}{\numberline {4.4.1}Frontend (package \texttt {swat.compiler.frontend})}{38}{subsection.4.4.1}
+\contentsline {section}{\numberline {4.5}Runtime}{39}{section.4.5}
+\contentsline {subsection}{\numberline {4.5.1}Client (package \texttt {swat.client})}{39}{subsection.4.5.1}
+\contentsline {subsection}{\numberline {4.5.2}Type Loader}{40}{subsection.4.5.2}
+\contentsline {subsection}{\numberline {4.5.3}JSON Serializer}{40}{subsection.4.5.3}
+\contentsline {subsection}{\numberline {4.5.4}RPC}{41}{subsection.4.5.4}
+\contentsline {section}{\numberline {4.6}Integration with a Web Framework}{43}{section.4.6}
+\contentsline {section}{\numberline {4.7}Build Process}{44}{section.4.7}
+\contentsline {section}{\numberline {4.8}Tests}{44}{section.4.8}
+\contentsline {chapter}{\numberline {5}Conclusion}{46}{chapter.5}
+\contentsline {section}{\numberline {5.1}Similar Tools}{46}{section.5.1}
+\contentsline {subsection}{\numberline {5.1.1}Comparison}{47}{subsection.5.1.1}
+\contentsline {section}{\numberline {5.2}Future Work}{48}{section.5.2}
+\contentsline {subsection}{\numberline {5.2.1}Web workers}{49}{subsection.5.2.1}
+\contentsline {subsection}{\numberline {5.2.2}Template Engine}{49}{subsection.5.2.2}
+\contentsline {subsection}{\numberline {5.2.3}Build Process}{50}{subsection.5.2.3}
+\contentsline {chapter}{Bibliography}{51}{chapter*.29}
+\contentsline {chapter}{Appendices}{56}{section*.30}
+\contentsline {chapter}{\numberline {A}User Manual}{56}{appendix.A}
+\contentsline {chapter}{\numberline {B}Sample Application}{57}{appendix.B}
+\contentsline {chapter}{\numberline {C}Content of attached CD}{59}{appendix.C}
