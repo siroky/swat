@@ -8,16 +8,16 @@ object Playground extends App {
 
     // Start a new worker of the specified type and define a handler for the received messages.
     val worker = Worker.start[EchoWorker] { (sender, message) =>
-        console.log(message)
+        console.log("EchoWorker responded: " + message)
     }
 
     // The worker is now running so a message can be sent to it.
-    console.log("Sending first message.")
+    console.log("Sending message Foo.")
     worker ! "Foo"
 
     // And another message after five seconds.
     window.setTimeout(() => {
-        console.log("Sending second message.")
+        console.log("Sending message Bar.")
         worker ! "Bar"
     }, 5000)
 }
@@ -26,9 +26,13 @@ object Playground extends App {
 class EchoWorker extends Worker {
     def receive(sender: WorkerRef, message: Any) {
         // Just wrap the message and send it back. A complex computation can be performed here...
-        val reply = "EchoServer responding to <<" + message.toString + ">>"
-        sender ! reply
+        val response = "<<" + message.toString + ">>"
+        sender ! response
     }
 }
 
-
+// After five seconds, the console output is:
+//   Sending message Foo.
+//   EchoWorker responded: <<Foo>>
+//   Sending message Bar.
+//   EchoWorker responded: <<Bar>>
