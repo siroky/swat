@@ -27,9 +27,9 @@ object Client extends App {
 
 // Do not change the application name if you want it to be runnable.
 object """ + testAppName + """ extends App {
-    writeToBody("Going to greet.")
+    writeToBody("Going to say hello.")
     window.alert("Hello World from Swat.")
-    writeToBody("Greeted.")
+    writeToBody("Job done!")
 
     def writeToBody(text: String) {
         document.body.appendChild(document.createTextNode(text))

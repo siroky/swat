@@ -4,7 +4,7 @@ import scala.tools.nsc.{SubComponent, Global, Settings}
 import scala.tools.nsc.io.{File, Directory}
 import tools.nsc.reporters.Reporter
 import collection.mutable
-import scala.tools.nsc.transform.Erasure
+import scala.tools.nsc.transform.{SpecializeTypes, Erasure}
 import scala.reflect.internal.util.Position
 
 /**
@@ -112,11 +112,18 @@ class SwatCompiler(
         /** The swat plugin. */
         object swatPlugin extends SwatCompilerPlugin(this)
 
-        /** The erasure component with altered dependencies. */
-        object postponedErasure extends {
+        /** The specializeTypes phase with altered dependencies. */
+        object postponedSpecializeTypes extends {
             val global: SwatGlobal.this.type = SwatGlobal.this
             val runsAfter = List("swat")
             val runsRightAfter = Some("swat")
+        } with SpecializeTypes
+
+        /** The erasure phase with altered dependencies. */
+        object postponedErasure extends {
+            val global: SwatGlobal.this.type = SwatGlobal.this
+            val runsAfter = List("specializeTypes")
+            val runsRightAfter = Some("specializeTypes")
         } with Erasure
 
         /** Adds the internal compiler phases to the phases set. */
@@ -126,7 +133,8 @@ class SwatCompiler(
             // Alter the compiler phases.
             swatPlugin.components.foreach(c => addToPhasesSet(c, c.phaseName))
             removeFromPhasesSet(erasure)
-            removeFromPhasesSet(specializeTypes) // TODO investigate
+            removeFromPhasesSet(specializeTypes)
+            addToPhasesSet(postponedSpecializeTypes, "@specialized-driven class and method specialization")
             addToPhasesSet(postponedErasure, "erase types, add interfaces for traits")
         }
 

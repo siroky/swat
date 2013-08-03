@@ -1,11 +1,13 @@
 import sbt._
 import Keys._
+import sbt.inc.Analysis
 import scala.tools.nsc.io.Directory
+import com.typesafe.sbt.SbtStartScript
 
 object SwatBuild extends Build {
 
-    val swatScalaVersion = "2.10.1"
-    val swatVersion = "0.3-SNAPSHOT"
+    val swatScalaVersion = "2.10.2"
+    val swatVersion = "0.4-SNAPSHOT"
 
     val defaultSettings = Defaults.defaultSettings ++ Seq(
         scalaVersion := swatScalaVersion,
@@ -48,13 +50,20 @@ object SwatBuild extends Build {
             api
         )
 
-    val swatTask = TaskKey[Unit]("swat", "Swat compilation")
+    val swatTask = TaskKey[Analysis]("swat", "Swat compilation")
 
     object RawSwatProject {
         def apply(id: String, path: java.io.File, settings: Seq[Setting[_]] = defaultSettings): Project = {
             Project(
                 id, path, settings = settings ++ Seq(
-                    swatTask <<= (fullClasspath in Compile, sourceDirectory in Compile, resourceDirectory in Compile, runner) map { (cp, src, res, runner) =>
+                    swatTask <<= (
+                        compile in Compile,
+                        fullClasspath in Compile,
+                        sourceDirectory in Compile,
+                        resourceDirectory in Compile,
+                        runner
+                        ) map { (analysis, cp, src, res, runner) =>
+
                         val pathSeparator = System.getProperty("path.separator")
                         val swatCp = cp.map(_.data.getPath).mkString(pathSeparator)
                         val sourceFiles = new Directory(src / "scala").deepFiles
@@ -71,7 +80,8 @@ object SwatBuild extends Build {
                         )(runner), logger)
 
                         analysis
-                    }
+                    },
+                    compile <<= swatTask
                 )
             ).dependsOn(
                 compiler, api
@@ -124,7 +134,7 @@ object SwatBuild extends Build {
 
     lazy val web =
         play.Project(
-            "web", swatVersion, Nil, path = file("web")
+            "web", swatVersion, Nil, path = file("web"), defaultSettings ++ SbtStartScript.startScriptForClassesSettings
         ).aggregate(
             tests,
             swatter,
