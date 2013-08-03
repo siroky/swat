@@ -103,7 +103,7 @@ object JsonSerializer {
     }
 
     /* Finds all types in the specified Swat JSON that aren't loaded yet. */
-    def findMissingTypes(swatJson: Any): Array[String] = js.native {"""
+    private def findMissingTypes(swatJson: Any): Array[String] = js.native {"""
         var missingTypes = [];
 
         var processType = function(typeIdentifier) {
@@ -127,7 +127,7 @@ object JsonSerializer {
     """}
 
     /* Deserializes the specified Swat JSON and returns the root value. */
-    def deserialize(swatJson: Any): Any = js.native {"""
+    private def deserialize(swatJson: Any): Any = js.native {"""
         var deserializedObjects = {};
 
         var deserializeValue = function(value) {

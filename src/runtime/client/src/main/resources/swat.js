@@ -46,7 +46,7 @@ swat.error = function(message) {
 
 /** Traverses all objects on the specified path. The visitor function gets an owning object and name of the field. */
 swat.traverse = function(path, visitor) {
-    var parent = window;
+    var parent = self;
     while (path != '') {
         var index = path.indexOf('.');
         var name = (index >= 0) ? path.substring(0, index) : path;

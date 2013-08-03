@@ -43,27 +43,37 @@ object TypeLoader {
     /**
      * Returns the JavaScript code of the specified object that extends the [[scala.App]] trait together with all
      * its dependencies. The application is started with the specified startup args provided.
-     * @param appObjectTypeIdentifier Type identifier of the application object.
+     * @param appTypeIdentifier Type identifier of the application type.
      * @param args The startup arguments.
      */
     @swat.remote
-    def getApp(appObjectTypeIdentifier: String, args: Array[String]): Future[String] = {
-        val typeIdentifier = appObjectTypeIdentifier.stripSuffix("$") + "$"
+    def getApp(appTypeIdentifier: String, args: Array[String]): Future[String] = {
+        // Determine the type identifier suffix based on whether it's a class or a singleton object.
+        val suffix =
+            try {
+                getSource(appTypeIdentifier)
+                ""
+            } catch {
+                case e: TypeLoadingException => "$"
+            }
+
+        val typeIdentifier = appTypeIdentifier + suffix
+        val isClass = !typeIdentifier.endsWith("$")
         val jsArgs = args.map("'" + _.replace("\\", "\\\\").replace("'", "\\'") + "'").mkString("[", ",", "]")
 
         get(Array[String](typeIdentifier), Array.empty).map { code =>
             s"""
                |$code
                |
-               |// Application $appObjectTypeIdentifier start.
+               |// Application $appTypeIdentifier start.
                |swat.startupArgs = swat.jsArrayToScalaArray($jsArgs);
-               |$typeIdentifier();
+               |swat.app = ${if (isClass) "new " else ""}$typeIdentifier();
             """.stripMargin
         }
     }
 
-    def getAppOrAlert(appObjectTypeIdentifier: String, args: Array[String]): Future[String] = {
-        getApp(appObjectTypeIdentifier, args).recover {
+    def getAppOrAlert(appTypeIdentifier: String, args: Array[String]): Future[String] = {
+        getApp(appTypeIdentifier, args).recover {
             case e: TypeLoadingException => s"alert('Swat application loading error: ${e.message}');"
         }
     }
