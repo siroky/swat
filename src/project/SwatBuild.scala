@@ -1,6 +1,7 @@
 import sbt._
 import Keys._
 import sbt.inc.Analysis
+import scala.collection._
 import scala.tools.nsc.io.Directory
 import com.typesafe.sbt.SbtStartScript
 
@@ -53,31 +54,37 @@ object SwatBuild extends Build {
     val swatTask = TaskKey[Analysis]("swat", "Swat compilation")
 
     object RawSwatProject {
+
+        /* For each project its last compilation time or nothing if it hasn't been compiled yet. */
+        val projectCompilationTimes = mutable.HashMap[String, Long]()
+
         def apply(id: String, path: java.io.File, settings: Seq[Setting[_]] = defaultSettings): Project = {
             Project(
                 id, path, settings = settings ++ Seq(
-                    swatTask <<= (
-                        compile in Compile,
-                        fullClasspath in Compile,
-                        sourceDirectory in Compile,
-                        resourceDirectory in Compile,
-                        runner
-                        ) map { (analysis, cp, src, res, runner) =>
+                    swatTask <<= (compile in Compile, fullClasspath in Compile, resourceDirectory in Compile, runner) map {
+                        (analysis, cp, res, runner) =>
 
-                        val pathSeparator = System.getProperty("path.separator")
-                        val swatCp = cp.map(_.data.getPath).mkString(pathSeparator)
-                        val sourceFiles = new Directory(src / "scala").deepFiles
-                        // val sourceFiles = analysis.infos.allInfos.keys
-                        val sourceFilePaths = sourceFiles.map(_.path).mkString(pathSeparator)
+                        // Discover the modified sources.
+                        val lastCompilationTime = projectCompilationTimes.getOrElse(id, 0L)
+                        val sourceCompilationTimes = analysis.apis.internal.mapValues(_.compilation.startTime)
+                        val changedSources = sourceCompilationTimes.filter(_._2 > lastCompilationTime).map(_._1)
+                        projectCompilationTimes.update(id, sourceCompilationTimes.values.max)
 
-                        // Run the compiler.
-                        val logger = ConsoleLogger()
-                        Run.executeTrapExit(Run.run(
-                            "swat.compiler.Main", // Class to run.
-                            cp.map(_.data), // Classpath for the compiler.
-                            Seq(swatCp, sourceFilePaths, res.getPath), // Command line arguments.
-                            logger
-                        )(runner), logger)
+                        // If anything has been modified, recompile it.
+                        if (changedSources.nonEmpty) {
+                            val pathSeparator = System.getProperty("path.separator")
+                            val swatClassPath = cp.map(_.data.getPath).mkString(pathSeparator)
+                            val sourcePaths = changedSources.map(_.getAbsolutePath).mkString(pathSeparator)
+
+                            // Run the compiler.
+                            val logger = ConsoleLogger()
+                            Run.executeTrapExit(Run.run(
+                                "swat.compiler.Main", // Class to run.
+                                cp.map(_.data), // Classpath for the compiler.
+                                Seq(swatClassPath, sourcePaths, res.getPath), // Command line arguments.
+                                logger
+                            )(runner), logger)
+                        }
 
                         analysis
                     },

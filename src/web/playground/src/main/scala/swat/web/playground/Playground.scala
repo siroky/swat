@@ -6,6 +6,8 @@ import swat.client.workers._
 /** The application running in the web page. */
 object Playground extends App {
 
+    window.alert("Hello World!")
+
     // Start a new worker of the specified type and define a handler for the received messages.
     val worker = Worker.start[EchoWorker] { (sender, message) =>
         console.log("EchoWorker responded: " + message)
