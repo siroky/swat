@@ -1,0 +1,46 @@
+Slide 1: Scala Web Application Toolkit (1 min)
+	- Predstaveni
+	- Cil prace: prekladac Scala to JavaScript a souvisejici nastroje potrebne 
+	  k vyvoji webovych aplikaci ve Scale.
+	  
+Slide 2: Motivace (2 min)
+	- Monopol Js v prostredi webovych prohlizecu, jedina platforma podporovana
+	  napric vsemi webovymi prohlizeci.
+	- Nevyhody Js v kontextu velkych webovych aplikaci, vzhledem k tomu ze jazyk
+	  byl primarne urcen pro kratke skripty.
+	- Vznik novych jazyku a prekladacu stavajicich do Js.
+	- Scala je pekny perspekvtivni jazyk ktery pouzitelny prekladac do Js nema.
+	- Diky pouzitelnosti i na serveru je cela aplikace v jednom jazyce.
+	
+Slide 3: Core (3 min)
+	- Prekladac je plugin do Scala compileru, prevadi Scala ASTs do Js ASTs.
+	  Backend pote z Js ASTs generuje Js kod. Musi resit prevod Scala konstruktu
+	  do JavaScriptu.
+	- Interoperabilita je nutnost, jinak by aplikace nic nemohla delat, silne 
+	  typovy pristup (adaptery) a code blocks.
+	- Low level runtime napsany v Js resi to, co nebylo mozne prevest do Js v
+	  dobe kompilace.
+	- Knihovny z velke casti prelozene pomoci Swatu, upravene pro cilove 
+	  prostredi (bez vlaken apod).
+	  
+Slide 4: Rozsireni (3 min)
+	- Classloader slouzi k ziskani jednoho skriptu, ktery obsahuje vse, co dana
+	  trida potrebuje ke svemu behu. Dependency graph mezi tridami.
+	- JSON serializer pouzivany jak na serveru ve Scala, tak na klientu. JSON
+	  format umoznujici serializaci a deserializaci objektovych grafu s ref.
+	  cykly.
+	- RPC, vzdalene volani metod, vyuziva classloader a JSON serializer.
+
+Slide 5: Zaver (1 min)
+	- Vsechny pozadavky byly vyreseny a implementovany.
+	- Z duvodu casu neni plne podporovana cela Scala a Java Library.
+	
+Pripominky:
+	- Pretezovani - to ktera varianta metody se ma zavolat neurcuji typy parametru
+	  za behu, ale jiz v dobe kompilace se jako posledni argument predava typova
+	  signatura podle ktere obalujici funkce pozna, kterou variantu ma zavolat.
+	  Typova signatura vsak obashuje puvodni Scalovske typy, ne Js typy, takze
+	  vsechny ciselne typy lze reprezentovat jako Number. Pomerne presne popsano 
+	  v Analyze v casti 3.3.4 v casti "Method overloading".
+	- Blokujici RPC - ve skutecnosti neblokujici, pouziva Scala Futures & Promises,
+	  nejasnost zpusobena chybou v UML sekvencinim diagramu.
